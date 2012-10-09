@@ -3,10 +3,9 @@
 Provides Ruby convenience methods to work with the DOR Workflow REST Service.  The REST API is defined here:
 https://consul.stanford.edu/display/DOR/DOR+services#DORservices-initializeworkflow
 
-# Configuration
-
-It assumes there's a Dor::Config
-
 ## Usage
 
-TODO: Write usage instructions here
+To initialize usage of the service, you need to call Dor::WorkflowService.configure, like in a bootup are startup method, e.g.:
+Dor::WorkflowService.configure('https://test-server.edu/workflow/')
+
+There's no need to call Dor::WorkflowService.configure if using the dor-services gem and using the Dor::Config object.  The latest versions of dor-services will configure the workflow service for you.
