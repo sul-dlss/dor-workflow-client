@@ -103,7 +103,7 @@ module Dor
         workflow_resource["#{repo}/objects/#{druid}/workflows/#{workflow}/#{process}"].put(xml, :content_type => 'application/xml')
         return true
       end
-      
+
       # Deletes a workflow from a particular repository and druid
       # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
       # @param [String] druid The id of the object to delete the workflow from
@@ -112,7 +112,7 @@ module Dor
         workflow_resource["#{repo}/objects/#{druid}/workflows/#{workflow}"].delete
         return true
       end
-      
+
       # Returns the Date for a requested milestone from workflow lifecycle
       # @param [String] repo epository name
       # @param [String] druid object id
@@ -133,7 +133,7 @@ module Dor
           
         nil
       end
-      
+
       # Returns the Date for a requested milestone ONLY FROM THE ACTIVE workflow table
       # @param [String] repo epository name
       # @param [String] druid object id
@@ -154,7 +154,7 @@ module Dor
           
         nil
       end
-      
+
       def get_milestones(repo, druid)
         doc = self.query_lifecycle(repo, druid)
         doc.xpath("//lifecycle/milestone").collect do |node|
@@ -168,7 +168,7 @@ module Dor
         current.unshift(default_repository) if current.length < 3
         current.join(':')
       end
-      
+
       def get_objects_for_workstep completed, waiting, repository=nil, workflow=nil
         result = nil
         Array(completed).in_groups_of(2,false).each { |group|
@@ -180,8 +180,7 @@ module Dor
         }
         result || []
       end
-      
-#      private
+
       def create_process_xml(params)
         builder = Nokogiri::XML::Builder.new do |xml|
           attrs = params.reject { |k,v| v.nil? }
@@ -196,10 +195,24 @@ module Dor
         lifecycle_xml = workflow_resource[req].get
         return Nokogiri::XML(lifecycle_xml)
       end
-      
+
       def workflow_resource
-        Config.make_rest_client(Config.workflow.url)
+        raise "Please call Dor::WorkflowService.configure(url) once before calling any WorkflowService methods" if(@@resource.nil?)
+        @@resource
       end
+
+      # @param [String] url points to the workflow service
+      # @param [Hash] opts optional params
+      # @option opts [String] :client_cert_file path to an SSL client certificate
+      # @option opts [String] :client_key_file path to an SSL key file
+      # @option opts [String] :client_key_pass password for the key file
+      def configure(url, opts={})
+        params = {}
+        params[:ssl_client_cert] = OpenSSL::X509::Certificate.new(File.read(opts[:client_cert_file])) if opts[:client_cert_file]
+        params[:ssl_client_key]  = OpenSSL::PKey::RSA.new(File.read(opts[:client_key_file]), opts[:client_key_pass]) if opts[:client_key_file]
+        @@resource = RestClient::Resource.new(url, params)
+      end
+
     end
   end
 end

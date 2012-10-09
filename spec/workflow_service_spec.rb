@@ -3,8 +3,6 @@ require 'dor-workflow-service'
 
 describe Dor::WorkflowService do  
   before(:all) do
-    Dor::Config.push! { workflow.url = 'https://dortest.stanford.edu/workflow' }
-
     @wf_xml = <<-EOXML
     <workflow id="etdSubmitWF">
          <process name="register-object" status="completed" attempts="1" />
@@ -16,10 +14,6 @@ describe Dor::WorkflowService do
     EOXML
   end
   
-  after(:all) do
-    Dor::Config.pop!
-  end
-  
   before(:each) do
     @repo = 'dor'
     @druid = 'druid:123'
@@ -27,9 +21,10 @@ describe Dor::WorkflowService do
     @mock_logger = mock('logger').as_null_object
     Rails.stub!(:logger).and_return(@mock_logger)
 
-    @mock_resource = mock('RestClient::Resource')
+    @mock_resource = mock('mock_rest_client_resource')
     @mock_resource.stub!(:[]).and_return(@mock_resource)
     RestClient::Resource.stub!(:new).and_return(@mock_resource)
+    Dor::WorkflowService.configure 'https://dortest.stanford.edu/workflow'
   end
   
   describe "#create_workflow" do
@@ -130,7 +125,7 @@ describe Dor::WorkflowService do
   end
   
   describe "#get_objects_for_workstep" do
-    before :all do
+    before :each do
       @repository = "dor"
       @workflow = "googleScannedBookWF"
       @completed = "google-download"

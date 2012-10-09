@@ -7,6 +7,4 @@ RSpec.configure do |conf|
   
 end
 
-require 'dor_config'
-
 Rails = Object.new unless defined? Rails
