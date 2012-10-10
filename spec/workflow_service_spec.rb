@@ -124,6 +124,17 @@ describe Dor::WorkflowService do
 
   end
   
+  describe "#get_errored_objects_for_workstep" do
+    it "creates the URI string correctly and return a hash" do
+      @repository = "dor"
+      @workflow = "googleScannedBookWF"
+      @step ="google-download"
+      @mock_resource.should_receive(:[]).with("workflow_queue?repository=#{@repository}&workflow=#{@workflow}&error=#{@step}")
+      @mock_resource.should_receive(:get).and_return(%{<object errorMessage="druid:qd556jq0580 - Item error; caused by #<Rubydora::FedoraInvalidRequest: Error modifying datastream contentMetadata for druid:qd556jq0580. See logger for details>" id="druid:qd556jq0580" url="https://sul-dor-prod.stanford.edu/fedora/objects/druid:qd556jq0580"/>})
+      Dor::WorkflowService.get_errored_objects_for_workstep(@workflow,@step).class.should == Hash    
+    end
+  end
+  
   describe "#get_objects_for_workstep" do
     before :each do
       @repository = "dor"
