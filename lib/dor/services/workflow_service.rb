@@ -181,6 +181,26 @@ module Dor
         result || []
       end
 
+      # Get a list of druids that have errored out in a particular workflow and step
+      #
+      # @param [string] workflow name
+      # @param [string] step name
+      # @param [string] repository -- optional, default=dor
+      #
+      # @return [hash] hash of results, with key has a druid, and value as the error message
+      # e.g. 
+      # Dor::WorkflowService.get_errored_objects_for_workstep('accessionWF','content-metadata')
+      # => {"druid:qd556jq0580"=>"druid:qd556jq0580 - Item error; caused by #<Rubydora::FedoraInvalidRequest: Error modifying datastream contentMetadata for druid:qd556jq0580. See logger for details>"}
+      def get_errored_objects_for_workstep workflow, step, repository='dor'
+        result = {}
+        uri_string = "workflow_queue?repository=#{repository}&workflow=#{workflow}&error=#{step}"
+        resp = workflow_resource[uri_string].get
+        objs = Nokogiri::XML(resp).xpath('//object').collect do |node| 
+          result.merge!(node['id'] => node['errorMessage']) 
+        end
+        result
+      end
+
       def create_process_xml(params)
         builder = Nokogiri::XML::Builder.new do |xml|
           attrs = params.reject { |k,v| v.nil? }
