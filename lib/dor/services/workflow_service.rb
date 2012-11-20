@@ -158,7 +158,7 @@ module Dor
       def get_milestones(repo, druid)
         doc = self.query_lifecycle(repo, druid)
         doc.xpath("//lifecycle/milestone").collect do |node|
-          { :milestone => node.text, :at => Time.parse(node['date']) }
+          { :milestone => node.text, :at => Time.parse(node['date']), :version => node['version'] }
         end
       end
 

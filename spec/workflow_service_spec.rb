@@ -196,5 +196,15 @@ describe Dor::WorkflowService do
       Dor::WorkflowService.delete_workflow(@repo, @druid, 'accessionWF')
     end
   end
+  describe 'get_milestones' do
+    it 'should include the version in with the milestones' do
+      xml='<?xml version="1.0" encoding="UTF-8"?><lifecycle objectId="druid:gv054hp4128"><milestone date="2012-01-26T21:06:54-0800" version="2">published</milestone></lifecycle>'
+      xml=Nokogiri::XML(xml)
+      Dor::WorkflowService.stub(:query_lifecycle).and_return(xml)
+      milestones=Dor::WorkflowService.get_milestones(@repo, @druid)
+      milestones.first[:milestone].should == "published"
+      milestones.first[:version].should == "2"
+    end
+  end
   
 end
