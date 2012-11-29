@@ -5,12 +5,12 @@ require 'nokogiri'
 module Dor
 
   # Methods to create and update workflow
-  #
-  # ==== Required Constants
-  # - Dor::CREATE_WORKFLOW : true or false.  Can be used to turn of workflow in a particular environment, like development
-  # - Dor::WF_URI : The URI to the workflow service.  An example URI is 'http://lyberservices-dev.stanford.edu/workflow'
   module WorkflowService
     class << self
+
+      @@resource = nil
+      @@dor_services_url = nil
+
       # Creates a workflow for a given object in the repository.  If this particular workflow for this objects exists,
       # it will replace the old workflow with wf_xml passed to this method.  You have the option of creating a datastream or not.
       # Returns true on success.  Caller must handle any exceptions
@@ -216,6 +216,13 @@ module Dor
         return Nokogiri::XML(lifecycle_xml)
       end
 
+      def archive_workflow(repo, druid, wf_name)
+        raise "Please call Dor::WorkflowService.configure(workflow_service_url, :dor_services_url => DOR_SERVIES_URL) once before archiving workflow" if(@@dor_services_url.nil?)
+
+        dor_services = RestClient::Resource.new(@@dor_services_url)
+        dor_services["/objects/#{druid}/workflows/#{wf_name}/archive"].post ''
+      end
+
       def workflow_resource
         raise "Please call Dor::WorkflowService.configure(url) once before calling any WorkflowService methods" if(@@resource.nil?)
         @@resource
@@ -226,8 +233,10 @@ module Dor
       # @option opts [String] :client_cert_file path to an SSL client certificate
       # @option opts [String] :client_key_file path to an SSL key file
       # @option opts [String] :client_key_pass password for the key file
+      # @option opts [String] :dor_services_uri uri to the DOR REST service
       def configure(url, opts={})
         params = {}
+        @@dor_services_url = opts[:dor_services_url] if opts[:dor_services_url]
         #params[:ssl_client_cert] = OpenSSL::X509::Certificate.new(File.read(opts[:client_cert_file])) if opts[:client_cert_file]
         #params[:ssl_client_key]  = OpenSSL::PKey::RSA.new(File.read(opts[:client_key_file]), opts[:client_key_pass]) if opts[:client_key_file]
         @@resource = RestClient::Resource.new(url, params)
