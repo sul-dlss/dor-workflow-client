@@ -201,7 +201,8 @@ module Dor
         result
       end
 
-      def create_process_xml(params)
+      def create_process_xml(parrequire 'dor/services/workflow_service'
+      ams)
         builder = Nokogiri::XML::Builder.new do |xml|
           attrs = params.reject { |k,v| v.nil? }
           xml.process(attrs)
@@ -216,11 +217,13 @@ module Dor
         return Nokogiri::XML(lifecycle_xml)
       end
 
-      def archive_workflow(repo, druid, wf_name)
+      def archive_workflow(repo, druid, wf_name, version_num=nil)
         raise "Please call Dor::WorkflowService.configure(workflow_service_url, :dor_services_url => DOR_SERVIES_URL) once before archiving workflow" if(@@dor_services_url.nil?)
 
         dor_services = RestClient::Resource.new(@@dor_services_url)
-        dor_services["/objects/#{druid}/workflows/#{wf_name}/archive"].post ''
+        url = "/objects/#{druid}/workflows/#{wf_name}/archive"
+        url << "/#{version_num}" if(version_num)
+        dor_services[url].post ''
       end
 
       def workflow_resource
