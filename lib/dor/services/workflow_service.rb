@@ -201,8 +201,7 @@ module Dor
         result
       end
 
-      def create_process_xml(parrequire 'dor/services/workflow_service'
-      ams)
+      def create_process_xml(params)
         builder = Nokogiri::XML::Builder.new do |xml|
           attrs = params.reject { |k,v| v.nil? }
           xml.process(attrs)
