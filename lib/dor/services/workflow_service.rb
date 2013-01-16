@@ -220,7 +220,7 @@ module Dor
         raise "Please call Dor::WorkflowService.configure(workflow_service_url, :dor_services_url => DOR_SERVIES_URL) once before archiving workflow" if(@@dor_services_url.nil?)
 
         dor_services = RestClient::Resource.new(@@dor_services_url)
-        url = "/objects/#{druid}/workflows/#{wf_name}/archive"
+        url = "/v1/objects/#{druid}/workflows/#{wf_name}/archive"
         url << "/#{version_num}" if(version_num)
         dor_services[url].post ''
       end
