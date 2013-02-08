@@ -169,15 +169,25 @@ module Dor
         current.join(':')
       end
 
+      # This method bunches up groups of 2 completed steps and builds qualified (repository:workflow:step) paramaters
+      # for the workflow service
+      # TODO when we switch the workflow service to handle joins of more than 2 completed steps, we can fix this method to do one query
       def get_objects_for_workstep completed, waiting, repository=nil, workflow=nil
         result = nil
-        Array(completed).in_groups_of(2,false).each { |group|
+        if(completed)
+          Array(completed).in_groups_of(2,false).each do |group|
+            uri_string = "workflow_queue?waiting=#{qualify_step(repository,workflow,waiting)}"
+            group.each { |step| uri_string << "&completed=#{qualify_step(repository,workflow,step)}" }
+            resp = workflow_resource[uri_string].get
+            resp_ids = Nokogiri::XML(resp).xpath('//object[@id]').collect { |node| node['id'] }
+            result = result.nil? ? resp_ids : (result & resp_ids)
+          end
+        else
           uri_string = "workflow_queue?waiting=#{qualify_step(repository,workflow,waiting)}"
-          group.each { |step| uri_string << "&completed=#{qualify_step(repository,workflow,step)}" }
           resp = workflow_resource[uri_string].get
-          resp_ids = Nokogiri::XML(resp).xpath('//object[@id]').collect { |node| node['id'] }
-          result = result.nil? ? resp_ids : (result & resp_ids)
-        }
+          result = Nokogiri::XML(resp).xpath('//object[@id]').collect { |node| node['id'] }
+        end
+
         result || []
       end
 
