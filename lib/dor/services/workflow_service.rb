@@ -61,7 +61,10 @@ module Dor
         doc = Nokogiri::XML(workflow_md)
         raise Exception.new("Unable to parse response:\n#{workflow_md}") if(doc.root.nil?)
 
-        status = doc.root.at_xpath("//process[@name='#{process}']/@status").content
+        status = doc.root.at_xpath("//process[@name='#{process}']/@status")
+        if status
+          status=status.content
+        end
         return status
       end
 

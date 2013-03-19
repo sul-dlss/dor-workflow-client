@@ -94,6 +94,11 @@ describe Dor::WorkflowService do
       @mock_resource.should_receive(:get).and_return('something not xml')
       lambda{ Dor::WorkflowService.get_workflow_status('dor', 'druid:123', 'etdSubmitWF', 'registrar-approval') }.should raise_error(Exception, "Unable to parse response:\nsomething not xml")
     end
+    it "should return nil if the workflow/process combination doesnt exist" do
+      @mock_resource.should_receive(:get).and_return('<process name="registrar-approval" status="completed" />')
+      Dor::WorkflowService.get_workflow_status('dor', 'druid:123', 'accessionWF', 'publish').should == nil
+    end
+    
   end
 
   describe "#get_workflow_xml" do
