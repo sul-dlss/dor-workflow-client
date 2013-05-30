@@ -41,11 +41,12 @@ module Dor
       # @option opts [Float] :elapsed The number of seconds it took to complete this step. Can have a decimal.  Is set to 0 if not passed in.
       # @option opts [String] :lifecycle Bookeeping label for this particular workflow step.  Examples are: 'registered', 'shelved'
       # @option opts [String] :note Any kind of string annotation that you want to attach to the workflow
+      # @option opts [Integer] :priority Processing priority, 0-100, 100 being the highest priority. Workflow queues are returned in order of highest to lowest priority.  Stored in the system as 0 by default
       # == Http Call
       # The method does an HTTP PUT to the URL defined in Dor::WF_URI.  As an example:
       #   PUT "/dor/objects/pid:123/workflows/GoogleScannedWF/convert"
       #   <process name=\"convert\" status=\"completed\" />"
-      def update_workflow_status(repo, druid, workflow, process, status, opts = {}) #elapsed = 0, lifecycle = nil)
+      def update_workflow_status(repo, druid, workflow, process, status, opts = {})
         opts = {:elapsed => 0, :lifecycle => nil, :note => nil}.merge!(opts)
         opts[:elapsed] = opts[:elapsed].to_s
         xml = create_process_xml({:name => process, :status => status}.merge!(opts))
@@ -172,19 +173,23 @@ module Dor
         current.join(':')
       end
 
-      # This method bunches up groups of 2 completed steps and builds qualified (repository:workflow:step) paramaters
-      # for the workflow service
-      # TODO when we switch the workflow service to handle joins of more than 2 completed steps, we can fix this method to do one query
+
+      # Returns a list of druids from the WorkflowService that meet the criteria of the passed in completed and waiting params
+      #
+      # @param [Array<String>, String] completed An array or single String of the completed steps, should use the qualified format:
+      #   repository:workflow:step-name
+      # @param [String] waiting name of the waiting step
+      # @param [String] repository default repository to use if it isn't passed in the qualified-step-name
+      # @param [String] workflow default workflow to use if it isn't passed in the qualified-step-name
       def get_objects_for_workstep completed, waiting, repository=nil, workflow=nil
         result = nil
         if(completed)
-          Array(completed).in_groups_of(2,false).each do |group|
-            uri_string = "workflow_queue?waiting=#{qualify_step(repository,workflow,waiting)}"
-            group.each { |step| uri_string << "&completed=#{qualify_step(repository,workflow,step)}" }
-            resp = workflow_resource[uri_string].get
-            resp_ids = Nokogiri::XML(resp).xpath('//object[@id]').collect { |node| node['id'] }
-            result = result.nil? ? resp_ids : (result & resp_ids)
+          uri_string = "workflow_queue?waiting=#{qualify_step(repository,workflow,waiting)}"
+          Array(completed).each do |step|
+            uri_string << "&completed=#{qualify_step(repository,workflow,step)}"
           end
+            resp = workflow_resource[uri_string].get
+            result = Nokogiri::XML(resp).xpath('//object[@id]').collect { |node| node['id'] }
         else
           uri_string = "workflow_queue?waiting=#{qualify_step(repository,workflow,waiting)}"
           resp = workflow_resource[uri_string].get
