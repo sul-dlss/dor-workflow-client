@@ -1,9 +1,10 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 require 'dor-workflow-service'
+require 'equivalent-xml'
 
 describe Dor::WorkflowService do
-  before(:all) do
-    @wf_xml = <<-EOXML
+
+  let(:wf_xml) { <<-EOXML
     <workflow id="etdSubmitWF">
          <process name="register-object" status="completed" attempts="1" />
          <process name="submit" status="waiting" />
@@ -12,7 +13,7 @@ describe Dor::WorkflowService do
          <process name="start-accession" status="waiting" />
     </workflow>
     EOXML
-  end
+  }
 
   before(:each) do
     @repo = 'dor'
@@ -29,22 +30,43 @@ describe Dor::WorkflowService do
 
   describe "#create_workflow" do
     it "should pass workflow xml to the DOR workflow service and return the URL to the workflow" do
-      @mock_resource.should_receive(:put).with(@wf_xml, anything()).and_return('')
-      Dor::WorkflowService.create_workflow(@repo, @druid, 'etdSubmitWF', @wf_xml)
+      @mock_resource.should_receive(:put).with(wf_xml, anything()).and_return('')
+      Dor::WorkflowService.create_workflow(@repo, @druid, 'etdSubmitWF', wf_xml)
     end
 
     it "should log an error and return false if the PUT to the DOR workflow service throws an exception" do
       ex = Exception.new("exception thrown")
       @mock_resource.should_receive(:put).and_raise(ex)
-      lambda{ Dor::WorkflowService.create_workflow(@repo, @druid, 'etdSubmitWF', @wf_xml) }.should raise_error(Exception, "exception thrown")
+      lambda{ Dor::WorkflowService.create_workflow(@repo, @druid, 'etdSubmitWF', wf_xml) }.should raise_error(Exception, "exception thrown")
     end
 
     it "sets the create-ds param to the value of the passed in options hash" do
-      @mock_resource.should_receive(:put).with(@wf_xml, :content_type => 'application/xml',
+      @mock_resource.should_receive(:put).with(wf_xml, :content_type => 'application/xml',
                                                 :params => {'create-ds' => false}).and_return('')
-      Dor::WorkflowService.create_workflow(@repo, @druid, 'etdSubmitWF', @wf_xml, :create_ds => false)
+      Dor::WorkflowService.create_workflow(@repo, @druid, 'etdSubmitWF', wf_xml, :create_ds => false)
     end
 
+    it "adds priority attributes to all steps if passed in as an option" do
+
+    end
+
+  end
+
+  describe "#add_priority_to_workflow_xml" do
+
+    it "adds priority attributes to all process elements" do
+      expected = <<-XML
+        <workflow id="etdSubmitWF">
+             <process name="register-object" status="completed" attempts="1" priority="50"/>
+             <process name="submit" status="waiting" priority="50"/>
+             <process name="reader-approval" status="waiting" priority="50"/>
+             <process name="registrar-approval" status="waiting" priority="50"/>
+             <process name="start-accession" status="waiting" priority="50"/>
+        </workflow>
+      XML
+
+      Dor::WorkflowService.add_priority_to_workflow_xml(50, wf_xml).should be_equivalent_to(expected)
+    end
   end
 
   describe "#update_workflow_status" do

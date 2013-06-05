@@ -23,11 +23,26 @@ module Dor
       # @param [Hash] opts optional params
       # @option opts [Boolean] :create_ds if true, a workflow datastream will be created in Fedora.  Set to false if you do not want a datastream to be created
       #   If you do not pass in an <b>opts</b> Hash, then :create_ds is set to true by default
+      # @option opts [Integer] :priority adds priority to all process elements in the wf_xml workflow xml
       #
       def create_workflow(repo, druid, workflow_name, wf_xml, opts = {:create_ds => true})
-        workflow_resource["#{repo}/objects/#{druid}/workflows/#{workflow_name}"].put(wf_xml, :content_type => 'application/xml',
+        xml = wf_xml
+        xml = add_priority_to_workflow_xml(opts[:priority], wf_xml) if(opts[:priority])
+        workflow_resource["#{repo}/objects/#{druid}/workflows/#{workflow_name}"].put(xml, :content_type => 'application/xml',
                                                                                      :params => {'create-ds' => opts[:create_ds] })
         return true
+      end
+
+      # Adds priority attributes to each process of workflow xml
+      #
+      # @param [Integer] priority value to add to each process element
+      # @param [String] wf_xml the workflow xml
+      # @return [String] wf_xml with priority attributes
+      def add_priority_to_workflow_xml(priority, wf_xml)
+        return wf_xml if(priority.to_i == 0)
+        doc = Nokogiri::XML(wf_xml)
+        doc.xpath('/workflow/process').each { |proc| proc['priority'] = priority }
+        doc.to_xml
       end
 
       # Updates the status of one step in a workflow.
