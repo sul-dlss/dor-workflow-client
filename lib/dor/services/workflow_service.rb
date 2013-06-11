@@ -203,13 +203,12 @@ module Dor
           Array(completed).each do |step|
             uri_string << "&completed=#{qualify_step(repository,workflow,step)}"
           end
-            resp = workflow_resource[uri_string].get
-            result = Nokogiri::XML(resp).xpath('//object[@id]').collect { |node| node['id'] }
         else
           uri_string = "workflow_queue?waiting=#{qualify_step(repository,workflow,waiting)}"
-          resp = workflow_resource[uri_string].get
-          result = Nokogiri::XML(resp).xpath('//object[@id]').collect { |node| node['id'] }
         end
+        workflow_resource.options[:timeout] = 5 * 60 unless(workflow_resource.options.include?(:timeout))
+        resp = workflow_resource[uri_string].get
+        result = Nokogiri::XML(resp).xpath('//object[@id]').collect { |node| node['id'] }
 
         result || []
       end

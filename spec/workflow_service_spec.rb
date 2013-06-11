@@ -24,6 +24,7 @@ describe Dor::WorkflowService do
 
     @mock_resource = mock('mock_rest_client_resource')
     @mock_resource.stub!(:[]).and_return(@mock_resource)
+    @mock_resource.stub!(:options).and_return( {} )
     RestClient::Resource.stub!(:new).and_return(@mock_resource)
     Dor::WorkflowService.configure 'https://dortest.stanford.edu/workflow'
   end
