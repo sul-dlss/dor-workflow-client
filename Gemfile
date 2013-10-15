@@ -5,6 +5,7 @@ gemspec
 
 if RUBY_VERSION < '1.9'
   gem 'activesupport', "< 4.0"
+  gem 'nokogiri', "< 1.6"
 end
 
 group :development do
