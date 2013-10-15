@@ -19,13 +19,13 @@ describe Dor::WorkflowService do
     @repo = 'dor'
     @druid = 'druid:123'
 
-    @mock_logger = mock('logger').as_null_object
-    Rails.stub!(:logger).and_return(@mock_logger)
+    @mock_logger = double('logger').as_null_object
+    Rails.stub(:logger).and_return(@mock_logger)
 
-    @mock_resource = mock('mock_rest_client_resource')
-    @mock_resource.stub!(:[]).and_return(@mock_resource)
-    @mock_resource.stub!(:options).and_return( {} )
-    RestClient::Resource.stub!(:new).and_return(@mock_resource)
+    @mock_resource = double('mock_rest_client_resource')
+    @mock_resource.stub(:[]).and_return(@mock_resource)
+    @mock_resource.stub(:options).and_return( {} )
+    RestClient::Resource.stub(:new).and_return(@mock_resource)
     Dor::WorkflowService.configure 'https://dortest.stanford.edu/workflow'
   end
 
