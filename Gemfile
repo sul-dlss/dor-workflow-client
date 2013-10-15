@@ -8,5 +8,5 @@ if RUBY_VERSION < '1.9'
 end
 
 group :development do
-  gem "debugger"
+  gem "debugger", :platform => :ruby_19
 end
