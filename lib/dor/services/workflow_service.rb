@@ -91,15 +91,26 @@ module Dor
       # Get workflow names into an array for given PID
       # This method only works when this gem is used in a project that is configured to connect to DOR
       #
-      # @param [string] pid of druid
-      #
-      # @return [array] list of worklows
-      # e.g.
-      # Dor::WorkflowService.get_workflows('druid:sr100hp0609')
-      # => ["accessionWF", "assemblyWF", "disseminationWF"]
+      # @param [String] pid of druid
+      # @return [Array<String>] list of worklows
+      # @example Dor::WorkflowService.get_workflows('druid:sr100hp0609')
+      #   => ["accessionWF", "assemblyWF", "disseminationWF"]
       def get_workflows(pid)
         xml_doc=Nokogiri::XML(get_workflow_xml('dor',pid,''))
         return xml_doc.xpath('//workflow').collect {|workflow| workflow['id']}
+      end
+
+      # Get active workflow names into an array for given PID
+      # This method only works when this gem is used in a project that is configured to connect to DOR
+      #
+      # @param [String] repo repository of the object
+      # @param [String] pid id of object
+      # @return [Array<String>] list of active worklows.  Returns an empty Array if none are found
+      # @example Dor::WorkflowService.get_workflows('dor', 'druid:sr100hp0609')
+      #   => ["accessionWF", "assemblyWF", "disseminationWF"]
+      def get_active_workflows(repo, pid)
+        doc = Nokogiri::XML(get_workflow_xml(repo,pid,''))
+        doc.xpath( %(//workflow[not(process/@archived)]/@id ) ).map {|n| n.value}
       end
 
       # Updates the status of one step in a workflow to error.
@@ -246,6 +257,13 @@ module Dor
         req << '?active-only=true' if active_only
         lifecycle_xml = workflow_resource[req].get
         return Nokogiri::XML(lifecycle_xml)
+      end
+
+      def archive_active_workflow(repo, druid)
+        workflows = get_active_workflows(repo, druid)
+        workflows.each do |wf|
+          archive_workflow(repo, druid, wf,)
+        end
       end
 
       def archive_workflow(repo, druid, wf_name, version_num=nil)

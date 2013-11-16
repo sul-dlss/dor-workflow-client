@@ -242,4 +242,23 @@ describe Dor::WorkflowService do
     end
   end
 
+  describe ".get_active_workflows" do
+    it "it returns an array of active workflows only" do
+      xml = <<-XML
+      <workflows objectId="druid:mw971zk1113">
+        <workflow repository="dor" objectId="druid:mw971zk1113" id="accessionWF">
+          <process priority="0" lifecycle="submitted" elapsed="0.0" attempts="1" datetime="2013-02-18T15:08:10-0800" status="completed" name="start-accession"/>
+        </workflow>
+        <workflow repository="dor" objectId="druid:mw971zk1113" id="assemblyWF">
+          <process version="1" priority="0" elapsed="0.0" archived="true" attempts="1" datetime="2013-02-18T14:40:25-0800" status="completed" name="start-assembly"/>
+          <process version="1" priority="0" elapsed="0.509" archived="true" attempts="1" datetime="2013-02-18T14:42:24-0800" status="completed" name="jp2-create"/>
+        </workflow>
+      </workflows>
+      XML
+
+      Dor::WorkflowService.stub(:get_workflow_xml) { xml }
+      expect(Dor::WorkflowService.get_active_workflows('dor', 'druid:mw971zk1113')).to eq(['accessionWF'])
+    end
+  end
+
 end
