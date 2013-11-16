@@ -262,7 +262,7 @@ module Dor
       def archive_active_workflow(repo, druid)
         workflows = get_active_workflows(repo, druid)
         workflows.each do |wf|
-          archive_workflow(repo, druid, wf,)
+          archive_workflow(repo, druid, wf)
         end
       end
 
