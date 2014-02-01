@@ -261,4 +261,18 @@ describe Dor::WorkflowService do
     end
   end
 
+  describe "#close_version" do
+    it "calls the versionClose endpoint with druid" do
+      @mock_resource.should_receive(:[]).with("dor/objects/druid:123/versionClose").and_return(@mock_resource)
+      @mock_resource.should_receive(:post).with('').and_return('')
+      Dor::WorkflowService.close_version(@repo, @druid)
+    end
+
+    it "optionally prevents creation of accessionWF" do
+      @mock_resource.should_receive(:[]).with("dor/objects/druid:123/versionClose?create-accession=false").and_return(@mock_resource)
+      @mock_resource.should_receive(:post).with('').and_return('')
+      Dor::WorkflowService.close_version(@repo, @druid, false)
+    end
+  end
+
 end

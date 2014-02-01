@@ -275,6 +275,19 @@ module Dor
         dor_services[url].post ''
       end
 
+      # Calls the versionClose endpoint of the WorkflowService:
+      #   - completes the versioningWF:submit-version and versioningWF:start-accession steps
+      #   - initiates accesssionWF
+      # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
+      # @param [String] druid The id of the object to delete the workflow from
+      # @param [Boolean] create_accession_wf Option to create accessionWF when closing a version.  Defaults to true
+      def close_version(repo, druid, create_accession_wf = true)
+        uri = "#{repo}/objects/#{druid}/versionClose"
+        uri << "?create-accession=false" if(!create_accession_wf)
+        workflow_resource[uri].post ''
+        return true
+      end
+
       def workflow_resource
         raise "Please call Dor::WorkflowService.configure(url) once before calling any WorkflowService methods" if(@@resource.nil?)
         @@resource
