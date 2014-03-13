@@ -301,6 +301,7 @@ module Dor
       # @option opts [String] :dor_services_uri uri to the DOR REST service
       def configure(url, opts={})
         params = {}
+        params[:timeout] = opts[:timeout] if opts[:timeout]
         @@dor_services_url = opts[:dor_services_url] if opts[:dor_services_url]
         #params[:ssl_client_cert] = OpenSSL::X509::Certificate.new(File.read(opts[:client_cert_file])) if opts[:client_cert_file]
         #params[:ssl_client_key]  = OpenSSL::PKey::RSA.new(File.read(opts[:client_key_file]), opts[:client_key_pass]) if opts[:client_key_file]
