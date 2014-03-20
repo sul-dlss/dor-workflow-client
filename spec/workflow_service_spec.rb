@@ -203,7 +203,7 @@ describe Dor::WorkflowService do
         qualified_completed3 = "#{repo2}:#{workflow2}:#{completed3}"
         @mock_resource.should_receive(:[]).with("workflow_queue?waiting=#{qualified_waiting}&completed=#{qualified_completed}&completed=#{qualified_completed2}&completed=#{qualified_completed3}")
         @mock_resource.should_receive(:get).and_return(%{<objects count="2"><object id="druid:ab123de4567" priority="2"/><object id="druid:ab123de9012" priority="1"/></objects>})
-        Dor::WorkflowService.get_objects_for_workstep([qualified_completed, qualified_completed2, qualified_completed3], qualified_waiting, nil, nil, true).should == { 'druid:ab123de4567' => 2, 'druid:ab123de9012' => 1}
+        Dor::WorkflowService.get_objects_for_workstep([qualified_completed, qualified_completed2, qualified_completed3], qualified_waiting, nil, nil, with_priority: true).should == { 'druid:ab123de4567' => 2, 'druid:ab123de9012' => 1}
       end
 
       it "creates the URI string with only one completed step passed in as a String" do
@@ -229,7 +229,7 @@ describe Dor::WorkflowService do
 
         @mock_resource.should_receive(:[]).with("workflow_queue?waiting=#{qualified_waiting}")
         @mock_resource.should_receive(:get).and_return(%{<objects count="1"><object id="druid:ab123de4567" priority="33"/></objects>})
-        Dor::WorkflowService.get_objects_for_workstep(nil, qualified_waiting, nil, nil, true).should == { 'druid:ab123de4567' => 33 }
+        Dor::WorkflowService.get_objects_for_workstep(nil, qualified_waiting, nil, nil, with_priority: true).should == { 'druid:ab123de4567' => 33 }
       end
     end
   end

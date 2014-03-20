@@ -240,25 +240,28 @@ module Dor
       # @param [String] waiting name of the waiting step
       # @param [String] repository default repository to use if it isn't passed in the qualified-step-name
       # @param [String] workflow default workflow to use if it isn't passed in the qualified-step-name
-      # @param [Boolean] with_priority include the priority with each druid
-      # @param [Integer] limit maximum number of druids to return (nil for no limit)
+      # @param [Hash] options
+      # @option options [Boolean] :with_priority include the priority with each druid
+      # @option options [Integer] :limit maximum number of druids to return (nil for no limit)
       # @return [Array<String>, Hash] if with_priority, hash with druids as keys with their Integer priority as value; else Array of druids
       #
-      # @example Returns
-      #      [
+      # @example
+      #     get_objects_for_workstep(...) 
+      #     => [
       #        "druid:py156ps0477",
       #        "druid:tt628cb6479",
       #        "druid:ct021wp7863"
       #      ]
       # 
-      # @example or `with_priority = true`
-      #     {
+      # @example
+      #     get_objects_for_workstep(..., with_priority: true) 
+      #     => {
       #      "druid:py156ps0477" => 100,
       #      "druid:tt628cb6479" => 0,
       #      "druid:ct021wp7863" => -100
       #     }
       #
-      def get_objects_for_workstep completed, waiting, repository=nil, workflow=nil, with_priority=false, limit=nil
+      def get_objects_for_workstep completed, waiting, repository=nil, workflow=nil, options = {}
         result = nil
         uri_string = "workflow_queue?waiting=#{qualify_step(repository,workflow,waiting)}"
         if(completed)
@@ -268,7 +271,7 @@ module Dor
         end
         
         # XXX: add contraint for limit
-        if limit and limit.to_i > 0
+        if options[:limit] and options[:limit].to_i > 0
           raise NotImplementedError, 'Limit for results not yet supported'
         end
         
@@ -289,7 +292,7 @@ module Dor
           h
         end
 
-        with_priority ? result : result.keys
+        options[:with_priority] ? result : result.keys
       end
 
       # Get a list of druids that have errored out in a particular workflow and step
