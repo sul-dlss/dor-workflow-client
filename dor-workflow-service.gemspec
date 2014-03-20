@@ -6,7 +6,7 @@ require 'dor/workflow_version'
 Gem::Specification.new do |gem|
   gem.name          = "dor-workflow-service"
   gem.version       = Dor::Workflow::Service::VERSION
-  gem.authors       = ["Willy Mene"]
+  gem.authors       = ["Willy Mene", "Darren Hardy"]
   gem.email         = ["wmene@stanford.edu"]
   gem.description   = "Enables Ruby manipulation of the DOR Workflow Service via its REST API"
   gem.summary       = "Provides convenience methods to work with the DOR Workflow Service"
@@ -17,14 +17,14 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = ["lib"]
 
-  gem.add_dependency "activesupport"
-  gem.add_dependency "nokogiri"
-  gem.add_dependency "rest-client"
-  gem.add_dependency "confstruct"
+  gem.add_dependency "activesupport", '~> 4.0.4'
+  gem.add_dependency "nokogiri", '~> 1.6.0'
+  gem.add_dependency "rest-client", '~> 1.6.7'
+  gem.add_dependency "confstruct", '~> 0.2.7'
 
   gem.add_development_dependency "rake"
   gem.add_development_dependency "rspec"
   gem.add_development_dependency "yard"
   gem.add_development_dependency "redcarpet"
-  gem.add_development_dependency "equivalent-xml"
+  gem.add_development_dependency "equivalent-xml", '~> 0.3.0'
 end

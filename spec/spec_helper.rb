@@ -8,3 +8,5 @@ RSpec.configure do |conf|
 end
 
 Rails = Object.new unless defined? Rails
+
+require 'awesome_print'

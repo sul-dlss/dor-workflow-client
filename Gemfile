@@ -10,4 +10,5 @@ end
 
 group :development do
   gem "debugger", :platform => :ruby_19
+  gem 'awesome_print'
 end
