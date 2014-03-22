@@ -87,6 +87,13 @@ describe Dor::WorkflowService do
       @mock_resource.should_receive(:put).with(@xml_re, { :content_type => 'application/xml' }).and_raise(ex)
       lambda{ Dor::WorkflowService.update_workflow_status(@repo, @druid, "etdSubmitWF", "reader-approval", "completed") }.should raise_error(Exception, "exception thrown")
     end
+    
+    it "should raise an exception if current process status is the same" do
+      ex = RuntimeError.new('Status would not change: completed druid:123')
+      @mock_resource.should_receive(:get).and_return('<process name="reader-approval" status="completed" />')
+      lambda{ Dor::WorkflowService.update_workflow_status(@repo, @druid, "etdSubmitWF", "reader-approval", "completed") }.should raise_error(RuntimeError, ex.message)
+    end
+    
   end
 
   describe "#update_workflow_error_status" do
