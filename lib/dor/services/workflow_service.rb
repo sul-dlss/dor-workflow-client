@@ -51,6 +51,13 @@ module Dor
       # Updates the status of one step in a workflow.
       # Returns true on success.  Caller must handle any exceptions
       #
+      # XXX: We want to be able to specify a *state transition*
+      # not a final state. For example, `waiting` -> `queued` but if we send 
+      # in `queued` and the state is already in `queued` or even `error` 
+      # then the caller might need to know about that. If so, it should have
+      # transactional semantics and thus would require the workflow service 
+      # to implement it.
+      #
       # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
       # @param [String] druid The id of the object
       # @param [String] workflow The name of the workflow
@@ -62,6 +69,8 @@ module Dor
       # @option opts [String] :note Any kind of string annotation that you want to attach to the workflow
       # @option opts [Integer] :priority Processing priority. Recommended range is -100..100, 100 being the highest priority, and -100 being the lowest priority. Workflow queues are returned in order of highest to lowest priority value. Default is 0.
       # @return [Boolean] always true
+      # @raise [RuntimeError] if the current status in the workflow service is the same as the new status
+      #
       # Http Call
       # ==
       # The method does an HTTP PUT to the URL defined in `Dor::WF_URI`.  As an example:
@@ -70,6 +79,10 @@ module Dor
       #     <process name=\"convert\" status=\"completed\" />"
       def update_workflow_status(repo, druid, workflow, process, status, opts = {})
         raise ArgumentError, "Unknown status value #{status}" unless VALID_STATUS.include?(status.downcase)
+        if get_workflow_status(repo, druid, workflow, process) == status
+          raise RuntimeError, "Status would not change: #{status} #{druid}" 
+        end
+        
         opts = {:elapsed => 0, :lifecycle => nil, :note => nil}.merge!(opts)
         opts[:elapsed] = opts[:elapsed].to_s
         xml = create_process_xml({:name => process, :status => status.downcase}.merge!(opts))
@@ -77,17 +90,18 @@ module Dor
         return true
       end
 
-      #
       # Retrieves the process status of the given workflow for the given object identifier
+      #
       # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
       # @param [String] druid The id of the object
       # @param [String] workflow The name of the workflow
       # @param [String] process The name of the process step
       # @return [String] status for repo-workflow-process-druid
+      # @raise [RuntimeError] if workflow XML from workflow service is not well-formed
       def get_workflow_status(repo, druid, workflow, process)
         workflow_md = get_workflow_xml(repo, druid, workflow)
         doc = Nokogiri::XML(workflow_md)
-        raise Exception.new("Unable to parse response:\n#{workflow_md}") if(doc.root.nil?)
+        raise RuntimeError, "Unable to parse response:\n#{workflow_md}" if(doc.root.nil?)
 
         status = doc.root.at_xpath("//process[@name='#{process}']/@status")
         if status
@@ -96,8 +110,8 @@ module Dor
         return status
       end
 
-      #
       # Retrieves the raw XML for the given workflow
+      #
       # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
       # @param [String] druid The id of the object
       # @param [String] workflow The name of the workflow
@@ -110,7 +124,7 @@ module Dor
       # This method only works when this gem is used in a project that is configured to connect to DOR
       #
       # @param [String] pid of druid
-      # @return [Array<String>] list of worklows
+      # @return [Array<String>] list of workflows
       # @example 
       #   Dor::WorkflowService.get_workflows('druid:sr100hp0609')
       #   => ["accessionWF", "assemblyWF", "disseminationWF"]
@@ -124,7 +138,7 @@ module Dor
       #
       # @param [String] repo repository of the object
       # @param [String] pid id of object
-      # @return [Array<String>] list of active worklows.  Returns an empty Array if none are found
+      # @return [Array<String>] list of active workflows.  Returns an empty Array if none are found
       # @example 
       #   Dor::WorkflowService.get_workflows('dor', 'druid:sr100hp0609')
       #   => ["accessionWF", "assemblyWF", "disseminationWF"]
@@ -158,6 +172,7 @@ module Dor
       end
 
       # Deletes a workflow from a particular repository and druid
+      #
       # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
       # @param [String] druid The id of the object to delete the workflow from
       # @param [String] workflow The name of the workflow to be deleted
@@ -168,6 +183,7 @@ module Dor
       end
 
       # Returns the Date for a requested milestone from workflow lifecycle
+      #
       # @param [String] repo repository name
       # @param [String] druid object id
       # @param [String] milestone name of the milestone being queried for
@@ -189,6 +205,7 @@ module Dor
       end
 
       # Returns the Date for a requested milestone ONLY FROM THE ACTIVE workflow table
+      #
       # @param [String] repo epository name
       # @param [String] druid object id
       # @param [String] milestone name of the milestone being queried for
@@ -218,6 +235,7 @@ module Dor
       end
 
       # Converts repo-workflow-step into repo:workflow:step
+      #
       # @param [String] default_repository
       # @param [String] default_workflow
       # @param [String] step if contains colon :, then uses
@@ -341,7 +359,7 @@ module Dor
       end
 
       def archive_workflow(repo, druid, wf_name, version_num=nil)
-        raise "Please call Dor::WorkflowService.configure(workflow_service_url, :dor_services_url => DOR_SERVIES_URL) once before archiving workflow" if(@@dor_services_url.nil?)
+        raise RuntimeError, "Please call Dor::WorkflowService.configure(workflow_service_url, :dor_services_url => DOR_SERVIES_URL) once before archiving workflow" if(@@dor_services_url.nil?)
 
         dor_services = RestClient::Resource.new(@@dor_services_url)
         url = "/v1/objects/#{druid}/workflows/#{wf_name}/archive"
@@ -366,7 +384,7 @@ module Dor
 
       # @return [RestClient::Resource] the REST client resource
       def workflow_resource
-        raise "Please call Dor::WorkflowService.configure(url) once before calling any WorkflowService methods" if(@@resource.nil?)
+        raise RuntimeError, "Please call Dor::WorkflowService.configure(url) once before calling any WorkflowService methods" if(@@resource.nil?)
         @@resource
       end
 

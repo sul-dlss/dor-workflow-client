@@ -76,12 +76,14 @@ describe Dor::WorkflowService do
     end
 
     it "should update workflow status and return true if successful" do
+      @mock_resource.should_receive(:get).and_return('<process name="reader-approval" status="queued" />')
       @mock_resource.should_receive(:put).with(@xml_re, { :content_type => 'application/xml' }).and_return('')
       Dor::WorkflowService.update_workflow_status(@repo, @druid, "etdSubmitWF", "reader-approval", "completed", :version => 2, :note => 'annotation', :priority => 34).should be_true
     end
 
     it "should return false if the PUT to the DOR workflow service throws an exception" do
       ex = Exception.new("exception thrown")
+      @mock_resource.should_receive(:get).and_return('<process name="reader-approval" status="queued" />')
       @mock_resource.should_receive(:put).with(@xml_re, { :content_type => 'application/xml' }).and_raise(ex)
       lambda{ Dor::WorkflowService.update_workflow_status(@repo, @druid, "etdSubmitWF", "reader-approval", "completed") }.should raise_error(Exception, "exception thrown")
     end
@@ -95,6 +97,7 @@ describe Dor::WorkflowService do
 
     it "should return false if the PUT to the DOR workflow service throws an exception" do
       ex = Exception.new("exception thrown")
+      @mock_resource.should_receive(:get).and_return('<process name="reader-approval" status="queued" />')
       @mock_resource.should_receive(:put).with(/status="completed"/, { :content_type => 'application/xml' }).and_raise(ex)
       lambda{ Dor::WorkflowService.update_workflow_status(@repo, @druid, "etdSubmitWF", "reader-approval", "completed") }.should raise_error(Exception, "exception thrown")
     end
