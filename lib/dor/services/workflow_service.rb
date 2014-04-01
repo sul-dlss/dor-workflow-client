@@ -111,7 +111,7 @@ module Dor
       #
       # @param [String] pid of druid
       # @return [Array<String>] list of worklows
-      # @example 
+      # @example
       #   Dor::WorkflowService.get_workflows('druid:sr100hp0609')
       #   => ["accessionWF", "assemblyWF", "disseminationWF"]
       def get_workflows(pid)
@@ -125,7 +125,7 @@ module Dor
       # @param [String] repo repository of the object
       # @param [String] pid id of object
       # @return [Array<String>] list of active worklows.  Returns an empty Array if none are found
-      # @example 
+      # @example
       #   Dor::WorkflowService.get_workflows('dor', 'druid:sr100hp0609')
       #   => ["accessionWF", "assemblyWF", "disseminationWF"]
       def get_active_workflows(repo, pid)
@@ -225,7 +225,7 @@ module Dor
       #   for example, jp2-create, or assemblyWF:jp2-create,
       #   or dor:assemblyWF:jp2-create
       # @return [String] repo:workflow:step
-      # @example 
+      # @example
       #   dor:assemblyWF:jp2-create
       def qualify_step(default_repository, default_workflow, step)
         current = step.split(/:/,3)
@@ -246,15 +246,15 @@ module Dor
       # @return [Array<String>, Hash] if with_priority, hash with druids as keys with their Integer priority as value; else Array of druids
       #
       # @example
-      #     get_objects_for_workstep(...) 
+      #     get_objects_for_workstep(...)
       #     => [
       #        "druid:py156ps0477",
       #        "druid:tt628cb6479",
       #        "druid:ct021wp7863"
       #      ]
-      # 
+      #
       # @example
-      #     get_objects_for_workstep(..., with_priority: true) 
+      #     get_objects_for_workstep(..., with_priority: true)
       #     => {
       #      "druid:py156ps0477" => 100,
       #      "druid:tt628cb6479" => 0,
@@ -303,7 +303,7 @@ module Dor
       # @return [Hash] hash of results, with key has a druid, and value as the error message
       # @example
       #     Dor::WorkflowService.get_errored_objects_for_workstep('accessionWF','content-metadata')
-      #     => {"druid:qd556jq0580"=>"druid:qd556jq0580 - Item error; caused by 
+      #     => {"druid:qd556jq0580"=>"druid:qd556jq0580 - Item error; caused by
       #        #<Rubydora::FedoraInvalidRequest: Error modifying datastream contentMetadata for druid:qd556jq0580. See logger for details>"}
       def get_errored_objects_for_workstep workflow, step, repository='dor'
         result = {}
@@ -313,6 +313,54 @@ module Dor
           result.merge!(node['id'] => node['errorMessage'])
         end
         result
+      end
+
+      # Gets all of the workflow steps that have a status of 'queued' that have a last-updated timestamp older than the number of hours passed in
+      #   This will enable re-queueing of jobs that have been lost by the job manager
+      # @param [String] repository name of the repository you want to query, like 'dor' or 'sdr'
+      # @param [Hash] opts optional values for query
+      # @option opts [Integer] :hours_ago steps older than this value will be returned by the query.  If not passed in, the service defaults to 24 hours
+      # @option opts [Integer] :limit sets the maximum number of workflow steps that can be returned.  Defaults to no limit
+      # @return [Array[Hash]] each Hash represents a workflow step.  It will have the following keys:
+      #  :workflow, :step, :druid, :priority
+      def get_stale_queued_workflows(repository, opts = {})
+        uri_string = build_queued_uri(repository, opts = {})
+        xml = workflow_resource[uri_string].get
+        parse_queued_workflows_response xml
+      end
+
+      # Returns a count of workflow steps that have a status of 'queued' that have a last-updated timestamp older than the number of hours passed in
+      # @param [String] repository name of the repository you want to query, like 'dor' or 'sdr'
+      # @param [Hash] opts optional values for query
+      # @option opts [Integer] :hours_ago steps older than this value will be returned by the query.  If not passed in, the service defaults to 24 hours
+      # @return [Integer] number of stale, queued steps if the :count_only option was set to true
+      def count_stale_queued_workflows(repository, opts = {})
+        uri_string = build_queued_uri(repository, opts)
+        uri_string << "&count-only=true"
+        xml = workflow_resource[uri_string].get
+        doc = Nokogiri::XML(xml)
+        return doc.at_xpath('/objects/@count').value.to_i
+      end
+
+      def build_queued_uri(repository, opts = {})
+        uri_string = "workflow_queue/all_queued?repository=#{repository}"
+        uri_string << "&hours-ago=#{opts[:hours_ago]}" if opts[:hours_ago]
+        uri_string << "&limit=#{opts[:limit]}" if opts[:limit]
+        uri_string
+      end
+
+      def parse_queued_workflows_response(xml)
+        res = []
+        doc = Nokogiri::XML(xml)
+        doc.xpath('/workflows/workflow').each do |wf_node|
+          wf = {}
+          wf[:workflow] = wf_node['name']
+          wf[:step]     = wf_node['process']
+          wf[:druid]    = wf_node['druid']
+          wf[:priority] = wf_node['priority'].to_i
+          res << wf
+        end
+        res
       end
 
       # @return [String]
