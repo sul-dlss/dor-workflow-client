@@ -269,12 +269,11 @@ module Dor
             uri_string << "&completed=#{qualify_step(repository,workflow,step)}"
           end
         end
-        
-        # XXX: add contraint for limit
+
         if options[:limit] and options[:limit].to_i > 0
-          raise NotImplementedError, 'Limit for results not yet supported'
+          uri_string << "&limit=#{options[:limit].to_i}"
         end
-        
+
         workflow_resource.options[:timeout] = 5 * 60 unless(workflow_resource.options.include?(:timeout))
         resp = workflow_resource[uri_string].get
         #
