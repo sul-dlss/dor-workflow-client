@@ -85,6 +85,12 @@ describe Dor::WorkflowService do
       @mock_resource.should_receive(:put).with(@xml_re, { :content_type => 'application/xml' }).and_raise(ex)
       lambda{ Dor::WorkflowService.update_workflow_status(@repo, @druid, "etdSubmitWF", "reader-approval", "completed") }.should raise_error(Exception, "exception thrown")
     end
+
+    it "performs a conditional update when current-status is passed as a parameter" do
+       @mock_resource.should_receive(:[]).with("dor/objects/druid:123/workflows/etdSubmitWF/reader-approval?current-status=queued")
+      @mock_resource.should_receive(:put).with(@xml_re, { :content_type => 'application/xml' }).and_return('')
+      Dor::WorkflowService.update_workflow_status(@repo, @druid, "etdSubmitWF", "reader-approval", "completed", :version => 2, :note => 'annotation', :priority => 34, :current_status => 'queued').should be_true
+    end
   end
 
   describe "#update_workflow_error_status" do

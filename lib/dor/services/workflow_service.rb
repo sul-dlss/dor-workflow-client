@@ -61,6 +61,7 @@ module Dor
       # @option opts [String] :lifecycle Bookeeping label for this particular workflow step.  Examples are: 'registered', 'shelved'
       # @option opts [String] :note Any kind of string annotation that you want to attach to the workflow
       # @option opts [Integer] :priority Processing priority. Recommended range is -100..100, 100 being the highest priority, and -100 being the lowest priority. Workflow queues are returned in order of highest to lowest priority value. Default is 0.
+      # @option opts [String] :current_status Setting this string tells the workflow service to compare the current status to this value.  If the current value does not match this value, the update is not performed
       # @return [Boolean] always true
       # Http Call
       # ==
@@ -72,8 +73,11 @@ module Dor
         raise ArgumentError, "Unknown status value #{status}" unless VALID_STATUS.include?(status.downcase)
         opts = {:elapsed => 0, :lifecycle => nil, :note => nil}.merge!(opts)
         opts[:elapsed] = opts[:elapsed].to_s
+        current_status = opts.delete(:current_status)
         xml = create_process_xml({:name => process, :status => status.downcase}.merge!(opts))
-        workflow_resource["#{repo}/objects/#{druid}/workflows/#{workflow}/#{process}"].put(xml, :content_type => 'application/xml')
+        uri = "#{repo}/objects/#{druid}/workflows/#{workflow}/#{process}"
+        uri << "?current-status=#{current_status}" if current_status
+        workflow_resource[uri].put(xml, :content_type => 'application/xml')
         return true
       end
 
