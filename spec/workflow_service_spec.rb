@@ -85,6 +85,12 @@ describe Dor::WorkflowService do
       @mock_resource.should_receive(:put).with(@xml_re, { :content_type => 'application/xml' }).and_raise(ex)
       lambda{ Dor::WorkflowService.update_workflow_status(@repo, @druid, "etdSubmitWF", "reader-approval", "completed") }.should raise_error(Exception, "exception thrown")
     end
+
+    it "performs a conditional update when current-status is passed as a parameter" do
+       @mock_resource.should_receive(:[]).with("dor/objects/druid:123/workflows/etdSubmitWF/reader-approval?current-status=queued")
+      @mock_resource.should_receive(:put).with(@xml_re, { :content_type => 'application/xml' }).and_return('')
+      Dor::WorkflowService.update_workflow_status(@repo, @druid, "etdSubmitWF", "reader-approval", "completed", :version => 2, :note => 'annotation', :priority => 34, :current_status => 'queued').should be_true
+    end
   end
 
   describe "#update_workflow_error_status" do
@@ -294,6 +300,31 @@ describe Dor::WorkflowService do
       @mock_resource.should_receive(:[]).with("dor/objects/druid:123/versionClose?create-accession=false").and_return(@mock_resource)
       @mock_resource.should_receive(:post).with('').and_return('')
       Dor::WorkflowService.close_version(@repo, @druid, false)
+    end
+  end
+
+  describe ".parse_queued_workflows_response" do
+    it "returns an Array of Hashes containing each workflow step" do
+      xml = <<-XML
+        <workflows>
+            <workflow priority="30" note="annotation" lifecycle="in-process" errorText="stacktrace" errorMessage="NullPointerException" elapsed="1.173" repository="dor" attempts="0" datetime="2008-11-15T13:30:00-0800" status="waiting" process="content-metadata" name="accessionWF" druid="dr:123"/>
+            <workflow priority="30" note="annotation" lifecycle="in-process" errorText="stacktrace" errorMessage="NullPointerException" elapsed="1.173" repository="dor" attempts="0" datetime="2008-11-15T13:30:00-0800" status="waiting" process="jp2-create" name="assemblyWF" druid="dr:456"/>
+        </workflows>
+      XML
+      expected = [ { :workflow => 'accessionWF', :step => 'content-metadata', :druid => 'dr:123', :priority => 30},
+                   { :workflow => 'assemblyWF', :step => 'jp2-create', :druid => 'dr:456', :priority => 30} ]
+
+      ah = Dor::WorkflowService.parse_queued_workflows_response(xml)
+      ah.should eql(expected)
+    end
+  end
+
+  describe ".count_stale_queued_workflows" do
+    it "returns the number of queued workflow steps" do
+      @mock_resource.should_receive(:[]).with("workflow_queue/all_queued?repository=dor&hours-ago=48&count-only=true")
+      @mock_resource.should_receive(:get).and_return(%{<objects count="10"/>})
+
+      Dor::WorkflowService.count_stale_queued_workflows('dor', :hours_ago => 48).should == 10
     end
   end
 
