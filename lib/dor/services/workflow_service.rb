@@ -76,7 +76,7 @@ module Dor
         current_status = opts.delete(:current_status)
         xml = create_process_xml({:name => process, :status => status.downcase}.merge!(opts))
         uri = "#{repo}/objects/#{druid}/workflows/#{workflow}/#{process}"
-        uri << "?current-status=#{current_status}" if current_status
+        uri << "?current-status=#{current_status.downcase}" if current_status
         workflow_resource[uri].put(xml, :content_type => 'application/xml')
         return true
       end
@@ -328,7 +328,7 @@ module Dor
       # @return [Array[Hash]] each Hash represents a workflow step.  It will have the following keys:
       #  :workflow, :step, :druid, :priority
       def get_stale_queued_workflows(repository, opts = {})
-        uri_string = build_queued_uri(repository, opts = {})
+        uri_string = build_queued_uri(repository, opts)
         xml = workflow_resource[uri_string].get
         parse_queued_workflows_response xml
       end
@@ -344,27 +344,6 @@ module Dor
         xml = workflow_resource[uri_string].get
         doc = Nokogiri::XML(xml)
         return doc.at_xpath('/objects/@count').value.to_i
-      end
-
-      def build_queued_uri(repository, opts = {})
-        uri_string = "workflow_queue/all_queued?repository=#{repository}"
-        uri_string << "&hours-ago=#{opts[:hours_ago]}" if opts[:hours_ago]
-        uri_string << "&limit=#{opts[:limit]}" if opts[:limit]
-        uri_string
-      end
-
-      def parse_queued_workflows_response(xml)
-        res = []
-        doc = Nokogiri::XML(xml)
-        doc.xpath('/workflows/workflow').each do |wf_node|
-          wf = {}
-          wf[:workflow] = wf_node['name']
-          wf[:step]     = wf_node['process']
-          wf[:druid]    = wf_node['druid']
-          wf[:priority] = wf_node['priority'].to_i
-          res << wf
-        end
-        res
       end
 
       # @return [String]
@@ -439,6 +418,29 @@ module Dor
         #params[:ssl_client_key]  = OpenSSL::PKey::RSA.new(File.read(opts[:client_key_file]), opts[:client_key_pass]) if opts[:client_key_file]
         @@resource = RestClient::Resource.new(url, params)
       end
+
+  protected
+
+    def build_queued_uri(repository, opts = {})
+      uri_string = "workflow_queue/all_queued?repository=#{repository}"
+      uri_string << "&hours-ago=#{opts[:hours_ago]}" if opts[:hours_ago]
+      uri_string << "&limit=#{opts[:limit]}" if opts[:limit]
+      uri_string
+    end
+
+    def parse_queued_workflows_response(xml)
+      res = []
+      doc = Nokogiri::XML(xml)
+      doc.xpath('/workflows/workflow').each do |wf_node|
+        wf = {}
+        wf[:workflow] = wf_node['name']
+        wf[:step]     = wf_node['process']
+        wf[:druid]    = wf_node['druid']
+        wf[:priority] = wf_node['priority'].to_i
+        res << wf
+      end
+      res
+    end
 
     end
   end
