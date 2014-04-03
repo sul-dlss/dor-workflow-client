@@ -303,7 +303,7 @@ describe Dor::WorkflowService do
     end
   end
 
-  describe ".parse_queued_workflows_response" do
+  describe ".get_stale_queued_workflows" do
     it "returns an Array of Hashes containing each workflow step" do
       xml = <<-XML
         <workflows>
@@ -311,10 +311,12 @@ describe Dor::WorkflowService do
             <workflow priority="30" note="annotation" lifecycle="in-process" errorText="stacktrace" errorMessage="NullPointerException" elapsed="1.173" repository="dor" attempts="0" datetime="2008-11-15T13:30:00-0800" status="waiting" process="jp2-create" name="assemblyWF" druid="dr:456"/>
         </workflows>
       XML
+      @mock_resource.should_receive(:[]).with("workflow_queue/all_queued?repository=dor&hours-ago=24&limit=100")
+      @mock_resource.should_receive(:get).and_return(xml)
+
+      ah = Dor::WorkflowService.get_stale_queued_workflows 'dor', :hours_ago => 24, :limit => 100
       expected = [ { :workflow => 'accessionWF', :step => 'content-metadata', :druid => 'dr:123', :priority => 30},
                    { :workflow => 'assemblyWF', :step => 'jp2-create', :druid => 'dr:456', :priority => 30} ]
-
-      ah = Dor::WorkflowService.parse_queued_workflows_response(xml)
       ah.should eql(expected)
     end
   end

@@ -323,7 +323,8 @@ module Dor
       #   This will enable re-queueing of jobs that have been lost by the job manager
       # @param [String] repository name of the repository you want to query, like 'dor' or 'sdr'
       # @param [Hash] opts optional values for query
-      # @option opts [Integer] :hours_ago steps older than this value will be returned by the query.  If not passed in, the service defaults to 24 hours
+      # @option opts [Integer] :hours_ago steps older than this value will be returned by the query.  If not passed in, the service defaults to 0 hours,
+      #   meaning you will get all queued workflows
       # @option opts [Integer] :limit sets the maximum number of workflow steps that can be returned.  Defaults to no limit
       # @return [Array[Hash]] each Hash represents a workflow step.  It will have the following keys:
       #  :workflow, :step, :druid, :priority
@@ -336,7 +337,8 @@ module Dor
       # Returns a count of workflow steps that have a status of 'queued' that have a last-updated timestamp older than the number of hours passed in
       # @param [String] repository name of the repository you want to query, like 'dor' or 'sdr'
       # @param [Hash] opts optional values for query
-      # @option opts [Integer] :hours_ago steps older than this value will be returned by the query.  If not passed in, the service defaults to 24 hours
+      # @option opts [Integer] :hours_ago steps older than this value will be returned by the query.  If not passed in, the service defaults to 0 hours,
+      #   meaning you will get all queued workflows
       # @return [Integer] number of stale, queued steps if the :count_only option was set to true
       def count_stale_queued_workflows(repository, opts = {})
         uri_string = build_queued_uri(repository, opts)
