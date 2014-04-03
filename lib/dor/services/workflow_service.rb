@@ -265,6 +265,12 @@ module Dor
       #      "druid:ct021wp7863" => -100
       #     }
       #
+      # @example
+      #     get_objects_for_workstep(..., with_priority: true, limit: 1)
+      #     => {
+      #      "druid:py156ps0477" => 100,
+      #     }
+      #
       def get_objects_for_workstep completed, waiting, repository=nil, workflow=nil, options = {}
         result = nil
         uri_string = "workflow_queue?waiting=#{qualify_step(repository,workflow,waiting)}"
