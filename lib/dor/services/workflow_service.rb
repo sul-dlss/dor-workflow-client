@@ -145,7 +145,7 @@ module Dor
       # @param [String] workflow The name of the workflow
       # @param [String] error_msg The error message.  Ideally, this is a brief message describing the error
       # @param [Hash] opts optional values for the workflow step
-      # @option opts [String] :error_txt A slot to hold more information about the error, like a full stacktrace
+      # @option opts [String] :error_text A slot to hold more information about the error, like a full stacktrace
       # @return [Boolean] always true
       #
       # Http Call
@@ -155,7 +155,7 @@ module Dor
       #     PUT "/dor/objects/pid:123/workflows/GoogleScannedWF/convert"
       #     <process name=\"convert\" status=\"error\" />"
       def update_workflow_error_status(repo, druid, workflow, process, error_msg, opts = {})
-        opts = {:error_txt => nil}.merge!(opts)
+        opts = {:error_text => nil}.merge!(opts)
         xml = create_process_xml({:name => process, :status => 'error', :errorMessage => error_msg}.merge!(opts))
         workflow_resource["#{repo}/objects/#{druid}/workflows/#{workflow}/#{process}"].put(xml, :content_type => 'application/xml')
         return true
@@ -358,6 +358,7 @@ module Dor
       def create_process_xml(params)
         builder = Nokogiri::XML::Builder.new do |xml|
           attrs = params.reject { |k,v| v.nil? }
+          attrs = Hash[ attrs.map {|k,v| [k.to_s.camelize(:lower), v]}]  # camelize all the keys in the attrs hash
           xml.process(attrs)
         end
         return builder.to_xml

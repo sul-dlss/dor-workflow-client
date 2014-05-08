@@ -95,8 +95,8 @@ describe Dor::WorkflowService do
 
   describe "#update_workflow_error_status" do
     it "should update workflow status to error and return true if successful" do
-      @mock_resource.should_receive(:put).with(/status="error"/, { :content_type => 'application/xml' }).and_return('')
-      Dor::WorkflowService.update_workflow_error_status(@repo, @druid, "etdSubmitWF", "reader-approval", "Some exception", :error_txt =>"The optional stacktrace")
+      @mock_resource.should_receive(:put).with(/status="error" errorMessage="Some exception" errorText="The optional stacktrace"/, { :content_type => 'application/xml' }).and_return('')
+      Dor::WorkflowService.update_workflow_error_status(@repo, @druid, "etdSubmitWF", "reader-approval", "Some exception", :error_text =>"The optional stacktrace")
     end
 
     it "should return false if the PUT to the DOR workflow service throws an exception" do
