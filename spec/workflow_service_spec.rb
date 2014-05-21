@@ -47,26 +47,26 @@ describe Dor::WorkflowService do
       Dor::WorkflowService.create_workflow(@repo, @druid, 'etdSubmitWF', wf_xml, :create_ds => false)
     end
 
-    it "adds priority attributes to all steps if passed in as an option" do
+    it "adds lane_id attributes to all steps if passed in as an option" do
 
     end
 
   end
 
-  describe "#add_priority_to_workflow_xml" do
+  describe "#add_lane_id_to_workflow_xml" do
 
-    it "adds priority attributes to all process elements" do
+    it "adds laneId attributes to all process elements" do
       expected = <<-XML
         <workflow id="etdSubmitWF">
-             <process name="register-object" status="completed" attempts="1" priority="50"/>
-             <process name="submit" status="waiting" priority="50"/>
-             <process name="reader-approval" status="waiting" priority="50"/>
-             <process name="registrar-approval" status="waiting" priority="50"/>
-             <process name="start-accession" status="waiting" priority="50"/>
+             <process name="register-object" status="completed" attempts="1" laneId="lane1"/>
+             <process name="submit" status="waiting" laneId="lane1"/>
+             <process name="reader-approval" status="waiting" laneId="lane1"/>
+             <process name="registrar-approval" status="waiting" laneId="lane1"/>
+             <process name="start-accession" status="waiting" laneId="lane1"/>
         </workflow>
       XML
 
-      Dor::WorkflowService.add_priority_to_workflow_xml(50, wf_xml).should be_equivalent_to(expected)
+      Dor::WorkflowService.add_lane_id_to_workflow_xml('lane1', wf_xml).should be_equivalent_to(expected)
     end
   end
 
@@ -76,8 +76,9 @@ describe Dor::WorkflowService do
     end
 
     it "should update workflow status and return true if successful" do
-      @mock_resource.should_receive(:put).with(@xml_re, { :content_type => 'application/xml' }).and_return('')
-      Dor::WorkflowService.update_workflow_status(@repo, @druid, "etdSubmitWF", "reader-approval", "completed", :version => 2, :note => 'annotation', :priority => 34).should be_true
+      built_xml = "<?xml version=\"1.0\"?>\n<process name=\"reader-approval\" status=\"completed\" elapsed=\"0\" note=\"annotation\" version=\"2\" laneId=\"lane2\"/>\n"
+      @mock_resource.should_receive(:put).with(built_xml, { :content_type => 'application/xml' }).and_return('')
+      Dor::WorkflowService.update_workflow_status(@repo, @druid, "etdSubmitWF", "reader-approval", "completed", :version => 2, :note => 'annotation', :lane_id => 'lane2').should be_true
     end
 
     it "should return false if the PUT to the DOR workflow service throws an exception" do
@@ -87,9 +88,9 @@ describe Dor::WorkflowService do
     end
 
     it "performs a conditional update when current-status is passed as a parameter" do
-       @mock_resource.should_receive(:[]).with("dor/objects/druid:123/workflows/etdSubmitWF/reader-approval?current-status=queued")
+      @mock_resource.should_receive(:[]).with("dor/objects/druid:123/workflows/etdSubmitWF/reader-approval?current-status=queued")
       @mock_resource.should_receive(:put).with(@xml_re, { :content_type => 'application/xml' }).and_return('')
-      Dor::WorkflowService.update_workflow_status(@repo, @druid, "etdSubmitWF", "reader-approval", "completed", :version => 2, :note => 'annotation', :priority => 34, :current_status => 'queued').should be_true
+      Dor::WorkflowService.update_workflow_status(@repo, @druid, "etdSubmitWF", "reader-approval", "completed", :version => 2, :note => 'annotation', :lane_id => 'lane1', :current_status => 'queued').should be_true
     end
   end
 
@@ -194,11 +195,11 @@ describe Dor::WorkflowService do
         qualified_completed2 = "#{repo2}:#{workflow2}:#{completed2}"
         qualified_completed3 = "#{repo2}:#{workflow2}:#{completed3}"
         @mock_resource.should_receive(:[]).with("workflow_queue?waiting=#{qualified_waiting}&completed=#{qualified_completed}&completed=#{qualified_completed2}&completed=#{qualified_completed3}")
-        @mock_resource.should_receive(:get).and_return(%{<objects count="2"><object id="druid:ab123de4567" priority="1"/><object id="druid:ab123de9012" priority="0"/></objects>})
+        @mock_resource.should_receive(:get).and_return(%{<objects count="2"><object id="druid:ab123de4567"/><object id="druid:ab123de9012"/></objects>})
         Dor::WorkflowService.get_objects_for_workstep([qualified_completed, qualified_completed2, qualified_completed3], qualified_waiting).should == ['druid:ab123de4567', 'druid:ab123de9012']
       end
 
-      it "same but with priority" do
+      it "same but with lane_id" do
         qualified_waiting = "#{@repository}:#{@workflow}:#{@waiting}"
         qualified_completed = "#{@repository}:#{@workflow}:#{@completed}"
         repo2 = "sdr"
@@ -208,8 +209,8 @@ describe Dor::WorkflowService do
         qualified_completed2 = "#{repo2}:#{workflow2}:#{completed2}"
         qualified_completed3 = "#{repo2}:#{workflow2}:#{completed3}"
         @mock_resource.should_receive(:[]).with("workflow_queue?waiting=#{qualified_waiting}&completed=#{qualified_completed}&completed=#{qualified_completed2}&completed=#{qualified_completed3}")
-        @mock_resource.should_receive(:get).and_return(%{<objects count="2"><object id="druid:ab123de4567" priority="2"/><object id="druid:ab123de9012" priority="1"/></objects>})
-        Dor::WorkflowService.get_objects_for_workstep([qualified_completed, qualified_completed2, qualified_completed3], qualified_waiting, nil, nil, with_priority: true).should == { 'druid:ab123de4567' => 2, 'druid:ab123de9012' => 1}
+        @mock_resource.should_receive(:get).and_return(%{<objects count="2"><object id="druid:ab123de4567"/><object id="druid:ab123de9012"/></objects>})
+        Dor::WorkflowService.get_objects_for_workstep([qualified_completed, qualified_completed2, qualified_completed3], qualified_waiting, nil, nil, lane_id: "lane1").should == [ 'druid:ab123de4567', 'druid:ab123de9012']
       end
 
       it "creates the URI string with only one completed step passed in as a String" do
@@ -230,12 +231,12 @@ describe Dor::WorkflowService do
         Dor::WorkflowService.get_objects_for_workstep(nil, qualified_waiting).should == ['druid:ab123de4567']
       end
 
-      it "same but with priority" do
+      it "same but with lane_id" do
         qualified_waiting = "#{@repository}:#{@workflow}:#{@waiting}"
 
         @mock_resource.should_receive(:[]).with("workflow_queue?waiting=#{qualified_waiting}")
-        @mock_resource.should_receive(:get).and_return(%{<objects count="1"><object id="druid:ab123de4567" priority="33"/></objects>})
-        Dor::WorkflowService.get_objects_for_workstep(nil, qualified_waiting, nil, nil, with_priority: true).should == { 'druid:ab123de4567' => 33 }
+        @mock_resource.should_receive(:get).and_return(%{<objects count="1"><object id="druid:ab123de4567"/></objects>})
+        Dor::WorkflowService.get_objects_for_workstep(nil, qualified_waiting, nil, nil, lane_id: "lane1").should == [ 'druid:ab123de4567' ]
       end
     end
   end
@@ -275,11 +276,11 @@ describe Dor::WorkflowService do
       xml = <<-XML
       <workflows objectId="druid:mw971zk1113">
         <workflow repository="dor" objectId="druid:mw971zk1113" id="accessionWF">
-          <process priority="0" lifecycle="submitted" elapsed="0.0" attempts="1" datetime="2013-02-18T15:08:10-0800" status="completed" name="start-accession"/>
+          <process laneId="default" lifecycle="submitted" elapsed="0.0" attempts="1" datetime="2013-02-18T15:08:10-0800" status="completed" name="start-accession"/>
         </workflow>
         <workflow repository="dor" objectId="druid:mw971zk1113" id="assemblyWF">
-          <process version="1" priority="0" elapsed="0.0" archived="true" attempts="1" datetime="2013-02-18T14:40:25-0800" status="completed" name="start-assembly"/>
-          <process version="1" priority="0" elapsed="0.509" archived="true" attempts="1" datetime="2013-02-18T14:42:24-0800" status="completed" name="jp2-create"/>
+          <process version="1" laneId="default" elapsed="0.0" archived="true" attempts="1" datetime="2013-02-18T14:40:25-0800" status="completed" name="start-assembly"/>
+          <process version="1" laneId="default" elapsed="0.509" archived="true" attempts="1" datetime="2013-02-18T14:42:24-0800" status="completed" name="jp2-create"/>
         </workflow>
       </workflows>
       XML
@@ -307,16 +308,16 @@ describe Dor::WorkflowService do
     it "returns an Array of Hashes containing each workflow step" do
       xml = <<-XML
         <workflows>
-            <workflow priority="30" note="annotation" lifecycle="in-process" errorText="stacktrace" errorMessage="NullPointerException" elapsed="1.173" repository="dor" attempts="0" datetime="2008-11-15T13:30:00-0800" status="waiting" process="content-metadata" name="accessionWF" druid="dr:123"/>
-            <workflow priority="30" note="annotation" lifecycle="in-process" errorText="stacktrace" errorMessage="NullPointerException" elapsed="1.173" repository="dor" attempts="0" datetime="2008-11-15T13:30:00-0800" status="waiting" process="jp2-create" name="assemblyWF" druid="dr:456"/>
+            <workflow laneId="lane1" note="annotation" lifecycle="in-process" errorText="stacktrace" errorMessage="NullPointerException" elapsed="1.173" repository="dor" attempts="0" datetime="2008-11-15T13:30:00-0800" status="waiting" process="content-metadata" name="accessionWF" druid="dr:123"/>
+            <workflow laneId="lane2" note="annotation" lifecycle="in-process" errorText="stacktrace" errorMessage="NullPointerException" elapsed="1.173" repository="dor" attempts="0" datetime="2008-11-15T13:30:00-0800" status="waiting" process="jp2-create" name="assemblyWF" druid="dr:456"/>
         </workflows>
       XML
       @mock_resource.should_receive(:[]).with("workflow_queue/all_queued?repository=dor&hours-ago=24&limit=100")
       @mock_resource.should_receive(:get).and_return(xml)
 
       ah = Dor::WorkflowService.get_stale_queued_workflows 'dor', :hours_ago => 24, :limit => 100
-      expected = [ { :workflow => 'accessionWF', :step => 'content-metadata', :druid => 'dr:123', :priority => 30},
-                   { :workflow => 'assemblyWF', :step => 'jp2-create', :druid => 'dr:456', :priority => 30} ]
+      expected = [ { :workflow => 'accessionWF', :step => 'content-metadata', :druid => 'dr:123', :lane_id => 'lane1'},
+                   { :workflow => 'assemblyWF', :step => 'jp2-create', :druid => 'dr:456', :lane_id => 'lane2'} ]
       ah.should eql(expected)
     end
   end
@@ -327,6 +328,22 @@ describe Dor::WorkflowService do
       @mock_resource.should_receive(:get).and_return(%{<objects count="10"/>})
 
       Dor::WorkflowService.count_stale_queued_workflows('dor', :hours_ago => 48).should == 10
+    end
+  end
+
+  describe ".get_lane_ids" do
+    it "returns the lane ids for a given workflow step" do
+      xml = <<-XML
+      <lanes>
+        <lane id="lane1"/>
+        <lane id="lane2"/>
+      </lanes>
+      XML
+
+      @mock_resource.should_receive(:[]).with("workflow_queue/lane_ids?step=dor:accessionWF:shelve")
+      @mock_resource.should_receive(:get).and_return(xml)
+
+      Dor::WorkflowService.get_lane_ids('dor', 'accessionWF', 'shelve').should == ["lane1", "lane2"]
     end
   end
 
