@@ -25,27 +25,15 @@ module Dor
       # @param [Hash] opts optional params
       # @option opts [Boolean] :create_ds if true, a workflow datastream will be created in Fedora.  Set to false if you do not want a datastream to be created
       #   If you do not pass in an <b>opts</b> Hash, then :create_ds is set to true by default
-      # @option opts [Integer] :priority adds priority to all process elements in the wf_xml workflow xml
+      # @option opts [String] :lane_id adds laneId attribute to all process elements in the wf_xml workflow xml.  Defaults to a value of 'default'
       # @return [Boolean] always true
       #
       def create_workflow(repo, druid, workflow_name, wf_xml, opts = {:create_ds => true})
-        xml = wf_xml
-        xml = add_priority_to_workflow_xml(opts[:priority], wf_xml) if(opts[:priority])
+        lane_id = opts.fetch(:lane_id, 'default')
+        xml = add_lane_id_to_workflow_xml(lane_id, wf_xml)
         workflow_resource["#{repo}/objects/#{druid}/workflows/#{workflow_name}"].put(xml, :content_type => 'application/xml',
                                                                                      :params => {'create-ds' => opts[:create_ds] })
         return true
-      end
-
-      # Adds priority attributes to each process of workflow xml
-      #
-      # @param [Integer] priority value to add to each process element
-      # @param [String] wf_xml the workflow xml
-      # @return [String] wf_xml with priority attributes
-      def add_priority_to_workflow_xml(priority, wf_xml)
-        return wf_xml if(priority.to_i == 0)
-        doc = Nokogiri::XML(wf_xml)
-        doc.xpath('/workflow/process').each { |proc| proc['priority'] = priority }
-        doc.to_xml
       end
 
       # Updates the status of one step in a workflow.
@@ -60,7 +48,7 @@ module Dor
       # @option opts [Float] :elapsed The number of seconds it took to complete this step. Can have a decimal.  Is set to 0 if not passed in.
       # @option opts [String] :lifecycle Bookeeping label for this particular workflow step.  Examples are: 'registered', 'shelved'
       # @option opts [String] :note Any kind of string annotation that you want to attach to the workflow
-      # @option opts [Integer] :priority Processing priority. Recommended range is -100..100, 100 being the highest priority, and -100 being the lowest priority. Workflow queues are returned in order of highest to lowest priority value. Default is 0.
+      # @option opts [String] :lane_id Id of processing lane used by the job manager.  Can convey priority or name of an applicaiton specific processing lane (e.g. 'high', 'critical', 'hydrus')
       # @option opts [String] :current_status Setting this string tells the workflow service to compare the current status to this value.  If the current value does not match this value, the update is not performed
       # @return [Boolean] always true
       # Http Call
@@ -244,10 +232,12 @@ module Dor
       # @param [String] waiting name of the waiting step
       # @param [String] repository default repository to use if it isn't passed in the qualified-step-name
       # @param [String] workflow default workflow to use if it isn't passed in the qualified-step-name
+      # @param [String] lane_id issue a query for a specific lane_id for the waiting step
       # @param [Hash] options
-      # @option options [Boolean] :with_priority include the priority with each druid
+      # @param options  [String]  :default_repository repository to query for if not using the qualified format
+      # @param options  [String]  :default_workflow workflow to query for if not using the qualified format
       # @option options [Integer] :limit maximum number of druids to return (nil for no limit)
-      # @return [Array<String>, Hash] if with_priority, hash with druids as keys with their Integer priority as value; else Array of druids
+      # @return [Array<String>]  Array of druids
       #
       # @example
       #     get_objects_for_workstep(...)
@@ -258,25 +248,26 @@ module Dor
       #      ]
       #
       # @example
-      #     get_objects_for_workstep(..., with_priority: true)
+      #     get_objects_for_workstep(..., "lane1")
       #     => {
-      #      "druid:py156ps0477" => 100,
-      #      "druid:tt628cb6479" => 0,
-      #      "druid:ct021wp7863" => -100
+      #      "druid:py156ps0477",
+      #      "druid:tt628cb6479",
       #     }
       #
       # @example
-      #     get_objects_for_workstep(..., with_priority: true, limit: 1)
+      #     get_objects_for_workstep(..., "lane1", limit: 1)
       #     => {
-      #      "druid:py156ps0477" => 100,
+      #      "druid:py156ps0477",
       #     }
       #
-      def get_objects_for_workstep completed, waiting, repository=nil, workflow=nil, options = {}
+      def get_objects_for_workstep completed, waiting, lane_id='default', options = {}
         result = nil
-        uri_string = "workflow_queue?waiting=#{qualify_step(repository,workflow,waiting)}"
+        waiting_param = qualify_step(options[:default_repository],options[:default_workflow],waiting)
+        uri_string = "workflow_queue?waiting=#{waiting_param}"
         if(completed)
           Array(completed).each do |step|
-            uri_string << "&completed=#{qualify_step(repository,workflow,step)}"
+            completed_param = qualify_step(options[:default_repository],options[:default_workflow],step)
+            uri_string << "&completed=#{completed_param}"
           end
         end
 
@@ -284,24 +275,22 @@ module Dor
           uri_string << "&limit=#{options[:limit].to_i}"
         end
 
+        uri_string << "&lane-id=#{lane_id}"
+
         workflow_resource.options[:timeout] = 5 * 60 unless(workflow_resource.options.include?(:timeout))
         resp = workflow_resource[uri_string].get
         #
         # response looks like:
         #    <objects count="2">
-        #      <object id="druid:ab123de4567" priority="2"/>
-        #      <object id="druid:ab123de9012" priority="1"/>        #
+        #      <object id="druid:ab123de4567"/>
+        #      <object id="druid:ab123de9012"/>
         #    </objects>
         #
         # convert into:
-        #    { 'druid:ab123de4567' => 2, 'druid:ab123de9012' => 1}
+        #   ['druid:ab123de4567', 'druid:ab123de9012']
         #
-        result = Nokogiri::XML(resp).xpath('//object[@id]').inject({}) do |h, node|
-          h[node['id']] = node['priority'] ? node['priority'].to_i : 0
-          h
-        end
-
-        options[:with_priority] ? result : result.keys
+        result = Nokogiri::XML(resp).xpath('//object[@id]')
+        result.map { |n| n[:id] }
       end
 
       # Get a list of druids that have errored out in a particular workflow and step
@@ -333,7 +322,7 @@ module Dor
       #   meaning you will get all queued workflows
       # @option opts [Integer] :limit sets the maximum number of workflow steps that can be returned.  Defaults to no limit
       # @return [Array[Hash]] each Hash represents a workflow step.  It will have the following keys:
-      #  :workflow, :step, :druid, :priority
+      #  :workflow, :step, :druid, :lane_id
       def get_stale_queued_workflows(repository, opts = {})
         uri_string = build_queued_uri(repository, opts)
         xml = workflow_resource[uri_string].get
@@ -403,6 +392,19 @@ module Dor
         return true
       end
 
+      # Returns all the distinct laneIds for a given workflow step
+      #
+      # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
+      # @param [String] workflow name
+      # @param [String] process name
+      # @return [Array<String>] all of the distinct laneIds.  Array will be empty if no lane ids were found
+      def get_lane_ids(repo, workflow, process)
+        uri = "workflow_queue/lane_ids?step=#{repo}:#{workflow}:#{process}"
+        doc = Nokogiri::XML(workflow_resource[uri].get)
+        nodes = doc.xpath('/lanes/lane')
+        nodes.map {|n| n['id']}
+      end
+
       # @return [RestClient::Resource] the REST client resource
       def workflow_resource
         raise "Please call Dor::WorkflowService.configure(url) once before calling any WorkflowService methods" if(@@resource.nil?)
@@ -445,10 +447,21 @@ module Dor
         wf[:workflow] = wf_node['name']
         wf[:step]     = wf_node['process']
         wf[:druid]    = wf_node['druid']
-        wf[:priority] = wf_node['priority'].to_i
+        wf[:lane_id] = wf_node['laneId']
         res << wf
       end
       res
+    end
+
+    # Adds laneId attributes to each process of workflow xml
+    #
+    # @param [String] lane_id to add to each process element
+    # @param [String] wf_xml the workflow xml
+    # @return [String] wf_xml with lane_id attributes
+    def add_lane_id_to_workflow_xml(lane_id, wf_xml)
+      doc = Nokogiri::XML(wf_xml)
+      doc.xpath('/workflow/process').each { |proc| proc['laneId'] = lane_id }
+      doc.to_xml
     end
 
     end
