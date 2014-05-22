@@ -15,6 +15,18 @@ describe Dor::WorkflowService do
     EOXML
   }
 
+  let(:wf_xml_label) { <<-EOXML
+<?xml version="1.0"?>
+<workflow id="etdSubmitWF">
+         <process name="register-object" status="completed" attempts="1" laneId="default"/>
+         <process name="submit" status="waiting" laneId="default"/>
+         <process name="reader-approval" status="waiting" laneId="default"/>
+         <process name="registrar-approval" status="waiting" laneId="default"/>
+         <process name="start-accession" status="waiting" laneId="default"/>
+    </workflow>
+    EOXML
+  }
+
   before(:each) do
     @repo = 'dor'
     @druid = 'druid:123'
@@ -31,7 +43,7 @@ describe Dor::WorkflowService do
 
   describe "#create_workflow" do
     it "should pass workflow xml to the DOR workflow service and return the URL to the workflow" do
-      @mock_resource.should_receive(:put).with(wf_xml, anything()).and_return('')
+      @mock_resource.should_receive(:put).with(wf_xml_label, anything()).and_return('')
       Dor::WorkflowService.create_workflow(@repo, @druid, 'etdSubmitWF', wf_xml)
     end
 
@@ -42,7 +54,7 @@ describe Dor::WorkflowService do
     end
 
     it "sets the create-ds param to the value of the passed in options hash" do
-      @mock_resource.should_receive(:put).with(wf_xml, :content_type => 'application/xml',
+      @mock_resource.should_receive(:put).with(wf_xml_label, :content_type => 'application/xml',
                                                 :params => {'create-ds' => false}).and_return('')
       Dor::WorkflowService.create_workflow(@repo, @druid, 'etdSubmitWF', wf_xml, :create_ds => false)
     end
@@ -66,7 +78,7 @@ describe Dor::WorkflowService do
         </workflow>
       XML
 
-      Dor::WorkflowService.add_lane_id_to_workflow_xml('lane1', wf_xml).should be_equivalent_to(expected)
+      Dor::WorkflowService.send(:add_lane_id_to_workflow_xml, 'lane1', wf_xml).should be_equivalent_to(expected)
     end
   end
 

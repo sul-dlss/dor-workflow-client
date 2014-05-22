@@ -25,27 +25,15 @@ module Dor
       # @param [Hash] opts optional params
       # @option opts [Boolean] :create_ds if true, a workflow datastream will be created in Fedora.  Set to false if you do not want a datastream to be created
       #   If you do not pass in an <b>opts</b> Hash, then :create_ds is set to true by default
-      # @option opts [String] :lane_id adds laneId attribute to all process elements in the wf_xml workflow xml
+      # @option opts [String] :lane_id adds laneId attribute to all process elements in the wf_xml workflow xml.  Defaults to a value of 'default'
       # @return [Boolean] always true
       #
       def create_workflow(repo, druid, workflow_name, wf_xml, opts = {:create_ds => true})
-        xml = wf_xml
-        xml = add_lane_id_to_workflow_xml(opts[:lane_id], wf_xml) if(opts[:lane_id])
+        lane_id = opts.fetch(:lane_id, 'default')
+        xml = add_lane_id_to_workflow_xml(lane_id, wf_xml)
         workflow_resource["#{repo}/objects/#{druid}/workflows/#{workflow_name}"].put(xml, :content_type => 'application/xml',
                                                                                      :params => {'create-ds' => opts[:create_ds] })
         return true
-      end
-
-      # Adds laneId attributes to each process of workflow xml
-      #
-      # @param [String] lane_id to add to each process element
-      # @param [String] wf_xml the workflow xml
-      # @return [String] wf_xml with lane_id attributes
-      def add_lane_id_to_workflow_xml(lane_id, wf_xml)
-        return wf_xml if lane_id.nil?
-        doc = Nokogiri::XML(wf_xml)
-        doc.xpath('/workflow/process').each { |proc| proc['laneId'] = lane_id }
-        doc.to_xml
       end
 
       # Updates the status of one step in a workflow.
@@ -457,6 +445,17 @@ module Dor
         res << wf
       end
       res
+    end
+
+    # Adds laneId attributes to each process of workflow xml
+    #
+    # @param [String] lane_id to add to each process element
+    # @param [String] wf_xml the workflow xml
+    # @return [String] wf_xml with lane_id attributes
+    def add_lane_id_to_workflow_xml(lane_id, wf_xml)
+      doc = Nokogiri::XML(wf_xml)
+      doc.xpath('/workflow/process').each { |proc| proc['laneId'] = lane_id }
+      doc.to_xml
     end
 
     end
