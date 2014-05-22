@@ -232,8 +232,10 @@ module Dor
       # @param [String] waiting name of the waiting step
       # @param [String] repository default repository to use if it isn't passed in the qualified-step-name
       # @param [String] workflow default workflow to use if it isn't passed in the qualified-step-name
+      # @param [String] lane_id issue a query for a specific lane_id for the waiting step
       # @param [Hash] options
-      # @option options [Boolean] :lane_id issue a query for a specific lane_id for the waiting step
+      # @param options  [String]  :default_repository repository to query for if not using the qualified format
+      # @param options  [String]  :default_workflow workflow to query for if not using the qualified format
       # @option options [Integer] :limit maximum number of druids to return (nil for no limit)
       # @return [Array<String>]  Array of druids
       #
@@ -246,30 +248,34 @@ module Dor
       #      ]
       #
       # @example
-      #     get_objects_for_workstep(..., lane: "lane1")
+      #     get_objects_for_workstep(..., "lane1")
       #     => {
       #      "druid:py156ps0477",
       #      "druid:tt628cb6479",
       #     }
       #
       # @example
-      #     get_objects_for_workstep(..., lane: "lane1", limit: 1)
+      #     get_objects_for_workstep(..., "lane1", limit: 1)
       #     => {
       #      "druid:py156ps0477",
       #     }
       #
-      def get_objects_for_workstep completed, waiting, repository=nil, workflow=nil, options = {}
+      def get_objects_for_workstep completed, waiting, lane_id='default', options = {}
         result = nil
-        uri_string = "workflow_queue?waiting=#{qualify_step(repository,workflow,waiting)}"
+        waiting_param = qualify_step(options[:default_repository],options[:default_workflow],waiting)
+        uri_string = "workflow_queue?waiting=#{waiting_param}"
         if(completed)
           Array(completed).each do |step|
-            uri_string << "&completed=#{qualify_step(repository,workflow,step)}"
+            completed_param = qualify_step(options[:default_repository],options[:default_workflow],step)
+            uri_string << "&completed=#{completed_param}"
           end
         end
 
         if options[:limit] and options[:limit].to_i > 0
           uri_string << "&limit=#{options[:limit].to_i}"
         end
+
+        uri_string << "&lane-id=#{lane_id}"
 
         workflow_resource.options[:timeout] = 5 * 60 unless(workflow_resource.options.include?(:timeout))
         resp = workflow_resource[uri_string].get
