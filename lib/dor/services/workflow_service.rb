@@ -102,12 +102,13 @@ module Dor
       # This method only works when this gem is used in a project that is configured to connect to DOR
       #
       # @param [String] pid of druid
+      # @param [String] repo repository for the object. Defaults to 'dor'
       # @return [Array<String>] list of worklows
       # @example
       #   Dor::WorkflowService.get_workflows('druid:sr100hp0609')
       #   => ["accessionWF", "assemblyWF", "disseminationWF"]
-      def get_workflows(pid)
-        xml_doc=Nokogiri::XML(get_workflow_xml('dor',pid,''))
+      def get_workflows(pid, repo='dor')
+        xml_doc=Nokogiri::XML(get_workflow_xml(repo,pid,''))
         return xml_doc.xpath('//workflow').collect {|workflow| workflow['id']}
       end
 
