@@ -182,7 +182,7 @@ module Dor
       end
 
       # Returns the Date for a requested milestone ONLY FROM THE ACTIVE workflow table
-      # @param [String] repo epository name
+      # @param [String] repo repository name
       # @param [String] druid object id
       # @param [String] milestone name of the milestone being queried for
       # @return [Time] when the milestone was achieved.  Returns nil if the milestone does not exist
@@ -313,6 +313,28 @@ module Dor
           result.merge!(node['id'] => node['errorMessage'])
         end
         result
+      end
+
+      # Returns the number of objects that have a status of 'error' in a particular workflow and step
+      #
+      # @param [String] workflow name
+      # @param [String] step name
+      # @param [String] repository -- optional, default=dor
+      #
+      # @return [Integer] Number of objects with this repository:workflow:step that have a status of 'error'
+      def count_errored_for_workstep(workflow, step, repository='dor')
+        count_objects_in_step(workflow, step, repository, 'error')
+      end
+
+      # Returns the number of objects that have a status of 'queued' in a particular workflow and step
+      #
+      # @param [String] workflow name
+      # @param [String] step name
+      # @param [String] repository -- optional, default=dor
+      #
+      # @return [Integer] Number of objects with this repository:workflow:step that have a status of 'queued'
+      def count_queued_for_workstep(workflow, step, repository='dor')
+        count_objects_in_step(workflow, step, repository, 'queued')
       end
 
       # Gets all of the workflow steps that have a status of 'queued' that have a last-updated timestamp older than the number of hours passed in
@@ -463,6 +485,14 @@ module Dor
       doc = Nokogiri::XML(wf_xml)
       doc.xpath('/workflow/process').each { |proc| proc['laneId'] = lane_id }
       doc.to_xml
+    end
+
+    def count_objects_in_step(workflow, step, type, repo)
+      uri_string = "workflow_queue?repository=#{repo}&workflow=#{workflow}&#{type}=#{step}"
+      resp = @workflow_resource[uri_string].get
+      node = Nokogiri::XML(resp).at_xpath('/objects')
+      raise "Unable to determine count from response" if node.nil?
+      node['count'].to_i
     end
 
     end
