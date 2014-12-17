@@ -17,7 +17,7 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^(spec)/})
   gem.require_paths = ["lib"]
 
-  gem.add_dependency "activesupport", '~> 4.1.6'
+  gem.add_dependency "activesupport", '>= 3.2.1', '< 4.2.0'
   gem.add_dependency "nokogiri", '~> 1.6.0'
   gem.add_dependency "rest-client", '~> 1.6.7'
   gem.add_dependency "confstruct", '~> 0.2.7'
