@@ -1,6 +1,7 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 require 'dor-workflow-service'
 require 'equivalent-xml'
+require 'equivalent-xml/rspec_matchers'
 
 describe Dor::WorkflowService do
 
