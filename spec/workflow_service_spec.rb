@@ -33,29 +33,29 @@ describe Dor::WorkflowService do
     @druid = 'druid:123'
 
     @mock_logger = double('logger').as_null_object
-    Rails.stub(:logger).and_return(@mock_logger)
+    allow(Rails).to receive(:logger).and_return(@mock_logger)
 
     @mock_resource = double('mock_rest_client_resource')
-    @mock_resource.stub(:[]).and_return(@mock_resource)
-    @mock_resource.stub(:options).and_return( {} )
-    RestClient::Resource.stub(:new).and_return(@mock_resource)
+    allow(@mock_resource).to receive(:[]).and_return(@mock_resource)
+    allow(@mock_resource).to receive(:options).and_return( {} )
+    allow(RestClient::Resource).to receive(:new).and_return(@mock_resource)
     Dor::WorkflowService.configure 'https://dortest.stanford.edu/workflow'
   end
 
   describe "#create_workflow" do
     it "should pass workflow xml to the DOR workflow service and return the URL to the workflow" do
-      @mock_resource.should_receive(:put).with(wf_xml_label, anything()).and_return('')
+      expect(@mock_resource).to receive(:put).with(wf_xml_label, anything()).and_return('')
       Dor::WorkflowService.create_workflow(@repo, @druid, 'etdSubmitWF', wf_xml)
     end
 
     it "should log an error and return false if the PUT to the DOR workflow service throws an exception" do
       ex = Exception.new("exception thrown")
-      @mock_resource.should_receive(:put).and_raise(ex)
-      lambda{ Dor::WorkflowService.create_workflow(@repo, @druid, 'etdSubmitWF', wf_xml) }.should raise_error(Exception, "exception thrown")
+      expect(@mock_resource).to receive(:put).and_raise(ex)
+      expect{ Dor::WorkflowService.create_workflow(@repo, @druid, 'etdSubmitWF', wf_xml) }.to raise_error(Exception, "exception thrown")
     end
 
     it "sets the create-ds param to the value of the passed in options hash" do
-      @mock_resource.should_receive(:put).with(wf_xml_label, :content_type => 'application/xml',
+      expect(@mock_resource).to receive(:put).with(wf_xml_label, :content_type => 'application/xml',
                                                 :params => {'create-ds' => false}).and_return('')
       Dor::WorkflowService.create_workflow(@repo, @druid, 'etdSubmitWF', wf_xml, :create_ds => false)
     end
@@ -79,7 +79,7 @@ describe Dor::WorkflowService do
         </workflow>
       XML
 
-      Dor::WorkflowService.send(:add_lane_id_to_workflow_xml, 'lane1', wf_xml).should be_equivalent_to(expected)
+      expect(Dor::WorkflowService.send(:add_lane_id_to_workflow_xml, 'lane1', wf_xml)).to be_equivalent_to(expected)
     end
   end
 
@@ -90,56 +90,56 @@ describe Dor::WorkflowService do
 
     it "should update workflow status and return true if successful" do
       built_xml = "<?xml version=\"1.0\"?>\n<process name=\"reader-approval\" status=\"completed\" elapsed=\"0\" note=\"annotation\" version=\"2\" laneId=\"lane2\"/>\n"
-      @mock_resource.should_receive(:put).with(built_xml, { :content_type => 'application/xml' }).and_return('')
+      expect(@mock_resource).to receive(:put).with(built_xml, { :content_type => 'application/xml' }).and_return('')
       expect(Dor::WorkflowService.update_workflow_status(@repo, @druid, "etdSubmitWF", "reader-approval", "completed", :version => 2, :note => 'annotation', :lane_id => 'lane2')).to be_truthy
     end
 
     it "should return false if the PUT to the DOR workflow service throws an exception" do
       ex = Exception.new("exception thrown")
-      @mock_resource.should_receive(:put).with(@xml_re, { :content_type => 'application/xml' }).and_raise(ex)
-      lambda{ Dor::WorkflowService.update_workflow_status(@repo, @druid, "etdSubmitWF", "reader-approval", "completed") }.should raise_error(Exception, "exception thrown")
+      expect(@mock_resource).to receive(:put).with(@xml_re, { :content_type => 'application/xml' }).and_raise(ex)
+      expect{ Dor::WorkflowService.update_workflow_status(@repo, @druid, "etdSubmitWF", "reader-approval", "completed") }.to raise_error(Exception, "exception thrown")
     end
 
     it "performs a conditional update when current-status is passed as a parameter" do
-      @mock_resource.should_receive(:[]).with("dor/objects/druid:123/workflows/etdSubmitWF/reader-approval?current-status=queued")
-      @mock_resource.should_receive(:put).with(@xml_re, { :content_type => 'application/xml' }).and_return('')
+      expect(@mock_resource).to receive(:[]).with("dor/objects/druid:123/workflows/etdSubmitWF/reader-approval?current-status=queued")
+      expect(@mock_resource).to receive(:put).with(@xml_re, { :content_type => 'application/xml' }).and_return('')
       expect(Dor::WorkflowService.update_workflow_status(@repo, @druid, "etdSubmitWF", "reader-approval", "completed", :version => 2, :note => 'annotation', :lane_id => 'lane1', :current_status => 'queued')).to be_truthy
     end
   end
 
   describe "#update_workflow_error_status" do
     it "should update workflow status to error and return true if successful" do
-      @mock_resource.should_receive(:put).with(/status="error" errorMessage="Some exception" errorText="The optional stacktrace"/, { :content_type => 'application/xml' }).and_return('')
+      expect(@mock_resource).to receive(:put).with(/status="error" errorMessage="Some exception" errorText="The optional stacktrace"/, { :content_type => 'application/xml' }).and_return('')
       Dor::WorkflowService.update_workflow_error_status(@repo, @druid, "etdSubmitWF", "reader-approval", "Some exception", :error_text =>"The optional stacktrace")
     end
 
     it "should return false if the PUT to the DOR workflow service throws an exception" do
       ex = Exception.new("exception thrown")
-      @mock_resource.should_receive(:put).with(/status="completed"/, { :content_type => 'application/xml' }).and_raise(ex)
-      lambda{ Dor::WorkflowService.update_workflow_status(@repo, @druid, "etdSubmitWF", "reader-approval", "completed") }.should raise_error(Exception, "exception thrown")
+      expect(@mock_resource).to receive(:put).with(/status="completed"/, { :content_type => 'application/xml' }).and_raise(ex)
+      expect{ Dor::WorkflowService.update_workflow_status(@repo, @druid, "etdSubmitWF", "reader-approval", "completed") }.to raise_error(Exception, "exception thrown")
     end
   end
 
   describe "#get_workflow_status" do
     it "parses workflow xml and returns status as a string" do
-      @mock_resource.should_receive(:get).and_return('<process name="registrar-approval" status="completed" />')
-      Dor::WorkflowService.get_workflow_status('dor', 'druid:123', 'etdSubmitWF', 'registrar-approval').should == 'completed'
+      expect(@mock_resource).to receive(:get).and_return('<process name="registrar-approval" status="completed" />')
+      expect(Dor::WorkflowService.get_workflow_status('dor', 'druid:123', 'etdSubmitWF', 'registrar-approval')).to eq('completed')
     end
 
     it "should throw an exception if it fails for any reason" do
       ex = Exception.new("exception thrown")
-      @mock_resource.should_receive(:get).and_raise(ex)
+      expect(@mock_resource).to receive(:get).and_raise(ex)
 
-      lambda{ Dor::WorkflowService.get_workflow_status('dor', 'druid:123', 'etdSubmitWF', 'registrar-approval') }.should raise_error(Exception, "exception thrown")
+      expect{ Dor::WorkflowService.get_workflow_status('dor', 'druid:123', 'etdSubmitWF', 'registrar-approval') }.to raise_error(Exception, "exception thrown")
     end
 
     it "should throw an exception if it cannot parse the response" do
-      @mock_resource.should_receive(:get).and_return('something not xml')
-      lambda{ Dor::WorkflowService.get_workflow_status('dor', 'druid:123', 'etdSubmitWF', 'registrar-approval') }.should raise_error(Exception, "Unable to parse response:\nsomething not xml")
+      expect(@mock_resource).to receive(:get).and_return('something not xml')
+      expect{ Dor::WorkflowService.get_workflow_status('dor', 'druid:123', 'etdSubmitWF', 'registrar-approval') }.to raise_error(Exception, "Unable to parse response:\nsomething not xml")
     end
     it "should return nil if the workflow/process combination doesnt exist" do
-      @mock_resource.should_receive(:get).and_return('<process name="registrar-approval" status="completed" />')
-      Dor::WorkflowService.get_workflow_status('dor', 'druid:123', 'accessionWF', 'publish').should == nil
+      expect(@mock_resource).to receive(:get).and_return('<process name="registrar-approval" status="completed" />')
+      expect(Dor::WorkflowService.get_workflow_status('dor', 'druid:123', 'accessionWF', 'publish')).to eq(nil)
     end
 
   end
@@ -147,8 +147,8 @@ describe Dor::WorkflowService do
   describe "#get_workflow_xml" do
     it "returns the xml for a given repository, druid, and workflow" do
       xml = '<workflow id="etdSubmitWF"><process name="registrar-approval" status="completed" /></workflow>'
-      @mock_resource.should_receive(:get).and_return(xml)
-      Dor::WorkflowService.get_workflow_xml('dor', 'druid:123', 'etdSubmitWF').should == xml
+      expect(@mock_resource).to receive(:get).and_return(xml)
+      expect(Dor::WorkflowService.get_workflow_xml('dor', 'druid:123', 'etdSubmitWF')).to eq(xml)
     end
   end
 
@@ -161,13 +161,13 @@ describe Dor::WorkflowService do
             <milestone date="2010-06-15T16:08:58-0700">released</milestone>
         </lifecycle>
       EOXML
-      @mock_resource.should_receive(:get).and_return(xml)
-      Dor::WorkflowService.get_lifecycle('dor', 'druid:123', 'released').beginning_of_day.should == Time.parse('2010-06-15T16:08:58-0700').beginning_of_day
+      expect(@mock_resource).to receive(:get).and_return(xml)
+      expect(Dor::WorkflowService.get_lifecycle('dor', 'druid:123', 'released').beginning_of_day).to eq(Time.parse('2010-06-15T16:08:58-0700').beginning_of_day)
     end
 
     it "returns nil if the milestone hasn't been reached yet" do
-      @mock_resource.should_receive(:get).and_return('<lifecycle/>')
-      Dor::WorkflowService.get_lifecycle('dor', 'druid:abc', 'inprocess').should be_nil
+      expect(@mock_resource).to receive(:get).and_return('<lifecycle/>')
+      expect(Dor::WorkflowService.get_lifecycle('dor', 'druid:abc', 'inprocess')).to be_nil
     end
 
   end
@@ -182,18 +182,18 @@ describe Dor::WorkflowService do
 
     context "a query with one step completed and one waiting" do
       it "creates the URI string with only the one completed step" do
-        @mock_resource.should_receive(:[]).with("workflow_queue?waiting=#{@repository}:#{@workflow}:#{@waiting}&completed=#{@repository}:#{@workflow}:#{@completed}&lane-id=default")
-        @mock_resource.should_receive(:get).and_return(%{<objects count="1"><object id="druid:ab123de4567"/><object id="druid:ab123de9012"/></objects>})
-        Dor::WorkflowService.get_objects_for_workstep(@completed, @waiting, 'default', :default_repository => @repository, :default_workflow => @workflow).should == ['druid:ab123de4567','druid:ab123de9012']
+        expect(@mock_resource).to receive(:[]).with("workflow_queue?waiting=#{@repository}:#{@workflow}:#{@waiting}&completed=#{@repository}:#{@workflow}:#{@completed}&lane-id=default")
+        expect(@mock_resource).to receive(:get).and_return(%{<objects count="1"><object id="druid:ab123de4567"/><object id="druid:ab123de9012"/></objects>})
+        expect(Dor::WorkflowService.get_objects_for_workstep(@completed, @waiting, 'default', :default_repository => @repository, :default_workflow => @workflow)).to eq(['druid:ab123de4567','druid:ab123de9012'])
       end
     end
 
     context "a query with TWO steps completed and one waiting" do
       it "creates the URI string with the two completed steps correctly" do
         second_completed="google-convert"
-        @mock_resource.should_receive(:[]).with("workflow_queue?waiting=#{@repository}:#{@workflow}:#{@waiting}&completed=#{@repository}:#{@workflow}:#{@completed}&completed=#{@repository}:#{@workflow}:#{second_completed}&lane-id=default")
-        @mock_resource.should_receive(:get).and_return(%{<objects count="1"><object id="druid:ab123de4567"/><object id="druid:ab123de9012"/></objects>})
-        Dor::WorkflowService.get_objects_for_workstep([@completed,second_completed], @waiting, 'default', :default_repository => @repository, :default_workflow => @workflow).should == ['druid:ab123de4567','druid:ab123de9012']
+        expect(@mock_resource).to receive(:[]).with("workflow_queue?waiting=#{@repository}:#{@workflow}:#{@waiting}&completed=#{@repository}:#{@workflow}:#{@completed}&completed=#{@repository}:#{@workflow}:#{second_completed}&lane-id=default")
+        expect(@mock_resource).to receive(:get).and_return(%{<objects count="1"><object id="druid:ab123de4567"/><object id="druid:ab123de9012"/></objects>})
+        expect(Dor::WorkflowService.get_objects_for_workstep([@completed,second_completed], @waiting, 'default', :default_repository => @repository, :default_workflow => @workflow)).to eq(['druid:ab123de4567','druid:ab123de9012'])
       end
     end
 
@@ -207,9 +207,9 @@ describe Dor::WorkflowService do
         completed3="ingest-transfer"
         qualified_completed2 = "#{repo2}:#{workflow2}:#{completed2}"
         qualified_completed3 = "#{repo2}:#{workflow2}:#{completed3}"
-        @mock_resource.should_receive(:[]).with("workflow_queue?waiting=#{qualified_waiting}&completed=#{qualified_completed}&completed=#{qualified_completed2}&completed=#{qualified_completed3}&lane-id=default")
-        @mock_resource.should_receive(:get).and_return(%{<objects count="2"><object id="druid:ab123de4567"/><object id="druid:ab123de9012"/></objects>})
-        Dor::WorkflowService.get_objects_for_workstep([qualified_completed, qualified_completed2, qualified_completed3], qualified_waiting).should == ['druid:ab123de4567', 'druid:ab123de9012']
+        expect(@mock_resource).to receive(:[]).with("workflow_queue?waiting=#{qualified_waiting}&completed=#{qualified_completed}&completed=#{qualified_completed2}&completed=#{qualified_completed3}&lane-id=default")
+        expect(@mock_resource).to receive(:get).and_return(%{<objects count="2"><object id="druid:ab123de4567"/><object id="druid:ab123de9012"/></objects>})
+        expect(Dor::WorkflowService.get_objects_for_workstep([qualified_completed, qualified_completed2, qualified_completed3], qualified_waiting)).to eq(['druid:ab123de4567', 'druid:ab123de9012'])
       end
 
       it "same but with lane_id" do
@@ -221,9 +221,9 @@ describe Dor::WorkflowService do
         completed3="ingest-transfer"
         qualified_completed2 = "#{repo2}:#{workflow2}:#{completed2}"
         qualified_completed3 = "#{repo2}:#{workflow2}:#{completed3}"
-        @mock_resource.should_receive(:[]).with("workflow_queue?waiting=#{qualified_waiting}&completed=#{qualified_completed}&completed=#{qualified_completed2}&completed=#{qualified_completed3}&lane-id=lane1")
-        @mock_resource.should_receive(:get).and_return(%{<objects count="2"><object id="druid:ab123de4567"/><object id="druid:ab123de9012"/></objects>})
-        Dor::WorkflowService.get_objects_for_workstep([qualified_completed, qualified_completed2, qualified_completed3], qualified_waiting, "lane1").should == [ 'druid:ab123de4567', 'druid:ab123de9012']
+        expect(@mock_resource).to receive(:[]).with("workflow_queue?waiting=#{qualified_waiting}&completed=#{qualified_completed}&completed=#{qualified_completed2}&completed=#{qualified_completed3}&lane-id=lane1")
+        expect(@mock_resource).to receive(:get).and_return(%{<objects count="2"><object id="druid:ab123de4567"/><object id="druid:ab123de9012"/></objects>})
+        expect(Dor::WorkflowService.get_objects_for_workstep([qualified_completed, qualified_completed2, qualified_completed3], qualified_waiting, "lane1")).to eq([ 'druid:ab123de4567', 'druid:ab123de9012'])
       end
 
       it "creates the URI string with only one completed step passed in as a String" do
@@ -231,25 +231,25 @@ describe Dor::WorkflowService do
         qualified_completed = "#{@repository}:#{@workflow}:#{@completed}"
         repo2 = "sdr"
 
-        @mock_resource.should_receive(:[]).with("workflow_queue?waiting=#{qualified_waiting}&completed=#{qualified_completed}&lane-id=default")
-        @mock_resource.should_receive(:get).and_return(%{<objects count="1"><object id="druid:ab123de4567"/></objects>})
-        Dor::WorkflowService.get_objects_for_workstep(qualified_completed, qualified_waiting).should == ['druid:ab123de4567']
+        expect(@mock_resource).to receive(:[]).with("workflow_queue?waiting=#{qualified_waiting}&completed=#{qualified_completed}&lane-id=default")
+        expect(@mock_resource).to receive(:get).and_return(%{<objects count="1"><object id="druid:ab123de4567"/></objects>})
+        expect(Dor::WorkflowService.get_objects_for_workstep(qualified_completed, qualified_waiting)).to eq(['druid:ab123de4567'])
       end
 
       it "creates the URI string without any completed steps, only waiting" do
         qualified_waiting = "#{@repository}:#{@workflow}:#{@waiting}"
 
-        @mock_resource.should_receive(:[]).with("workflow_queue?waiting=#{qualified_waiting}&lane-id=default")
-        @mock_resource.should_receive(:get).and_return(%{<objects count="1"><object id="druid:ab123de4567"/></objects>})
-        Dor::WorkflowService.get_objects_for_workstep(nil, qualified_waiting).should == ['druid:ab123de4567']
+        expect(@mock_resource).to receive(:[]).with("workflow_queue?waiting=#{qualified_waiting}&lane-id=default")
+        expect(@mock_resource).to receive(:get).and_return(%{<objects count="1"><object id="druid:ab123de4567"/></objects>})
+        expect(Dor::WorkflowService.get_objects_for_workstep(nil, qualified_waiting)).to eq(['druid:ab123de4567'])
       end
 
       it "same but with lane_id" do
         qualified_waiting = "#{@repository}:#{@workflow}:#{@waiting}"
 
-        @mock_resource.should_receive(:[]).with("workflow_queue?waiting=#{qualified_waiting}&lane-id=lane1")
-        @mock_resource.should_receive(:get).and_return(%{<objects count="1"><object id="druid:ab123de4567"/></objects>})
-        Dor::WorkflowService.get_objects_for_workstep(nil, qualified_waiting, "lane1").should == [ 'druid:ab123de4567' ]
+        expect(@mock_resource).to receive(:[]).with("workflow_queue?waiting=#{qualified_waiting}&lane-id=lane1")
+        expect(@mock_resource).to receive(:get).and_return(%{<objects count="1"><object id="druid:ab123de4567"/></objects>})
+        expect(Dor::WorkflowService.get_objects_for_workstep(nil, qualified_waiting, "lane1")).to eq([ 'druid:ab123de4567' ])
       end
     end
   end
@@ -260,16 +260,16 @@ describe Dor::WorkflowService do
       workflow = "googleScannedBookWF"
       completed = "google-download"
       waiting = "process-content"
-      @mock_resource.should_receive(:[]).with("workflow_queue?waiting=#{repository}:#{workflow}:#{waiting}&completed=#{repository}:#{workflow}:#{completed}&lane-id=default")
-      @mock_resource.should_receive(:get).and_return(%{<objects count="0"/>})
-      Dor::WorkflowService.get_objects_for_workstep(completed, waiting, 'default', :default_repository => repository, :default_workflow => workflow).should == []
+      expect(@mock_resource).to receive(:[]).with("workflow_queue?waiting=#{repository}:#{workflow}:#{waiting}&completed=#{repository}:#{workflow}:#{completed}&lane-id=default")
+      expect(@mock_resource).to receive(:get).and_return(%{<objects count="0"/>})
+      expect(Dor::WorkflowService.get_objects_for_workstep(completed, waiting, 'default', :default_repository => repository, :default_workflow => workflow)).to eq([])
     end
   end
 
   describe "#delete_workflow" do
     it "sends a delete request to the workflow service" do
-      @mock_resource.should_receive(:[]).with("#{@repo}/objects/#{@druid}/workflows/accessionWF")
-      @mock_resource.should_receive(:delete)
+      expect(@mock_resource).to receive(:[]).with("#{@repo}/objects/#{@druid}/workflows/accessionWF")
+      expect(@mock_resource).to receive(:delete)
       Dor::WorkflowService.delete_workflow(@repo, @druid, 'accessionWF')
     end
   end
@@ -277,10 +277,10 @@ describe Dor::WorkflowService do
     it 'should include the version in with the milestones' do
       xml='<?xml version="1.0" encoding="UTF-8"?><lifecycle objectId="druid:gv054hp4128"><milestone date="2012-01-26T21:06:54-0800" version="2">published</milestone></lifecycle>'
       xml=Nokogiri::XML(xml)
-      Dor::WorkflowService.stub(:query_lifecycle).and_return(xml)
+      allow(Dor::WorkflowService).to receive(:query_lifecycle).and_return(xml)
       milestones=Dor::WorkflowService.get_milestones(@repo, @druid)
-      milestones.first[:milestone].should == "published"
-      milestones.first[:version].should == "2"
+      expect(milestones.first[:milestone]).to eq("published")
+      expect(milestones.first[:version]).to eq("2")
     end
   end
 
@@ -298,21 +298,21 @@ describe Dor::WorkflowService do
       </workflows>
       XML
 
-      Dor::WorkflowService.stub(:get_workflow_xml) { xml }
+      allow(Dor::WorkflowService).to receive(:get_workflow_xml) { xml }
       expect(Dor::WorkflowService.get_active_workflows('dor', 'druid:mw971zk1113')).to eq(['accessionWF'])
     end
   end
 
   describe "#close_version" do
     it "calls the versionClose endpoint with druid" do
-      @mock_resource.should_receive(:[]).with("dor/objects/druid:123/versionClose").and_return(@mock_resource)
-      @mock_resource.should_receive(:post).with('').and_return('')
+      expect(@mock_resource).to receive(:[]).with("dor/objects/druid:123/versionClose").and_return(@mock_resource)
+      expect(@mock_resource).to receive(:post).with('').and_return('')
       Dor::WorkflowService.close_version(@repo, @druid)
     end
 
     it "optionally prevents creation of accessionWF" do
-      @mock_resource.should_receive(:[]).with("dor/objects/druid:123/versionClose?create-accession=false").and_return(@mock_resource)
-      @mock_resource.should_receive(:post).with('').and_return('')
+      expect(@mock_resource).to receive(:[]).with("dor/objects/druid:123/versionClose?create-accession=false").and_return(@mock_resource)
+      expect(@mock_resource).to receive(:post).with('').and_return('')
       Dor::WorkflowService.close_version(@repo, @druid, false)
     end
   end
@@ -325,22 +325,22 @@ describe Dor::WorkflowService do
             <workflow laneId="lane2" note="annotation" lifecycle="in-process" errorText="stacktrace" errorMessage="NullPointerException" elapsed="1.173" repository="dor" attempts="0" datetime="2008-11-15T13:30:00-0800" status="waiting" process="jp2-create" name="assemblyWF" druid="dr:456"/>
         </workflows>
       XML
-      @mock_resource.should_receive(:[]).with("workflow_queue/all_queued?repository=dor&hours-ago=24&limit=100")
-      @mock_resource.should_receive(:get).and_return(xml)
+      expect(@mock_resource).to receive(:[]).with("workflow_queue/all_queued?repository=dor&hours-ago=24&limit=100")
+      expect(@mock_resource).to receive(:get).and_return(xml)
 
       ah = Dor::WorkflowService.get_stale_queued_workflows 'dor', :hours_ago => 24, :limit => 100
       expected = [ { :workflow => 'accessionWF', :step => 'content-metadata', :druid => 'dr:123', :lane_id => 'lane1'},
                    { :workflow => 'assemblyWF', :step => 'jp2-create', :druid => 'dr:456', :lane_id => 'lane2'} ]
-      ah.should eql(expected)
+      expect(ah).to eql(expected)
     end
   end
 
   describe ".count_stale_queued_workflows" do
     it "returns the number of queued workflow steps" do
-      @mock_resource.should_receive(:[]).with("workflow_queue/all_queued?repository=dor&hours-ago=48&count-only=true")
-      @mock_resource.should_receive(:get).and_return(%{<objects count="10"/>})
+      expect(@mock_resource).to receive(:[]).with("workflow_queue/all_queued?repository=dor&hours-ago=48&count-only=true")
+      expect(@mock_resource).to receive(:get).and_return(%{<objects count="10"/>})
 
-      Dor::WorkflowService.count_stale_queued_workflows('dor', :hours_ago => 48).should == 10
+      expect(Dor::WorkflowService.count_stale_queued_workflows('dor', :hours_ago => 48)).to eq(10)
     end
   end
 
@@ -353,10 +353,10 @@ describe Dor::WorkflowService do
       </lanes>
       XML
 
-      @mock_resource.should_receive(:[]).with("workflow_queue/lane_ids?step=dor:accessionWF:shelve")
-      @mock_resource.should_receive(:get).and_return(xml)
+      expect(@mock_resource).to receive(:[]).with("workflow_queue/lane_ids?step=dor:accessionWF:shelve")
+      expect(@mock_resource).to receive(:get).and_return(xml)
 
-      Dor::WorkflowService.get_lane_ids('dor', 'accessionWF', 'shelve').should == ["lane1", "lane2"]
+      expect(Dor::WorkflowService.get_lane_ids('dor', 'accessionWF', 'shelve')).to eq(["lane1", "lane2"])
     end
   end
 
