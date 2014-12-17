@@ -91,7 +91,7 @@ describe Dor::WorkflowService do
     it "should update workflow status and return true if successful" do
       built_xml = "<?xml version=\"1.0\"?>\n<process name=\"reader-approval\" status=\"completed\" elapsed=\"0\" note=\"annotation\" version=\"2\" laneId=\"lane2\"/>\n"
       @mock_resource.should_receive(:put).with(built_xml, { :content_type => 'application/xml' }).and_return('')
-      Dor::WorkflowService.update_workflow_status(@repo, @druid, "etdSubmitWF", "reader-approval", "completed", :version => 2, :note => 'annotation', :lane_id => 'lane2').should be_true
+      expect(Dor::WorkflowService.update_workflow_status(@repo, @druid, "etdSubmitWF", "reader-approval", "completed", :version => 2, :note => 'annotation', :lane_id => 'lane2')).to be_truthy
     end
 
     it "should return false if the PUT to the DOR workflow service throws an exception" do
@@ -103,7 +103,7 @@ describe Dor::WorkflowService do
     it "performs a conditional update when current-status is passed as a parameter" do
       @mock_resource.should_receive(:[]).with("dor/objects/druid:123/workflows/etdSubmitWF/reader-approval?current-status=queued")
       @mock_resource.should_receive(:put).with(@xml_re, { :content_type => 'application/xml' }).and_return('')
-      Dor::WorkflowService.update_workflow_status(@repo, @druid, "etdSubmitWF", "reader-approval", "completed", :version => 2, :note => 'annotation', :lane_id => 'lane1', :current_status => 'queued').should be_true
+      expect(Dor::WorkflowService.update_workflow_status(@repo, @druid, "etdSubmitWF", "reader-approval", "completed", :version => 2, :note => 'annotation', :lane_id => 'lane1', :current_status => 'queued')).to be_truthy
     end
   end
 
