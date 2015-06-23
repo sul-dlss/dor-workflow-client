@@ -23,7 +23,7 @@ Gem::Specification.new do |gem|
   gem.add_dependency "confstruct", '~> 0.2.7'
 
   gem.add_development_dependency "rake"
-  gem.add_development_dependency "rspec"
+  gem.add_development_dependency "rspec", "~> 3.3"
   gem.add_development_dependency "yard"
   gem.add_development_dependency "redcarpet"
   gem.add_development_dependency "equivalent-xml", '~> 0.5.1'
