@@ -83,9 +83,7 @@ module Dor
         raise Exception.new("Unable to parse response:\n#{workflow_md}") if(doc.root.nil?)
 
         status = doc.root.at_xpath("//process[@name='#{process}']/@status")
-        if status
-          status=status.content
-        end
+        status=status.content if status
         return status
       end
 
@@ -175,9 +173,7 @@ module Dor
       def get_lifecycle(repo, druid, milestone)
         doc = self.query_lifecycle(repo, druid)
         milestone = doc.at_xpath("//lifecycle/milestone[text() = '#{milestone}']")
-        if(milestone)
-          return Time.parse(milestone['date'])
-        end
+        return Time.parse(milestone['date']) if milestone
 
         nil
       end
@@ -196,9 +192,7 @@ module Dor
       def get_active_lifecycle(repo, druid, milestone)
         doc = self.query_lifecycle(repo, druid, true)
         milestone = doc.at_xpath("//lifecycle/milestone[text() = '#{milestone}']")
-        if(milestone)
-          return Time.parse(milestone['date'])
-        end
+        return Time.parse(milestone['date']) if milestone
 
         nil
       end
@@ -263,7 +257,6 @@ module Dor
       #     }
       #
       def get_objects_for_workstep completed, waiting, lane_id='default', options = {}
-        result = nil
         waiting_param = qualify_step(options[:default_repository],options[:default_workflow],waiting)
         uri_string = "workflow_queue?waiting=#{waiting_param}"
         if(completed)
@@ -273,7 +266,7 @@ module Dor
           end
         end
 
-        if options[:limit] and options[:limit].to_i > 0
+        if options[:limit] && options[:limit].to_i > 0
           uri_string << "&limit=#{options[:limit].to_i}"
         end
 
@@ -310,7 +303,7 @@ module Dor
         result = {}
         uri_string = "workflow_queue?repository=#{repository}&workflow=#{workflow}&error=#{step}"
         resp = workflow_resource[uri_string].get
-        objs = Nokogiri::XML(resp).xpath('//object').collect do |node|
+        Nokogiri::XML(resp).xpath('//object').collect do |node|
           result.merge!(node['id'] => node['errorMessage'])
         end
         result
@@ -411,7 +404,7 @@ module Dor
       # @param [Boolean] create_accession_wf Option to create accessionWF when closing a version.  Defaults to true
       def close_version(repo, druid, create_accession_wf = true)
         uri = "#{repo}/objects/#{druid}/versionClose"
-        uri << "?create-accession=false" if(!create_accession_wf)
+        uri << "?create-accession=false" unless create_accession_wf
         workflow_resource[uri].post ''
         return true
       end
@@ -454,47 +447,47 @@ module Dor
         @@resource = RestClient::Resource.new(url, params)
       end
 
-  protected
+      protected
 
-    def build_queued_uri(repository, opts = {})
-      uri_string = "workflow_queue/all_queued?repository=#{repository}"
-      uri_string << "&hours-ago=#{opts[:hours_ago]}" if opts[:hours_ago]
-      uri_string << "&limit=#{opts[:limit]}" if opts[:limit]
-      uri_string
-    end
-
-    def parse_queued_workflows_response(xml)
-      res = []
-      doc = Nokogiri::XML(xml)
-      doc.xpath('/workflows/workflow').each do |wf_node|
-        wf = {}
-        wf[:workflow] = wf_node['name']
-        wf[:step]     = wf_node['process']
-        wf[:druid]    = wf_node['druid']
-        wf[:lane_id] = wf_node['laneId']
-        res << wf
+      def build_queued_uri(repository, opts = {})
+        uri_string = "workflow_queue/all_queued?repository=#{repository}"
+        uri_string << "&hours-ago=#{opts[:hours_ago]}" if opts[:hours_ago]
+        uri_string << "&limit=#{opts[:limit]}" if opts[:limit]
+        uri_string
       end
-      res
-    end
 
-    # Adds laneId attributes to each process of workflow xml
-    #
-    # @param [String] lane_id to add to each process element
-    # @param [String] wf_xml the workflow xml
-    # @return [String] wf_xml with lane_id attributes
-    def add_lane_id_to_workflow_xml(lane_id, wf_xml)
-      doc = Nokogiri::XML(wf_xml)
-      doc.xpath('/workflow/process').each { |proc| proc['laneId'] = lane_id }
-      doc.to_xml
-    end
+      def parse_queued_workflows_response(xml)
+        res = []
+        doc = Nokogiri::XML(xml)
+        doc.xpath('/workflows/workflow').each do |wf_node|
+          wf = {}
+          wf[:workflow] = wf_node['name']
+          wf[:step]     = wf_node['process']
+          wf[:druid]    = wf_node['druid']
+          wf[:lane_id] = wf_node['laneId']
+          res << wf
+        end
+        res
+      end
 
-    def count_objects_in_step(workflow, step, type, repo)
-      uri_string = "workflow_queue?repository=#{repo}&workflow=#{workflow}&#{type}=#{step}"
-      resp = @workflow_resource[uri_string].get
-      node = Nokogiri::XML(resp).at_xpath('/objects')
-      raise "Unable to determine count from response" if node.nil?
-      node['count'].to_i
-    end
+      # Adds laneId attributes to each process of workflow xml
+      #
+      # @param [String] lane_id to add to each process element
+      # @param [String] wf_xml the workflow xml
+      # @return [String] wf_xml with lane_id attributes
+      def add_lane_id_to_workflow_xml(lane_id, wf_xml)
+        doc = Nokogiri::XML(wf_xml)
+        doc.xpath('/workflow/process').each { |proc| proc['laneId'] = lane_id }
+        doc.to_xml
+      end
+
+      def count_objects_in_step(workflow, step, type, repo)
+        uri_string = "workflow_queue?repository=#{repo}&workflow=#{workflow}&#{type}=#{step}"
+        resp = @workflow_resource[uri_string].get
+        node = Nokogiri::XML(resp).at_xpath('/objects')
+        raise "Unable to determine count from response" if node.nil?
+        node['count'].to_i
+      end
 
     end
   end

@@ -226,7 +226,6 @@ describe Dor::WorkflowService do
       it "creates the URI string with only one completed step passed in as a String" do
         qualified_waiting = "#{@repository}:#{@workflow}:#{@waiting}"
         qualified_completed = "#{@repository}:#{@workflow}:#{@completed}"
-        repo2 = "sdr"
 
         expect(@mock_resource).to receive(:[]).with("workflow_queue?waiting=#{qualified_waiting}&completed=#{qualified_completed}&lane-id=default")
         expect(@mock_resource).to receive(:get).and_return(%{<objects count="1"><object id="druid:ab123de4567"/></objects>})
@@ -353,7 +352,7 @@ describe Dor::WorkflowService do
       expect(@mock_resource).to receive(:[]).with("workflow_queue/lane_ids?step=dor:accessionWF:shelve")
       expect(@mock_resource).to receive(:get).and_return(xml)
 
-      expect(Dor::WorkflowService.get_lane_ids('dor', 'accessionWF', 'shelve')).to eq(["lane1", "lane2"])
+      expect(Dor::WorkflowService.get_lane_ids('dor', 'accessionWF', 'shelve')).to eq(%w(lane1 lane2))
     end
   end
 
