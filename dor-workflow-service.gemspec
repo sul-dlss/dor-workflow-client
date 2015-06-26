@@ -17,13 +17,13 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^(spec)/})
   gem.require_paths = ["lib"]
 
-  gem.add_dependency "activesupport", '>= 3.2.1', '< 4.2.2'
+  gem.add_dependency "activesupport", '>= 3.2.1', '< 5'
   gem.add_dependency "nokogiri", '~> 1.6.0'
   gem.add_dependency "rest-client", '~> 1.7'
-  gem.add_dependency "confstruct", '~> 0.2.7'
+  gem.add_dependency "confstruct", '>= 0.2.7', '< 2'
 
   gem.add_development_dependency "rake"
-  gem.add_development_dependency "rspec"
+  gem.add_development_dependency "rspec", "~> 3.3"
   gem.add_development_dependency "yard"
   gem.add_development_dependency "redcarpet"
   gem.add_development_dependency "equivalent-xml", '~> 0.5.1'

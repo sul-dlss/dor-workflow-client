@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/sul-dlss/dor-workflow-service.svg?branch=master)](https://travis-ci.org/sul-dlss/dor-workflow-service)
+[![Dependency Status](https://gemnasium.com/sul-dlss/dor-workflow-service.svg)](https://gemnasium.com/sul-dlss/dor-workflow-service)
 
 # dor-workflow-service gem
 
