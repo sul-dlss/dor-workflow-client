@@ -34,7 +34,7 @@ module Dor
         xml = add_lane_id_to_workflow_xml(lane_id, wf_xml)
         workflow_resource["#{repo}/objects/#{druid}/workflows/#{workflow_name}"].put(xml, :content_type => 'application/xml',
                                                                                      :params => {'create-ds' => opts[:create_ds] })
-        return true
+        true
       end
 
       # Updates the status of one step in a workflow.
@@ -67,7 +67,7 @@ module Dor
         uri = "#{repo}/objects/#{druid}/workflows/#{workflow}/#{process}"
         uri << "?current-status=#{current_status.downcase}" if current_status
         workflow_resource[uri].put(xml, :content_type => 'application/xml')
-        return true
+        true
       end
 
       #
@@ -80,11 +80,11 @@ module Dor
       def get_workflow_status(repo, druid, workflow, process)
         workflow_md = get_workflow_xml(repo, druid, workflow)
         doc = Nokogiri::XML(workflow_md)
-        raise Exception.new("Unable to parse response:\n#{workflow_md}") if(doc.root.nil?)
+        raise Exception.new("Unable to parse response:\n#{workflow_md}") if (doc.root.nil?)
 
         status = doc.root.at_xpath("//process[@name='#{process}']/@status")
         status=status.content if status
-        return status
+        status
       end
 
       #
@@ -106,9 +106,9 @@ module Dor
       # @example
       #   Dor::WorkflowService.get_workflows('druid:sr100hp0609')
       #   => ["accessionWF", "assemblyWF", "disseminationWF"]
-      def get_workflows(pid, repo='dor')
-        xml_doc=Nokogiri::XML(get_workflow_xml(repo,pid,''))
-        return xml_doc.xpath('//workflow').collect {|workflow| workflow['id']}
+      def get_workflows(pid, repo = 'dor')
+        xml_doc=Nokogiri::XML(get_workflow_xml(repo, pid, ''))
+        xml_doc.xpath('//workflow').collect {|workflow| workflow['id']}
       end
 
       # Get active workflow names into an array for given PID
@@ -121,7 +121,7 @@ module Dor
       #   Dor::WorkflowService.get_workflows('dor', 'druid:sr100hp0609')
       #   => ["accessionWF", "assemblyWF", "disseminationWF"]
       def get_active_workflows(repo, pid)
-        doc = Nokogiri::XML(get_workflow_xml(repo,pid,''))
+        doc = Nokogiri::XML(get_workflow_xml(repo, pid, ''))
         doc.xpath( %(//workflow[not(process/@archived)]/@id ) ).map {|n| n.value}
       end
 
@@ -146,7 +146,7 @@ module Dor
         opts = {:error_text => nil}.merge!(opts)
         xml = create_process_xml({:name => process, :status => 'error', :errorMessage => error_msg}.merge!(opts))
         workflow_resource["#{repo}/objects/#{druid}/workflows/#{workflow}/#{process}"].put(xml, :content_type => 'application/xml')
-        return true
+        true
       end
 
       # Deletes a workflow from a particular repository and druid
@@ -156,7 +156,7 @@ module Dor
       # @return [Boolean] always true
       def delete_workflow(repo, druid, workflow)
         workflow_resource["#{repo}/objects/#{druid}/workflows/#{workflow}"].delete
-        return true
+        true
       end
 
       # Returns the Date for a requested milestone from workflow lifecycle
@@ -171,7 +171,7 @@ module Dor
       #     <milestone date="2010-06-15T16:08:58-0700">released</milestone>
       #   </lifecycle>
       def get_lifecycle(repo, druid, milestone)
-        doc = self.query_lifecycle(repo, druid)
+        doc = query_lifecycle(repo, druid)
         milestone = doc.at_xpath("//lifecycle/milestone[text() = '#{milestone}']")
         return Time.parse(milestone['date']) if milestone
 
@@ -190,7 +190,7 @@ module Dor
       #     <milestone date="2010-06-15T16:08:58-0700">released</milestone>
       #   </lifecycle>
       def get_active_lifecycle(repo, druid, milestone)
-        doc = self.query_lifecycle(repo, druid, true)
+        doc = query_lifecycle(repo, druid, true)
         milestone = doc.at_xpath("//lifecycle/milestone[text() = '#{milestone}']")
         return Time.parse(milestone['date']) if milestone
 
@@ -199,8 +199,8 @@ module Dor
 
       # @return [Hash]
       def get_milestones(repo, druid)
-        doc = self.query_lifecycle(repo, druid)
-        doc.xpath("//lifecycle/milestone").collect do |node|
+        doc = query_lifecycle(repo, druid)
+        doc.xpath('//lifecycle/milestone').collect do |node|
           { :milestone => node.text, :at => Time.parse(node['date']), :version => node['version'] }
         end
       end
@@ -216,7 +216,7 @@ module Dor
       # @example
       #   dor:assemblyWF:jp2-create
       def qualify_step(default_repository, default_workflow, step)
-        current = step.split(/:/,3)
+        current = step.split(/:/, 3)
         current.unshift(default_workflow) if current.length < 3
         current.unshift(default_repository) if current.length < 3
         current.join(':')
@@ -256,12 +256,12 @@ module Dor
       #      "druid:py156ps0477",
       #     }
       #
-      def get_objects_for_workstep completed, waiting, lane_id='default', options = {}
-        waiting_param = qualify_step(options[:default_repository],options[:default_workflow],waiting)
+      def get_objects_for_workstep(completed, waiting, lane_id = 'default', options = {})
+        waiting_param = qualify_step(options[:default_repository], options[:default_workflow], waiting)
         uri_string = "workflow_queue?waiting=#{waiting_param}"
-        if(completed)
+        if (completed)
           Array(completed).each do |step|
-            completed_param = qualify_step(options[:default_repository],options[:default_workflow],step)
+            completed_param = qualify_step(options[:default_repository], options[:default_workflow], step)
             uri_string << "&completed=#{completed_param}"
           end
         end
@@ -272,7 +272,7 @@ module Dor
 
         uri_string << "&lane-id=#{lane_id}"
 
-        workflow_resource.options[:timeout] = 5 * 60 unless(workflow_resource.options.include?(:timeout))
+        workflow_resource.options[:timeout] = 5 * 60 unless (workflow_resource.options.include?(:timeout))
         resp = workflow_resource[uri_string].get
         #
         # response looks like:
@@ -299,7 +299,7 @@ module Dor
       #     Dor::WorkflowService.get_errored_objects_for_workstep('accessionWF','content-metadata')
       #     => {"druid:qd556jq0580"=>"druid:qd556jq0580 - Item error; caused by
       #        #<Rubydora::FedoraInvalidRequest: Error modifying datastream contentMetadata for druid:qd556jq0580. See logger for details>"}
-      def get_errored_objects_for_workstep workflow, step, repository='dor'
+      def get_errored_objects_for_workstep(workflow, step, repository = 'dor')
         result = {}
         uri_string = "workflow_queue?repository=#{repository}&workflow=#{workflow}&error=#{step}"
         resp = workflow_resource[uri_string].get
@@ -316,7 +316,7 @@ module Dor
       # @param [String] repository -- optional, default=dor
       #
       # @return [Integer] Number of objects with this repository:workflow:step that have a status of 'error'
-      def count_errored_for_workstep(workflow, step, repository='dor')
+      def count_errored_for_workstep(workflow, step, repository = 'dor')
         count_objects_in_step(workflow, step, repository, 'error')
       end
 
@@ -327,7 +327,7 @@ module Dor
       # @param [String] repository -- optional, default=dor
       #
       # @return [Integer] Number of objects with this repository:workflow:step that have a status of 'queued'
-      def count_queued_for_workstep(workflow, step, repository='dor')
+      def count_queued_for_workstep(workflow, step, repository = 'dor')
         count_objects_in_step(workflow, step, repository, 'queued')
       end
 
@@ -354,20 +354,20 @@ module Dor
       # @return [Integer] number of stale, queued steps if the :count_only option was set to true
       def count_stale_queued_workflows(repository, opts = {})
         uri_string = build_queued_uri(repository, opts)
-        uri_string << "&count-only=true"
+        uri_string << '&count-only=true'
         xml = workflow_resource[uri_string].get
         doc = Nokogiri::XML(xml)
-        return doc.at_xpath('/objects/@count').value.to_i
+        doc.at_xpath('/objects/@count').value.to_i
       end
 
       # @return [String]
       def create_process_xml(params)
         builder = Nokogiri::XML::Builder.new do |xml|
-          attrs = params.reject { |k,v| v.nil? }
-          attrs = Hash[ attrs.map {|k,v| [k.to_s.camelize(:lower), v]}]  # camelize all the keys in the attrs hash
+          attrs = params.reject { |k, v| v.nil? }
+          attrs = Hash[ attrs.map {|k, v| [k.to_s.camelize(:lower), v]}]  # camelize all the keys in the attrs hash
           xml.process(attrs)
         end
-        return builder.to_xml
+        builder.to_xml
       end
 
       # @return [Nokogiri::XML::Document]
@@ -375,7 +375,7 @@ module Dor
         req = "#{repo}/objects/#{druid}/lifecycle"
         req << '?active-only=true' if active_only
         lifecycle_xml = workflow_resource[req].get
-        return Nokogiri::XML(lifecycle_xml)
+        Nokogiri::XML(lifecycle_xml)
       end
 
       def archive_active_workflow(repo, druid)
@@ -385,12 +385,12 @@ module Dor
         end
       end
 
-      def archive_workflow(repo, druid, wf_name, version_num=nil)
-        raise "Please call Dor::WorkflowService.configure(workflow_service_url, :dor_services_url => DOR_SERVIES_URL) once before archiving workflow" if(@@dor_services_url.nil?)
+      def archive_workflow(repo, druid, wf_name, version_num = nil)
+        raise 'Please call Dor::WorkflowService.configure(workflow_service_url, :dor_services_url => DOR_SERVIES_URL) once before archiving workflow' if (@@dor_services_url.nil?)
 
         dor_services = RestClient::Resource.new(@@dor_services_url)
         url = "/v1/objects/#{druid}/workflows/#{wf_name}/archive"
-        url << "/#{version_num}" if(version_num)
+        url << "/#{version_num}" if (version_num)
         dor_services[url].post ''
       end
 
@@ -404,9 +404,9 @@ module Dor
       # @param [Boolean] create_accession_wf Option to create accessionWF when closing a version.  Defaults to true
       def close_version(repo, druid, create_accession_wf = true)
         uri = "#{repo}/objects/#{druid}/versionClose"
-        uri << "?create-accession=false" unless create_accession_wf
+        uri << '?create-accession=false' unless create_accession_wf
         workflow_resource[uri].post ''
-        return true
+        true
       end
 
       # Returns all the distinct laneIds for a given workflow step
@@ -424,7 +424,7 @@ module Dor
 
       # @return [RestClient::Resource] the REST client resource
       def workflow_resource
-        raise "Please call Dor::WorkflowService.configure(url) once before calling any WorkflowService methods" if(@@resource.nil?)
+        raise 'Please call Dor::WorkflowService.configure(url) once before calling any WorkflowService methods' if (@@resource.nil?)
         @@resource
       end
 
@@ -438,7 +438,7 @@ module Dor
       # @option opts [String] :client_key_file path to an SSL key file (deprecated)
       # @option opts [String] :client_key_pass password for the key file (deprecated)
       # @return [RestClient::Resource] the REST client resource
-      def configure(url, opts={})
+      def configure(url, opts = {})
         params = {}
         params[:timeout] = opts[:timeout] if opts[:timeout]
         @@dor_services_url = opts[:dor_services_url] if opts[:dor_services_url]
@@ -485,7 +485,7 @@ module Dor
         uri_string = "workflow_queue?repository=#{repo}&workflow=#{workflow}&#{type}=#{step}"
         resp = @workflow_resource[uri_string].get
         node = Nokogiri::XML(resp).at_xpath('/objects')
-        raise "Unable to determine count from response" if node.nil?
+        raise 'Unable to determine count from response' if node.nil?
         node['count'].to_i
       end
 
