@@ -1,3 +1,5 @@
+language: ruby
+sudo: false
 notifications:
   email: false
 
