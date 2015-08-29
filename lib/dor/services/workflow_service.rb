@@ -475,7 +475,7 @@ module Dor
 
       def count_objects_in_step(workflow, step, type, repo)
         uri_string = "workflow_queue?repository=#{repo}&workflow=#{workflow}&#{type}=#{step}"
-        resp = @workflow_resource[uri_string].get
+        resp = workflow_resource[uri_string].get
         node = Nokogiri::XML(resp).at_xpath('/objects')
         raise 'Unable to determine count from response' if node.nil?
         node['count'].to_i
