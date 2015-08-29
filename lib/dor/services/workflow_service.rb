@@ -32,8 +32,11 @@ module Dor
       def create_workflow(repo, druid, workflow_name, wf_xml, opts = {:create_ds => true})
         lane_id = opts.fetch(:lane_id, 'default')
         xml = add_lane_id_to_workflow_xml(lane_id, wf_xml)
-        workflow_resource["#{repo}/objects/#{druid}/workflows/#{workflow_name}"].put(xml, :content_type => 'application/xml',
-                                                                                     :params => {'create-ds' => opts[:create_ds] })
+        workflow_resource["#{repo}/objects/#{druid}/workflows/#{workflow_name}"].put(
+          xml,
+          :content_type => 'application/xml',
+          :params       => { 'create-ds' => opts[:create_ds] }
+        )
         true
       end
 
@@ -80,10 +83,9 @@ module Dor
       def get_workflow_status(repo, druid, workflow, process)
         workflow_md = get_workflow_xml(repo, druid, workflow)
         doc = Nokogiri::XML(workflow_md)
-        raise Exception.new("Unable to parse response:\n#{workflow_md}") if (doc.root.nil?)
-
+        raise Exception.new("Unable to parse response:\n#{workflow_md}") if doc.root.nil?
         status = doc.root.at_xpath("//process[@name='#{process}']/@status")
-        status=status.content if status
+        status = status.content if status
         status
       end
 
@@ -101,13 +103,13 @@ module Dor
       # This method only works when this gem is used in a project that is configured to connect to DOR
       #
       # @param [String] pid of druid
-      # @param [String] repo repository for the object. Defaults to 'dor'
+      # @param [String] repo repository for the object
       # @return [Array<String>] list of worklows
       # @example
       #   Dor::WorkflowService.get_workflows('druid:sr100hp0609')
       #   => ["accessionWF", "assemblyWF", "disseminationWF"]
       def get_workflows(pid, repo = 'dor')
-        xml_doc=Nokogiri::XML(get_workflow_xml(repo, pid, ''))
+        xml_doc = Nokogiri::XML(get_workflow_xml(repo, pid, ''))
         xml_doc.xpath('//workflow').collect {|workflow| workflow['id']}
       end
 
@@ -174,7 +176,6 @@ module Dor
         doc = query_lifecycle(repo, druid)
         milestone = doc.at_xpath("//lifecycle/milestone[text() = '#{milestone}']")
         return Time.parse(milestone['date']) if milestone
-
         nil
       end
 
@@ -193,7 +194,6 @@ module Dor
         doc = query_lifecycle(repo, druid, true)
         milestone = doc.at_xpath("//lifecycle/milestone[text() = '#{milestone}']")
         return Time.parse(milestone['date']) if milestone
-
         nil
       end
 
@@ -208,16 +208,13 @@ module Dor
       # Converts repo-workflow-step into repo:workflow:step
       # @param [String] default_repository
       # @param [String] default_workflow
-      # @param [String] step if contains colon :, then uses
-      #   the value for workflow and/or workflow/repository.
-      #   for example, jp2-create, or assemblyWF:jp2-create,
-      #   or dor:assemblyWF:jp2-create
+      # @param [String] step if contains colon :, then the value for workflow and/or workflow/repository. For example: 'jp2-create', 'assemblyWF:jp2-create' or 'dor:assemblyWF:jp2-create'
       # @return [String] repo:workflow:step
       # @example
       #   dor:assemblyWF:jp2-create
       def qualify_step(default_repository, default_workflow, step)
         current = step.split(/:/, 3)
-        current.unshift(default_workflow) if current.length < 3
+        current.unshift(default_workflow)   if current.length < 3
         current.unshift(default_repository) if current.length < 3
         current.join(':')
       end
@@ -259,17 +256,14 @@ module Dor
       def get_objects_for_workstep(completed, waiting, lane_id = 'default', options = {})
         waiting_param = qualify_step(options[:default_repository], options[:default_workflow], waiting)
         uri_string = "workflow_queue?waiting=#{waiting_param}"
-        if (completed)
+        if completed
           Array(completed).each do |step|
             completed_param = qualify_step(options[:default_repository], options[:default_workflow], step)
             uri_string << "&completed=#{completed_param}"
           end
         end
 
-        if options[:limit] && options[:limit].to_i > 0
-          uri_string << "&limit=#{options[:limit].to_i}"
-        end
-
+        uri_string << "&limit=#{options[:limit].to_i}"  if options[:limit] && options[:limit].to_i > 0
         uri_string << "&lane-id=#{lane_id}"
 
         workflow_resource.options[:timeout] = 5 * 60 unless (workflow_resource.options.include?(:timeout))
@@ -360,6 +354,7 @@ module Dor
         doc.at_xpath('/objects/@count').value.to_i
       end
 
+      # @param [Hash] params
       # @return [String]
       def create_process_xml(params)
         builder = Nokogiri::XML::Builder.new do |xml|
@@ -386,11 +381,10 @@ module Dor
       end
 
       def archive_workflow(repo, druid, wf_name, version_num = nil)
-        raise 'Please call Dor::WorkflowService.configure(workflow_service_url, :dor_services_url => DOR_SERVIES_URL) once before archiving workflow' if (@@dor_services_url.nil?)
-
+        raise 'Please call Dor::WorkflowService.configure(workflow_service_url, :dor_services_url => DOR_SERVIES_URL) once before archiving workflow' if @@dor_services_url.nil?
         dor_services = RestClient::Resource.new(@@dor_services_url)
         url = "/v1/objects/#{druid}/workflows/#{wf_name}/archive"
-        url << "/#{version_num}" if (version_num)
+        url << "/#{version_num}" if version_num
         dor_services[url].post ''
       end
 
@@ -422,9 +416,9 @@ module Dor
         nodes.map {|n| n['id']}
       end
 
-      # @return [RestClient::Resource] the REST client resource
+      # @return [RestClient::Resource] the REST client resource created during configure()
       def workflow_resource
-        raise 'Please call Dor::WorkflowService.configure(url) once before calling any WorkflowService methods' if (@@resource.nil?)
+        raise 'Please call Dor::WorkflowService.configure(url) once before calling any WorkflowService methods' if @@resource.nil?
         @@resource
       end
 
@@ -440,7 +434,7 @@ module Dor
       # @return [RestClient::Resource] the REST client resource
       def configure(url, opts = {})
         params = {}
-        params[:timeout] = opts[:timeout] if opts[:timeout]
+        params[:timeout]   = opts[:timeout] if opts[:timeout]
         @@dor_services_url = opts[:dor_services_url] if opts[:dor_services_url]
         #params[:ssl_client_cert] = OpenSSL::X509::Certificate.new(File.read(opts[:client_cert_file])) if opts[:client_cert_file]
         #params[:ssl_client_key]  = OpenSSL::PKey::RSA.new(File.read(opts[:client_key_file]), opts[:client_key_pass]) if opts[:client_key_file]
@@ -452,22 +446,20 @@ module Dor
       def build_queued_uri(repository, opts = {})
         uri_string = "workflow_queue/all_queued?repository=#{repository}"
         uri_string << "&hours-ago=#{opts[:hours_ago]}" if opts[:hours_ago]
-        uri_string << "&limit=#{opts[:limit]}" if opts[:limit]
+        uri_string << "&limit=#{opts[:limit]}"         if opts[:limit]
         uri_string
       end
 
       def parse_queued_workflows_response(xml)
-        res = []
         doc = Nokogiri::XML(xml)
-        doc.xpath('/workflows/workflow').each do |wf_node|
-          wf = {}
-          wf[:workflow] = wf_node['name']
-          wf[:step]     = wf_node['process']
-          wf[:druid]    = wf_node['druid']
-          wf[:lane_id] = wf_node['laneId']
-          res << wf
+        doc.xpath('/workflows/workflow').collect do |wf_node|
+          {
+            :workflow => wf_node['name'],
+            :step     => wf_node['process'],
+            :druid    => wf_node['druid'],
+            :lane_id  => wf_node['laneId']
+          }
         end
-        res
       end
 
       # Adds laneId attributes to each process of workflow xml
