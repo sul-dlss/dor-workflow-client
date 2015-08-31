@@ -4,5 +4,5 @@ source 'https://rubygems.org'
 gemspec
 
 group :development do
-  gem "debugger", :platform => :ruby_19
+  gem 'debugger', :platform => :ruby_19
 end
