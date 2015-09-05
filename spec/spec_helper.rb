@@ -5,9 +5,6 @@ require 'dor-workflow-service'
 require 'equivalent-xml'
 require 'equivalent-xml/rspec_matchers'
 
-Bundler.require(:default, :development)
-
 # RSpec.configure do |conf|
 # end
 
-Rails = Object.new unless defined? Rails
