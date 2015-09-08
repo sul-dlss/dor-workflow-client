@@ -518,6 +518,7 @@ module Dor
       # @return [Object] response from method
       def workflow_resource_method(uri_string, meth = 'get', payload = '', opts = {})
         with_retries(:max_tries => 2, :handler => @@handler, :rescue => workflow_service_exceptions_to_catch) do |attempt|
+          @@logger.info "[Attempt #{attempt}] #{meth} #{workflow_resource.url}/#{uri_string}"
           if %w[get delete].include?(meth)
             workflow_resource[uri_string].send(meth, opts)
           elsif opts.size == 0    # the right number of args allows existing test expect/with statements to continue working

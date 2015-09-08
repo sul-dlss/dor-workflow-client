@@ -3,7 +3,6 @@ require 'spec_helper'
 describe Dor::WorkflowService do
   before :each do
     @logger1 = double('Logger')
-    @logger2 = double('Logger')
     allow(Dor::WorkflowService).to receive(:default_logger).and_return(@logger1)
   end
   describe '#configure' do

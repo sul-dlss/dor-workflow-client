@@ -31,6 +31,8 @@ describe Dor::WorkflowService do
     @mock_logger   = double('Logger')
     allow(@mock_resource).to receive(:[]).and_return(@mock_resource)
     allow(@mock_resource).to receive(:options).and_return( {} )
+    allow(@mock_resource).to receive(:url).and_return( 'https://dortest.stanford.edu/workflow' )
+    allow(@mock_logger).to receive(:info)
     allow(RestClient::Resource).to receive(:new).and_return(@mock_resource)
     allow(Dor::WorkflowService).to receive(:default_logger).and_return(@mock_logger)
     Dor::WorkflowService.configure 'https://dortest.stanford.edu/workflow'
