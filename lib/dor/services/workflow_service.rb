@@ -2,13 +2,24 @@ require 'rest-client'
 require 'active_support'
 require 'active_support/core_ext'
 require 'nokogiri'
+require 'retries'
 
 module Dor
 
-  # Methods to create and update workflow
-  module WorkflowService
+  # TODO: major version revision: change pattern of usage to be normal non-singleton class
+  # TODO: convert @@class_vars to regular attributes
+  # TODO: create normal initalize method, deprecate configure
+  # TODO: hardcoded 'true' returns are dumb, instead return the response object where possible
+  # TODO: VALID_STATUS should be just another attribute w/ default
+  # TODO: allow constructor/initalizer to receive RestClient::Resource object(s), not just URLs (solves SSL/proxy config problem)
+  # TODO: allow constructor/initalizer to receive logger
+
+  # Create and update workflows
+  class WorkflowService
     class << self
 
+      @@handler  = nil
+      @@logger   = nil
       @@resource = nil
       @@dor_services_url = nil
 
@@ -32,11 +43,11 @@ module Dor
       def create_workflow(repo, druid, workflow_name, wf_xml, opts = {:create_ds => true})
         lane_id = opts.fetch(:lane_id, 'default')
         xml = add_lane_id_to_workflow_xml(lane_id, wf_xml)
-        workflow_resource["#{repo}/objects/#{druid}/workflows/#{workflow_name}"].put(
-          xml,
-          :content_type => 'application/xml',
-          :params       => { 'create-ds' => opts[:create_ds] }
-        )
+        workflow_resource_method "#{repo}/objects/#{druid}/workflows/#{workflow_name}", 'put', xml,
+          {
+            :content_type => 'application/xml',
+            :params       => { 'create-ds' => opts[:create_ds] }
+          }
         true
       end
 
@@ -63,19 +74,19 @@ module Dor
       #     <process name=\"convert\" status=\"completed\" />"
       def update_workflow_status(repo, druid, workflow, process, status, opts = {})
         raise ArgumentError, "Unknown status value #{status}" unless VALID_STATUS.include?(status.downcase)
-        opts = {:elapsed => 0, :lifecycle => nil, :note => nil}.merge!(opts)
+        opts = { :elapsed => 0, :lifecycle => nil, :note => nil }.merge!(opts)
         opts[:elapsed] = opts[:elapsed].to_s
         current_status = opts.delete(:current_status)
-        xml = create_process_xml({:name => process, :status => status.downcase}.merge!(opts))
+        xml = create_process_xml({ :name => process, :status => status.downcase }.merge!(opts))
         uri = "#{repo}/objects/#{druid}/workflows/#{workflow}/#{process}"
         uri << "?current-status=#{current_status.downcase}" if current_status
-        workflow_resource[uri].put(xml, :content_type => 'application/xml')
+        workflow_resource_method(uri, 'put', xml, { :content_type => 'application/xml' })
         true
       end
 
       #
       # Retrieves the process status of the given workflow for the given object identifier
-      # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
+      # @param [String] repo The repository the object resides in.  Currently recoginzes "dor" and "sdr".
       # @param [String] druid The id of the object
       # @param [String] workflow The name of the workflow
       # @param [String] process The name of the process step
@@ -91,12 +102,12 @@ module Dor
 
       #
       # Retrieves the raw XML for the given workflow
-      # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
+      # @param [String] repo The repository the object resides in.  Currently recoginzes "dor" and "sdr".
       # @param [String] druid The id of the object
       # @param [String] workflow The name of the workflow
       # @return [String] XML of the workflow
       def get_workflow_xml(repo, druid, workflow)
-        workflow_resource["#{repo}/objects/#{druid}/workflows/#{workflow}"].get
+        workflow_resource_method "#{repo}/objects/#{druid}/workflows/#{workflow}"
       end
 
       # Get workflow names into an array for given PID
@@ -147,7 +158,7 @@ module Dor
       def update_workflow_error_status(repo, druid, workflow, process, error_msg, opts = {})
         opts = {:error_text => nil}.merge!(opts)
         xml = create_process_xml({:name => process, :status => 'error', :errorMessage => error_msg}.merge!(opts))
-        workflow_resource["#{repo}/objects/#{druid}/workflows/#{workflow}/#{process}"].put(xml, :content_type => 'application/xml')
+        workflow_resource_method "#{repo}/objects/#{druid}/workflows/#{workflow}/#{process}", 'put', xml, {:content_type => 'application/xml'}
         true
       end
 
@@ -157,7 +168,7 @@ module Dor
       # @param [String] workflow The name of the workflow to be deleted
       # @return [Boolean] always true
       def delete_workflow(repo, druid, workflow)
-        workflow_resource["#{repo}/objects/#{druid}/workflows/#{workflow}"].delete
+        workflow_resource_method "#{repo}/objects/#{druid}/workflows/#{workflow}", 'delete'
         true
       end
 
@@ -266,8 +277,8 @@ module Dor
         uri_string << "&limit=#{options[:limit].to_i}"  if options[:limit] && options[:limit].to_i > 0
         uri_string << "&lane-id=#{lane_id}"
 
-        workflow_resource.options[:timeout] = 5 * 60 unless (workflow_resource.options.include?(:timeout))
-        resp = workflow_resource[uri_string].get
+        workflow_resource.options[:timeout] = 5 * 60 unless workflow_resource.options.include?(:timeout)
+        resp = workflow_resource_method uri_string
         #
         # response looks like:
         #    <objects count="2">
@@ -294,9 +305,8 @@ module Dor
       #     => {"druid:qd556jq0580"=>"druid:qd556jq0580 - Item error; caused by
       #        #<Rubydora::FedoraInvalidRequest: Error modifying datastream contentMetadata for druid:qd556jq0580. See logger for details>"}
       def get_errored_objects_for_workstep(workflow, step, repository = 'dor')
+        resp = workflow_resource_method "workflow_queue?repository=#{repository}&workflow=#{workflow}&error=#{step}"
         result = {}
-        uri_string = "workflow_queue?repository=#{repository}&workflow=#{workflow}&error=#{step}"
-        resp = workflow_resource[uri_string].get
         Nokogiri::XML(resp).xpath('//object').collect do |node|
           result.merge!(node['id'] => node['errorMessage'])
         end
@@ -336,8 +346,7 @@ module Dor
       #  :workflow, :step, :druid, :lane_id
       def get_stale_queued_workflows(repository, opts = {})
         uri_string = build_queued_uri(repository, opts)
-        xml = workflow_resource[uri_string].get
-        parse_queued_workflows_response xml
+        parse_queued_workflows_response workflow_resource_method(uri_string)
       end
 
       # Returns a count of workflow steps that have a status of 'queued' that have a last-updated timestamp older than the number of hours passed in
@@ -347,10 +356,8 @@ module Dor
       #   meaning you will get all queued workflows
       # @return [Integer] number of stale, queued steps if the :count_only option was set to true
       def count_stale_queued_workflows(repository, opts = {})
-        uri_string = build_queued_uri(repository, opts)
-        uri_string << '&count-only=true'
-        xml = workflow_resource[uri_string].get
-        doc = Nokogiri::XML(xml)
+        uri_string = build_queued_uri(repository, opts) + '&count-only=true'
+        doc = Nokogiri::XML(workflow_resource_method uri_string)
         doc.at_xpath('/objects/@count').value.to_i
       end
 
@@ -369,10 +376,11 @@ module Dor
       def query_lifecycle(repo, druid, active_only = false)
         req = "#{repo}/objects/#{druid}/lifecycle"
         req << '?active-only=true' if active_only
-        lifecycle_xml = workflow_resource[req].get
-        Nokogiri::XML(lifecycle_xml)
+        Nokogiri::XML(workflow_resource_method req)
       end
 
+      # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
+      # @param [String] druid The id of the object to archive the workflows from
       def archive_active_workflow(repo, druid)
         workflows = get_active_workflows(repo, druid)
         workflows.each do |wf|
@@ -380,6 +388,8 @@ module Dor
         end
       end
 
+      # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
+      # @param [String] druid The id of the object to delete the workflow from
       def archive_workflow(repo, druid, wf_name, version_num = nil)
         raise 'Please call Dor::WorkflowService.configure(workflow_service_url, :dor_services_url => DOR_SERVIES_URL) once before archiving workflow' if @@dor_services_url.nil?
         dor_services = RestClient::Resource.new(@@dor_services_url)
@@ -399,7 +409,7 @@ module Dor
       def close_version(repo, druid, create_accession_wf = true)
         uri = "#{repo}/objects/#{druid}/versionClose"
         uri << '?create-accession=false' unless create_accession_wf
-        workflow_resource[uri].post ''
+        workflow_resource_method(uri, 'post', '')
         true
       end
 
@@ -411,22 +421,36 @@ module Dor
       # @return [Array<String>] all of the distinct laneIds.  Array will be empty if no lane ids were found
       def get_lane_ids(repo, workflow, process)
         uri = "workflow_queue/lane_ids?step=#{repo}:#{workflow}:#{process}"
-        doc = Nokogiri::XML(workflow_resource[uri].get)
+        doc = Nokogiri::XML(workflow_resource_method uri)
         nodes = doc.xpath('/lanes/lane')
-        nodes.map {|n| n['id']}
+        nodes.map { |n| n['id'] }
       end
 
+      ### MIMICKING ATTRIBUTE READER
       # @return [RestClient::Resource] the REST client resource created during configure()
       def workflow_resource
         raise 'Please call Dor::WorkflowService.configure(url) once before calling any WorkflowService methods' if @@resource.nil?
         @@resource
       end
 
+      # Among other things, a distinct method helps tests mock default logger
+      # @param [String, IO] logdev The log device. This is a filename (String) or IO object (typically STDOUT, STDERR, or an open file).
+      # @param [String, Integer] shift_age Number of old log files to keep, or frequency of rotation (daily, weekly or monthly).
+      # @return [Logger] default logger object
+      def default_logger(logdev = 'workflow_service.log', shift_age = 'weekly')
+        Logger.new(logdev, shift_age)
+      end
+
+      def workflow_service_exceptions_to_catch
+        [RestClient::Exception]
+      end
+
       # Configure the workflow service
-      #
+      # TODO: replace with initialize
       # @param [String] url points to the workflow service
       # @param [Hash] opts optional params
-      # @option opts [String] :dor_services_uri uri to the DOR REST service
+      # @option opts [Logger] :logger defaults writing to workflow_service.log with weekly rotation
+      # @option opts [String] :dor_services_url uri to the DOR REST service
       # @option opts [Integer] :timeout number of seconds for RestClient timeout
       # @option opts [String] :client_cert_file path to an SSL client certificate (deprecated)
       # @option opts [String] :client_key_file path to an SSL key file (deprecated)
@@ -435,11 +459,16 @@ module Dor
       def configure(url, opts = {})
         params = {}
         params[:timeout]   = opts[:timeout] if opts[:timeout]
+        @@logger           = opts[:logger] || default_logger
         @@dor_services_url = opts[:dor_services_url] if opts[:dor_services_url]
-        #params[:ssl_client_cert] = OpenSSL::X509::Certificate.new(File.read(opts[:client_cert_file])) if opts[:client_cert_file]
-        #params[:ssl_client_key]  = OpenSSL::PKey::RSA.new(File.read(opts[:client_key_file]), opts[:client_key_pass]) if opts[:client_key_file]
+        # params[:ssl_client_cert] = OpenSSL::X509::Certificate.new(File.read(opts[:client_cert_file])) if opts[:client_cert_file]
+        # params[:ssl_client_key]  = OpenSSL::PKey::RSA.new(File.read(opts[:client_key_file]), opts[:client_key_pass]) if opts[:client_key_file]
+        @@handler = Proc.new do |exception, attempt_number, total_delay|
+          @@logger.warn "[Attempt #{attempt_number}] #{exception.class}: #{exception.message}; #{total_delay} seconds elapsed."
+        end
         @@resource = RestClient::Resource.new(url, params)
       end
+
 
       protected
 
@@ -474,11 +503,30 @@ module Dor
       end
 
       def count_objects_in_step(workflow, step, type, repo)
-        uri_string = "workflow_queue?repository=#{repo}&workflow=#{workflow}&#{type}=#{step}"
-        resp = workflow_resource[uri_string].get
+        resp = workflow_resource_method "workflow_queue?repository=#{repo}&workflow=#{workflow}&#{type}=#{step}"
         node = Nokogiri::XML(resp).at_xpath('/objects')
         raise 'Unable to determine count from response' if node.nil?
         node['count'].to_i
+      end
+
+      # calls workflow_resource[uri_string]."#{meth}" with variable number of optional arguments
+      # The point of this is to wrap ALL remote calls with consistent error handling and logging
+      # @param [String] uri_string resource to request
+      # @param [String] meth REST method to use on resource (get, put, post, delete, etc.)
+      # @param [String] payload body for (e.g. put) request
+      # @param [Hash] opts addtional headers options
+      # @return [Object] response from method
+      def workflow_resource_method(uri_string, meth = 'get', payload = '', opts = {})
+        with_retries(:max_tries => 2, :handler => @@handler, :rescue => workflow_service_exceptions_to_catch) do |attempt|
+          @@logger.info "[Attempt #{attempt}] #{meth} #{workflow_resource.url}/#{uri_string}"
+          if %w[get delete].include?(meth)
+            workflow_resource[uri_string].send(meth, opts)
+          elsif opts.size == 0    # the right number of args allows existing test expect/with statements to continue working
+            workflow_resource[uri_string].send(meth, payload)
+          else
+            workflow_resource[uri_string].send(meth, payload, opts)
+          end
+        end
       end
 
     end

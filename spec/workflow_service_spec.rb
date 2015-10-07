@@ -27,12 +27,14 @@ describe Dor::WorkflowService do
   before(:each) do
     @repo  = 'dor'
     @druid = 'druid:123'
-    @mock_logger = double('logger').as_null_object
-    allow(Rails).to receive(:logger).and_return(@mock_logger)
     @mock_resource = double('mock_rest_client_resource')
+    @mock_logger   = double('Logger')
     allow(@mock_resource).to receive(:[]).and_return(@mock_resource)
     allow(@mock_resource).to receive(:options).and_return( {} )
+    allow(@mock_resource).to receive(:url).and_return( 'https://dortest.stanford.edu/workflow' )
+    allow(@mock_logger).to receive(:info)
     allow(RestClient::Resource).to receive(:new).and_return(@mock_resource)
+    allow(Dor::WorkflowService).to receive(:default_logger).and_return(@mock_logger)
     Dor::WorkflowService.configure 'https://dortest.stanford.edu/workflow'
   end
 
@@ -42,10 +44,17 @@ describe Dor::WorkflowService do
       Dor::WorkflowService.create_workflow(@repo, @druid, 'etdSubmitWF', wf_xml)
     end
 
-    it 'should log an error and return false if the PUT to the DOR workflow service throws an exception' do
-      ex = Exception.new('exception thrown')
-      expect(@mock_resource).to receive(:put).and_raise(ex)
-      expect{ Dor::WorkflowService.create_workflow(@repo, @druid, 'etdSubmitWF', wf_xml) }.to raise_error(Exception, 'exception thrown')
+    it 'should log an error and retry upon a targetted RestClient exception, raise on an unexpected Exception' do
+      ex = RestClient::Exception.new(nil, 418)
+      ex.message = "I'm A Teapot"
+      runs = 0
+      expect(@mock_resource).to receive(:put).twice {
+        runs += 1
+        raise ex if runs == 1
+        raise Exception.new('Something Else Happened') if runs == 2
+      }
+      expect(@mock_logger).to receive(:warn).with(/\[Attempt 1\] RestClient::Exception: #{ex.message}/)
+      expect{ Dor::WorkflowService.create_workflow(@repo, @druid, 'etdSubmitWF', wf_xml) }.to raise_error(Exception, 'Something Else Happened')
     end
 
     it 'sets the create-ds param to the value of the passed in options hash' do
