@@ -1,5 +1,7 @@
 require 'spec_helper'
 
+# TODO: intercepting :get without checking URL/params is bogus
+
 describe Dor::WorkflowService do
   let(:wf_xml) { <<-EOXML
     <workflow id="etdSubmitWF">
@@ -345,11 +347,6 @@ describe Dor::WorkflowService do
 
   describe 'protected method' do
     describe '#build_queued_uri' do
-      it 'does something' do
-        skip 'test unimplemented'
-      end
-    end
-    describe '#parse_queued_workflows_response' do
       it 'does something' do
         skip 'test unimplemented'
       end

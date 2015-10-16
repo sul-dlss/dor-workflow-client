@@ -5,10 +5,22 @@ require 'active_support/cache/memory_store'
 require 'nokogiri'
 require 'retries'
 
+# Note: Workflow Service (the Java back-end) does not help us out in our caching attempts:
+#  ~ supply ETags, Pragma or Cache-Control headers
+#  ~ supply Expires, TTL or Last-Modified info
+#  ~ support If-Unmodified-Since, If-Modified-Since, If-None-Match, etc.
+#  ~ URL routes rely on query strings too frequently instead of fully spelling out (sub) resources that might be distinctly cacheable
+#
+#  As a result, we can't use a transparent If-Modified-Since or If-Match layer, like Rack::Cache.
+
 module Dor
   # Create and update workflows
   # yeah, it's big.  it was like that when I got here.  quit nagging me.
   # rubocop:disable Metrics/ClassLength
+
+  # TODO: actually cache stuff, possibly even the parsed nokogiri document objects
+  # TODO: use URI object as key?
+  # TODO: cache invalidation
   class WorkflowService
     attr_accessor :handler, :logger, :resource, :dor_services_url, :valid_statuses, :exceptions_to_catch
     attr_accessor :cache_enabled, :cache
@@ -114,7 +126,7 @@ module Dor
     end
 
     # Same as get_workflow_xml, but returns Nokogiri::XML object
-    # @see get_workflow_xml
+    # @see get_workflow_xml for @params
     # @return [Nokogiri::XML] document
     def get_workflow_ngxml(repo, druid, workflow)
       xml = get_workflow_xml(repo, druid, workflow)
@@ -290,30 +302,24 @@ module Dor
     #     => {"druid:qd556jq0580"=>"druid:qd556jq0580 - Item error; caused by
     #        #<Rubydora::FedoraInvalidRequest: Error modifying datastream contentMetadata for druid:qd556jq0580. See logger for details>"}
     def get_errored_objects_for_workstep(workflow, step, repository = 'dor')
-      resp = workflow_resource_method "workflow_queue?repository=#{repository}&workflow=#{workflow}&error=#{step}"
-      result = {}
-      Nokogiri::XML(resp).xpath('//object').collect do |node|
-        result.merge!(node['id'] => node['errorMessage'])
-      end
-      result
+      # resp = workflow_resource_method "workflow_queue?repository=#{repository}&workflow=#{workflow}&error=#{step}"
+      doc = objects_in_step_ngxml(repository, workflow, 'error', step)
+      Hash[ doc.xpath('//object').collect { |node| [node['id'] => node['errorMessage']] } ]
     end
 
     # Returns the number of objects that have a status of 'error' in a particular workflow and step
-    # @param [String] workflow name
-    # @param [String] step name
-    # @param [String] repository
+    # @param [String] workflow name, e.g. 'accessionWF'
+    # @param [String] step name, e.g. 'content-metadata'
+    # @param [String] repository, e.g. 'dor'
     # @return [Integer] Number of objects with this repository:workflow:step that have a status of 'error'
     def count_errored_for_workstep(workflow, step, repository = 'dor')
-      count_objects_in_step(workflow, step, repository, 'error')
+      count_objects_in_step(repository, workflow, 'error', step)
     end
 
     # Returns the number of objects that have a status of 'queued' in a particular workflow and step
-    # @param [String] workflow name
-    # @param [String] step name
-    # @param [String] repository
-    # @return [Integer] Number of objects with this repository:workflow:step that have a status of 'queued'
+    # @see count_errored_for_workstep for params and return
     def count_queued_for_workstep(workflow, step, repository = 'dor')
-      count_objects_in_step(workflow, step, repository, 'queued')
+      count_objects_in_step(repository, workflow, 'queued', step)
     end
 
     # Gets all of the workflow steps that have a status of 'queued' that have a last-updated timestamp older than the number of hours passed in
@@ -325,7 +331,14 @@ module Dor
     # @return [Array[Hash]] each Hash represents a workflow step, including the following keys: :workflow, :step, :druid, :lane_id
     def get_stale_queued_workflows(repository, opts = {})
       uri_string = build_queued_uri(repository, opts)
-      parse_queued_workflows_response workflow_resource_method(uri_string)
+      Nokogiri::XML(workflow_resource_method(uri_string)).xpath('/workflows/workflow').collect do |wf_node|
+        {
+          :workflow => wf_node['name'],
+          :step     => wf_node['process'],
+          :druid    => wf_node['druid'],
+          :lane_id  => wf_node['laneId']
+        }
+      end
     end
 
     # Returns a count of workflow steps that have a status of 'queued' that have a last-updated timestamp older than the number of hours passed in
@@ -363,6 +376,7 @@ module Dor
       get_active_workflows(repo, druid).each { |wf| archive_workflow(repo, druid, wf) }
     end
 
+    # Note: hits a totally different RestClient::Resource host that the rest of this class
     # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr"
     # @param [String] druid The id of the object to delete the workflow from
     def archive_workflow(repo, druid, wf_name, version_num = nil)
@@ -398,6 +412,7 @@ module Dor
 
     protected
 
+    # @return [String] URI
     def build_queued_uri(repository, opts = {})
       uri_string = "workflow_queue/all_queued?repository=#{repository}"
       uri_string << "&hours-ago=#{opts[:hours_ago]}" if opts[:hours_ago]
@@ -405,22 +420,14 @@ module Dor
       uri_string
     end
 
-    def parse_queued_workflows_response(xml)
-      doc = Nokogiri::XML(xml)
-      doc.xpath('/workflows/workflow').collect do |wf_node|
-        {
-          :workflow => wf_node['name'],
-          :step     => wf_node['process'],
-          :druid    => wf_node['druid'],
-          :lane_id  => wf_node['laneId']
-        }
-      end
+    def objects_in_step_ngxml(repo, workflow, key, value)
+      resp = workflow_resource_method "workflow_queue?repository=#{repo}&workflow=#{workflow}&#{key}=#{value}"
+      Nokogiri::XML(resp).at_xpath('/objects')
     end
 
-    def count_objects_in_step(workflow, step, type, repo)
-      resp = workflow_resource_method "workflow_queue?repository=#{repo}&workflow=#{workflow}&#{type}=#{step}"
-      node = Nokogiri::XML(resp).at_xpath('/objects')
-      raise 'Unable to determine count from response' if node.nil?
+    def count_objects_in_step(repo, workflow, key, value)
+      node = objects_in_step_ngxml(repo, workflow, key, value)
+      raise 'Unable to determine count from response' if node.nil? || node.root.nil?
       node['count'].to_i
     end
 
