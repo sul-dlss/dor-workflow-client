@@ -3,6 +3,8 @@ require 'active_support'
 require 'active_support/core_ext'
 require 'nokogiri'
 require 'retries'
+require 'faraday'
+require 'net/http/persistent'
 
 module Dor
 
@@ -22,6 +24,7 @@ module Dor
       @@logger   = nil
       @@resource = nil
       @@dor_services_url = nil
+      @@http_conn = nil
 
       # From Workflow Service's admin/Process.java
       VALID_STATUS = %w{waiting completed error queued skipped hold}
@@ -467,6 +470,10 @@ module Dor
           @@logger.warn "[Attempt #{attempt_number}] #{exception.class}: #{exception.message}; #{total_delay} seconds elapsed."
         end
         @@resource = RestClient::Resource.new(url, params)
+        @@http_conn = Faraday.new(url: url) do |faraday|
+          faraday.response :logger if opts[:debug] # logs to STDOUT
+          faraday.adapter  :net_http_persistent    # use Keep-Alive connections
+        end
       end
 
 
@@ -519,7 +526,11 @@ module Dor
       def workflow_resource_method(uri_string, meth = 'get', payload = '', opts = {})
         with_retries(:max_tries => 2, :handler => @@handler, :rescue => workflow_service_exceptions_to_catch) do |attempt|
           @@logger.info "[Attempt #{attempt}] #{meth} #{workflow_resource.url}/#{uri_string}"
-          if %w[get delete].include?(meth)
+          if meth == 'get'
+            fail NotImplementedError, "GET does not support extra headers: #{opts}" unless opts.length == 0
+            @@logger.debug "Persistent HTTP GET #{uri_string} (#{@@http_conn.inspect})"
+            @@http_conn.get(uri_string).body
+          elsif meth == 'delete'
             workflow_resource[uri_string].send(meth, opts)
           elsif opts.size == 0    # the right number of args allows existing test expect/with statements to continue working
             workflow_resource[uri_string].send(meth, payload)
