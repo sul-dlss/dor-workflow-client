@@ -8,18 +8,36 @@ https://consul.stanford.edu/display/DOR/DOR+services#DORservices-initializeworkf
 
 ## Usage
 
-To initialize usage of the service, you need to call `Dor::WorkflowService.configure`, like in a bootup or startup method,
-e.g.:
+As of version `2.x`, you should initialize a `Dor::WorkflowService` object in your application configuration, i.e. in a bootup or startup method like:
 
 ```ruby
-Dor::WorkflowService.configure('https://test-server.edu/workflow/')
+wfs = Dor::WorkflowService.new('https://test-server.edu/workflow/')
 ```
 
 If you plan to archive workflows, then you need to set the URL to the Dor REST service:
 
 ```ruby
-Dor::WorkflowService.configure('https://test-server.edu/workflow/', :dor_services_url => 'https://sul-lyberservices-dev.stanford.edu/dor')
+wfs = Dor::WorkflowService.new('https://test-server.edu/workflow/', :dor_services_url => 'https://sul-lyberservices-dev.stanford.edu/dor')
 ```
 
-There's no need to call `Dor::WorkflowService.configure` if using the `dor-services` gem and using the `Dor::Config`
- object.  The latest versions of `dor-services` will configure the workflow service for you.
+Consumers of recent versions of the [dor-services](https://github.com/sul-dlss/dor-services) gem can access the configured `Dor::WorkflowService` object via `Dor::Config`.
+
+## Underlying Clients
+
+This gem currently uses the [Faraday](https://github.com/lostisland/faraday) HTTP client to access the back-end service.  The clients be accessed directly from your `Dor::WorkflowService` object:
+
+```ruby
+wfs.workflow_resource # the Faraday object
+```
+
+Or for advanced configurations, ONE of them (not both) can be passed to the constructor instead of the raw URL string:
+
+```ruby
+conn = Faraday.new(:url => 'http://sushi.com') do |faraday|
+  faraday.request  :url_encoded             # form-encode POST params
+  faraday.response :logger                  # log requests to STDOUT
+  faraday.adapter  Faraday.default_adapter  # make requests with Net::HTTP
+end
+wfs = Dor::WorkflowService.new(conn)
+```
+
