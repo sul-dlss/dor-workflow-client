@@ -78,7 +78,7 @@ describe Dor::WorkflowService do
           <process name="start-accession" status="waiting" laneId="lane1"/>
         </workflow>
       XML
-      expect(@mock_resource).to receive(:put) do |arg1, whatever|
+      expect(@mock_resource).to receive(:put) do |arg1, _whatever|
         expect(arg1).to be_equivalent_to(expected)
       end
       @dwfs.create_workflow(@repo, @druid, 'etdSubmitWF', wf_xml, :lane_id => 'lane1')

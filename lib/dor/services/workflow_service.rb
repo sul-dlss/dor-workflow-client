@@ -346,7 +346,7 @@ module Dor
     # @return [String] XML
     def create_process_xml(params)
       builder = Nokogiri::XML::Builder.new do |xml|
-        attrs = params.reject { |k, v| v.nil? }
+        attrs = params.reject { |_k, v| v.nil? }
         attrs = Hash[ attrs.map {|k, v| [k.to_s.camelize(:lower), v]}] # camelize all the keys in the attrs hash
         xml.process(attrs)
       end
@@ -363,12 +363,13 @@ module Dor
     # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr"
     # @param [String] druid The id of the object to archive the workflows from
     def archive_active_workflow(repo, druid)
-      get_active_workflows(repo, druid).each { |wf| archive_workflow(repo, druid, wf) }
+      get_active_workflows(repo, druid).each { |wf| archive_workflow(druid, wf) }
     end
 
-    # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr"
     # @param [String] druid The id of the object to delete the workflow from
-    def archive_workflow(repo, druid, wf_name, version_num = nil)
+    # @param [String] wf_name Workflow name
+    # @param [Integer] version_num Version number to be posted
+    def archive_workflow(druid, wf_name, version_num = nil)
       raise 'Initialization like Dor::WorkflowService.new(workflow_service_url, :dor_services_url => DOR_SERVIES_URL) required before archiving workflow' if @dor_services_url.nil?
       dor_services = RestClient::Resource.new(@dor_services_url)
       url = "/v1/objects/#{druid}/workflows/#{wf_name}/archive"
