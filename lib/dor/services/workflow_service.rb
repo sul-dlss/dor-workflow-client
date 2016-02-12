@@ -1,10 +1,8 @@
-require 'rest-client'
 require 'active_support'
 require 'active_support/core_ext'
 require 'nokogiri'
 require 'retries'
 require 'faraday'
-require 'net/http/persistent'
 
 module Dor
 
@@ -13,7 +11,7 @@ module Dor
   # TODO: create normal initalize method, deprecate configure
   # TODO: hardcoded 'true' returns are dumb, instead return the response object where possible
   # TODO: VALID_STATUS should be just another attribute w/ default
-  # TODO: allow constructor/initalizer to receive RestClient::Resource object(s), not just URLs (solves SSL/proxy config problem)
+  # TODO: allow constructor/initalizer to receive Faraday object(s), not just URLs (solves SSL/proxy config problem)
   # TODO: allow constructor/initalizer to receive logger
 
   # Create and update workflows
@@ -280,7 +278,6 @@ module Dor
         uri_string << "&limit=#{options[:limit].to_i}"  if options[:limit] && options[:limit].to_i > 0
         uri_string << "&lane-id=#{lane_id}"
 
-        workflow_resource.options[:timeout] = 5 * 60 unless workflow_resource.options.include?(:timeout)
         resp = workflow_resource_method uri_string
         #
         # response looks like:
@@ -395,10 +392,9 @@ module Dor
       # @param [String] druid The id of the object to delete the workflow from
       def archive_workflow(repo, druid, wf_name, version_num = nil)
         raise 'Please call Dor::WorkflowService.configure(workflow_service_url, :dor_services_url => DOR_SERVIES_URL) once before archiving workflow' if @@dor_services_url.nil?
-        dor_services = RestClient::Resource.new(@@dor_services_url)
         url = "/v1/objects/#{druid}/workflows/#{wf_name}/archive"
         url << "/#{version_num}" if version_num
-        dor_services[url].post ''
+        workflow_resource_method(url, 'post', '')
       end
 
       # Calls the versionClose endpoint of the WorkflowService:
@@ -430,10 +426,10 @@ module Dor
       end
 
       ### MIMICKING ATTRIBUTE READER
-      # @return [RestClient::Resource] the REST client resource created during configure()
+      # @return [Faraday::Connection] the REST client resource created during configure()
       def workflow_resource
-        raise 'Please call Dor::WorkflowService.configure(url) once before calling any WorkflowService methods' if @@resource.nil?
-        @@resource
+        raise 'Please call Dor::WorkflowService.configure(url) once before calling any WorkflowService methods' if @@http_conn.nil?
+        @@http_conn
       end
 
       # Among other things, a distinct method helps tests mock default logger
@@ -445,7 +441,7 @@ module Dor
       end
 
       def workflow_service_exceptions_to_catch
-        [RestClient::Exception]
+        [Faraday::Error]
       end
 
       # Configure the workflow service
@@ -454,14 +450,12 @@ module Dor
       # @param [Hash] opts optional params
       # @option opts [Logger] :logger defaults writing to workflow_service.log with weekly rotation
       # @option opts [String] :dor_services_url uri to the DOR REST service
-      # @option opts [Integer] :timeout number of seconds for RestClient timeout
+      # @option opts [Integer] :timeout number of seconds for HTTP timeout
       # @option opts [String] :client_cert_file path to an SSL client certificate (deprecated)
       # @option opts [String] :client_key_file path to an SSL key file (deprecated)
       # @option opts [String] :client_key_pass password for the key file (deprecated)
-      # @return [RestClient::Resource] the REST client resource
-      def configure(url, opts = {})
-        params = {}
-        params[:timeout]   = opts[:timeout] if opts[:timeout]
+      # @return [Faraday::Connection] the REST client resource
+      def configure(url_or_connection, opts = {})
         @@logger           = opts[:logger] || default_logger
         @@dor_services_url = opts[:dor_services_url] if opts[:dor_services_url]
         # params[:ssl_client_cert] = OpenSSL::X509::Certificate.new(File.read(opts[:client_cert_file])) if opts[:client_cert_file]
@@ -469,11 +463,19 @@ module Dor
         @@handler = Proc.new do |exception, attempt_number, total_delay|
           @@logger.warn "[Attempt #{attempt_number}] #{exception.class}: #{exception.message}; #{total_delay} seconds elapsed."
         end
-        @@resource = RestClient::Resource.new(url, params)
-        @@http_conn = Faraday.new(url: url) do |faraday|
-          faraday.response :logger if opts[:debug] # logs to STDOUT
-          faraday.adapter  :net_http_persistent    # use Keep-Alive connections
-        end
+        @@http_conn = case url_or_connection
+                      when String
+                        Faraday.new(url: url_or_connection) do |faraday|
+                          faraday.response :logger if opts[:debug] # logs to STDOUT
+                          faraday.adapter  :net_http_persistent    # use Keep-Alive connections
+                          if opts.key? :timeout
+                            faraday.options.timeout = opts[:timeout]
+                            faraday.options.open_timeout = opts[:timeout]
+                          end
+                        end
+                      else
+                        url_or_connection
+                      end
       end
 
 
@@ -528,14 +530,12 @@ module Dor
           @@logger.info "[Attempt #{attempt}] #{meth} #{workflow_resource.url}/#{uri_string}"
           if meth == 'get'
             fail NotImplementedError, "GET does not support extra headers: #{opts}" unless opts.length == 0
-            @@logger.debug "Persistent HTTP GET #{uri_string} (#{@@http_conn.inspect})"
-            @@http_conn.get(uri_string).body
+            @@logger.debug "Persistent HTTP GET #{uri_string} (#{workflow_resource.inspect})"
+            workflow_resource.get(uri_string).body
           elsif meth == 'delete'
-            workflow_resource[uri_string].send(meth, opts)
-          elsif opts.size == 0    # the right number of args allows existing test expect/with statements to continue working
-            workflow_resource[uri_string].send(meth, payload)
+            workflow_resource.delete uri_string, opts
           else
-            workflow_resource[uri_string].send(meth, payload, opts)
+            workflow_resource.send(meth, uri_string, payload, opts)
           end
         end
       end
