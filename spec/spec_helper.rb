@@ -7,4 +7,3 @@ require 'equivalent-xml/rspec_matchers'
 
 # RSpec.configure do |conf|
 # end
-
