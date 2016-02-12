@@ -27,45 +27,39 @@ describe Dor::WorkflowService do
   before(:each) do
     @repo  = 'dor'
     @druid = 'druid:123'
-    @mock_resource = double('mock_rest_client_resource')
-    @mock_http_connection = double('mock_http_connection')
+    @mock_http_connection = double('mock_http_connection', url: 'http://example.com/')
     @mock_logger = double('Logger')
 
     allow(@mock_logger).to receive(:info)  # silence log output
     allow(@mock_logger).to receive(:debug) # silence log output
     allow(Dor::WorkflowService).to receive(:default_logger).and_return(@mock_logger)
 
-    allow(@mock_resource).to receive(:[]).and_return(@mock_resource)
-    allow(@mock_resource).to receive(:options).and_return( {} )
-    allow(@mock_resource).to receive(:url).and_return( 'https://localhost/workflow' )
-
     allow(Faraday).to receive(:new).and_return(@mock_http_connection)
 
-    allow(RestClient::Resource).to receive(:new).and_return(@mock_resource)
-    Dor::WorkflowService.configure @mock_resource.url
+    Dor::WorkflowService.configure @mock_http_connection.url
   end
 
   describe '#create_workflow' do
+    let(:url) { "#{@repo}/objects/#{@druid}/workflows/etdSubmitWF" }
     it 'should pass workflow xml to the DOR workflow service and return the URL to the workflow' do
-      expect(@mock_resource).to receive(:put).with(wf_xml_label, anything).and_return('')
+      expect(Dor::WorkflowService.workflow_resource).to receive(:put).with(url, wf_xml_label, anything).and_return('')
       Dor::WorkflowService.create_workflow(@repo, @druid, 'etdSubmitWF', wf_xml)
     end
 
-    it 'should log an error and retry upon a targetted RestClient exception, raise on an unexpected Exception' do
-      ex = RestClient::Exception.new(nil, 418)
-      ex.message = "I'm A Teapot"
+    it 'should log an error and retry upon a targetted Faraday exception, raise on an unexpected Exception' do
+      ex = Faraday::ClientError.new(418, "I'm A Teapot")
       runs = 0
-      expect(@mock_resource).to receive(:put).twice {
+      expect(@mock_http_connection).to receive(:put).twice {
         runs += 1
         raise ex if runs == 1
         raise Exception.new('Something Else Happened') if runs == 2
       }
-      expect(@mock_logger).to receive(:warn).with(/\[Attempt 1\] RestClient::Exception: #{ex.message}/)
+      expect(@mock_logger).to receive(:warn).with(/\[Attempt 1\] Faraday::ClientError: #{ex.message}/)
       expect{ Dor::WorkflowService.create_workflow(@repo, @druid, 'etdSubmitWF', wf_xml) }.to raise_error(Exception, 'Something Else Happened')
     end
 
     it 'sets the create-ds param to the value of the passed in options hash' do
-      expect(@mock_resource).to receive(:put).with(wf_xml_label, :content_type => 'application/xml',
+      expect(@mock_http_connection).to receive(:put).with(url, wf_xml_label, :content_type => 'application/xml',
                                                 :params => {'create-ds' => false}).and_return('')
       Dor::WorkflowService.create_workflow(@repo, @druid, 'etdSubmitWF', wf_xml, :create_ds => false)
     end
@@ -95,33 +89,36 @@ describe Dor::WorkflowService do
       @xml_re = /name="reader-approval"/
     end
 
+    let(:url) { "#{@repo}/objects/#{@druid}/workflows/etdSubmitWF/reader-approval" }
+
     it 'should update workflow status and return true if successful' do
       built_xml = "<?xml version=\"1.0\"?>\n<process name=\"reader-approval\" status=\"completed\" elapsed=\"0\" note=\"annotation\" version=\"2\" laneId=\"lane2\"/>\n"
-      expect(@mock_resource).to receive(:put).with(built_xml, { :content_type => 'application/xml' }).and_return('')
+      expect(@mock_http_connection).to receive(:put).with(url, built_xml, { :content_type => 'application/xml' }).and_return('')
       expect(Dor::WorkflowService.update_workflow_status(@repo, @druid, 'etdSubmitWF', 'reader-approval', 'completed', :version => 2, :note => 'annotation', :lane_id => 'lane2')).to be true
     end
 
     it 'should return false if the PUT to the DOR workflow service throws an exception' do
       ex = Exception.new('exception thrown')
-      expect(@mock_resource).to receive(:put).with(@xml_re, { :content_type => 'application/xml' }).and_raise(ex)
+      expect(@mock_http_connection).to receive(:put).with(url, @xml_re, { :content_type => 'application/xml' }).and_raise(ex)
       expect{ Dor::WorkflowService.update_workflow_status(@repo, @druid, 'etdSubmitWF', 'reader-approval', 'completed') }.to raise_error(Exception, 'exception thrown')
     end
 
     it 'performs a conditional update when current-status is passed as a parameter' do
-      expect(@mock_resource).to receive(:[]).with('dor/objects/druid:123/workflows/etdSubmitWF/reader-approval?current-status=queued')
-      expect(@mock_resource).to receive(:put).with(@xml_re, { :content_type => 'application/xml' }).and_return('')
+      expect(@mock_http_connection).to receive(:put).with("#{url}?current-status=queued", @xml_re, { :content_type => 'application/xml' }).and_return('')
       expect(Dor::WorkflowService.update_workflow_status(@repo, @druid, 'etdSubmitWF', 'reader-approval', 'completed', :version => 2, :note => 'annotation', :lane_id => 'lane1', :current_status => 'queued')).to be true
     end
   end
 
   describe '#update_workflow_error_status' do
+    let(:url) { "#{@repo}/objects/#{@druid}/workflows/etdSubmitWF/reader-approval" }
+
     it 'should update workflow status to error and return true if successful' do
-      expect(@mock_resource).to receive(:put).with(/status="error" errorMessage="Some exception" errorText="The optional stacktrace"/, { :content_type => 'application/xml' }).and_return('')
+      expect(@mock_http_connection).to receive(:put).with(url, /status="error" errorMessage="Some exception" errorText="The optional stacktrace"/, { :content_type => 'application/xml' }).and_return('')
       Dor::WorkflowService.update_workflow_error_status(@repo, @druid, 'etdSubmitWF', 'reader-approval', 'Some exception', :error_text =>'The optional stacktrace')
     end
     it 'should return false if the PUT to the DOR workflow service throws an exception' do
       ex = Exception.new('exception thrown')
-      expect(@mock_resource).to receive(:put).with(/status="completed"/, { :content_type => 'application/xml' }).and_raise(ex)
+      expect(@mock_http_connection).to receive(:put).with(url, /status="completed"/, { :content_type => 'application/xml' }).and_raise(ex)
       expect{ Dor::WorkflowService.update_workflow_status(@repo, @druid, 'etdSubmitWF', 'reader-approval', 'completed') }.to raise_error(Exception, 'exception thrown')
     end
   end
@@ -262,9 +259,10 @@ describe Dor::WorkflowService do
   end
 
   describe '#delete_workflow' do
+    let(:url) { "#{@repo}/objects/#{@druid}/workflows/accessionWF" }
+
     it 'sends a delete request to the workflow service' do
-      expect(@mock_resource).to receive(:[]).with("#{@repo}/objects/#{@druid}/workflows/accessionWF")
-      expect(@mock_resource).to receive(:delete)
+      expect(@mock_http_connection).to receive(:delete).with(url, {})
       Dor::WorkflowService.delete_workflow(@repo, @druid, 'accessionWF')
     end
   end
@@ -298,15 +296,14 @@ describe Dor::WorkflowService do
   end
 
   describe '#close_version' do
+    let(:url) { 'dor/objects/druid:123/versionClose' }
     it 'calls the versionClose endpoint with druid' do
-      expect(@mock_resource).to receive(:[]).with('dor/objects/druid:123/versionClose').and_return(@mock_resource)
-      expect(@mock_resource).to receive(:post).with('').and_return('')
+      expect(@mock_http_connection).to receive(:post).with(url, '', {}).and_return('')
       Dor::WorkflowService.close_version(@repo, @druid)
     end
 
     it 'optionally prevents creation of accessionWF' do
-      expect(@mock_resource).to receive(:[]).with('dor/objects/druid:123/versionClose?create-accession=false').and_return(@mock_resource)
-      expect(@mock_resource).to receive(:post).with('').and_return('')
+      expect(@mock_http_connection).to receive(:post).with("#{url}?create-accession=false", '', {}).and_return('')
       Dor::WorkflowService.close_version(@repo, @druid, false)
     end
   end
