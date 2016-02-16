@@ -321,7 +321,7 @@ module Dor
       #
       # @return [Integer] Number of objects with this repository:workflow:step that have a status of 'error'
       def count_errored_for_workstep(workflow, step, repository = 'dor')
-        count_objects_in_step(workflow, step, repository, 'error')
+        count_objects_in_step(workflow, step, 'error', repository)
       end
 
       # Returns the number of objects that have a status of 'queued' in a particular workflow and step
@@ -332,7 +332,7 @@ module Dor
       #
       # @return [Integer] Number of objects with this repository:workflow:step that have a status of 'queued'
       def count_queued_for_workstep(workflow, step, repository = 'dor')
-        count_objects_in_step(workflow, step, repository, 'queued')
+        count_objects_in_step(workflow, step, 'queued', repository)
       end
 
       # Gets all of the workflow steps that have a status of 'queued' that have a last-updated timestamp older than the number of hours passed in
