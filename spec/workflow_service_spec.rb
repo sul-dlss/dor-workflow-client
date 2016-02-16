@@ -49,6 +49,15 @@ describe Dor::WorkflowService do
     Dor::WorkflowService.configure mock_http_connection
   end
 
+  describe '#configure' do
+    it 'should handle a string and timeout' do
+      conn = Dor::WorkflowService.configure 'http://externalhost/', :timeout => 99
+      expect(conn).to be_a(Faraday::Connection)
+      expect(conn.options.timeout).to eq(99)
+      expect(conn.options.open_timeout).to eq(99)
+    end
+  end
+
   describe '#create_workflow' do
     let(:stubs) do
       Faraday::Adapter::Test::Stubs.new do |stub|
@@ -127,6 +136,10 @@ describe Dor::WorkflowService do
 
       expect(Dor::WorkflowService.update_workflow_status(@repo, @druid, 'etdSubmitWF', 'reader-approval', 'completed', :version => 2, :note => 'annotation', :lane_id => 'lane1', :current_status => 'queued')).to be true
     end
+
+    it 'should throw exception if invalid status provided' do
+      expect { Dor::WorkflowService.update_workflow_status(@repo, @druid, 'accessionWF', 'publish', 'NOT_VALID_STATUS') }.to raise_error(ArgumentError)
+    end
   end
 
   describe '#update_workflow_error_status' do
@@ -201,6 +214,21 @@ describe Dor::WorkflowService do
     end
   end
 
+  describe '#get_workflows' do
+    let(:xml) { '<workflow id="accessionWF"><process name="publish" status="completed" /></workflow>' }
+    let(:stubs) do
+      Faraday::Adapter::Test::Stubs.new do |stub|
+        stub.get("dor/objects/#{@druid}/workflows/") do |env|
+          [200, {}, xml]
+        end
+      end
+    end
+
+    it 'returns the workflows associated with druid' do
+      expect(Dor::WorkflowService.get_workflows(@druid)).to eq(['accessionWF'])
+    end
+  end
+
   describe '#get_lifecycle' do
     let(:stubs) do
       Faraday::Adapter::Test::Stubs.new do |stub|
@@ -228,6 +256,36 @@ describe Dor::WorkflowService do
 
     it "returns nil if the milestone hasn't been reached yet" do
       expect(Dor::WorkflowService.get_lifecycle('dor', 'druid:abc', 'inprocess')).to be_nil
+    end
+  end
+
+  describe '#get_active_lifecycle' do
+    let(:stubs) do
+      Faraday::Adapter::Test::Stubs.new do |stub|
+        stub.get("dor/objects/#{@druid}/lifecycle") do |env|
+          [200, {}, <<-EOXML]
+            <lifecycle objectId="#{@druid}">
+                <milestone date="2010-04-27T11:34:17-0700">registered</milestone>
+                <milestone date="2010-04-29T10:12:51-0700">inprocess</milestone>
+                <milestone date="2010-06-15T16:08:58-0700">released</milestone>
+            </lifecycle>
+          EOXML
+        end
+
+        stub.get("dor/objects/#{@druid}/lifecycle") do |env|
+          [200, {}, <<-EOXML]
+            <lifecycle />
+          EOXML
+        end
+      end
+    end
+
+    it 'parses out the active lifecycle' do
+      expect(Dor::WorkflowService.get_active_lifecycle('dor', @druid, 'released').beginning_of_day).to eq(Time.parse('2010-06-15T16:08:58-0700').beginning_of_day)
+    end
+
+    it 'handles missing lifecycle' do
+      expect(Dor::WorkflowService.get_active_lifecycle('dor', @druid, 'NOT_FOUND')).to be_nil
     end
   end
 
@@ -329,6 +387,58 @@ describe Dor::WorkflowService do
 
     it 'returns an empty list if it encounters an empty workflow queue' do
       expect(Dor::WorkflowService.get_objects_for_workstep(@completed, @waiting, 'default', :default_repository => @repository, :default_workflow => @workflow)).to eq([])
+    end
+  end
+
+  context 'get errored workflow steps' do
+    before(:all) do
+      @repository = 'dor'
+      @workflow   = 'accessionWF'
+      @step       = 'publish'
+    end
+
+    let(:stubs) do
+      Faraday::Adapter::Test::Stubs.new do |stub|
+        stub.get("/workflow_queue?error=#{@step}&repository=#{@repository}&workflow=#{@workflow}") do |env|
+          [200, {}, <<-EOXML ]
+            <objects count="1">
+               <object id="druid:ab123cd4567" errorMessage="This is an error message"/>
+             </objects>
+            EOXML
+        end
+      end
+    end
+    
+    it 'returns error messages for errored objects' do
+      expect(Dor::WorkflowService.get_errored_objects_for_workstep(@workflow, @step, @repository)).to eq({'druid:ab123cd4567'=>'This is an error message'})
+    end
+
+    it 'counts how many steps are errored out' do
+      expect(Dor::WorkflowService.count_errored_for_workstep(@workflow, @step, @repository)).to eq(1)
+    end
+  end
+
+  describe '#count_queued_for_workstep' do
+    before(:all) do
+      @repository = 'dor'
+      @workflow   = 'accessionWF'
+      @step       = 'publish'
+    end
+
+    let(:stubs) do
+      Faraday::Adapter::Test::Stubs.new do |stub|
+        stub.get("/workflow_queue?queued=#{@step}&repository=#{@repository}&workflow=#{@workflow}") do |env|
+          [200, {}, <<-EOXML ]
+            <objects count="1">
+               <object id="druid:ab123cd4567"/>
+             </objects>
+            EOXML
+        end
+      end
+    end
+
+    it 'counts how many steps are errored out' do
+      expect(Dor::WorkflowService.count_queued_for_workstep(@workflow, @step, @repository)).to eq(1)
     end
   end
 
