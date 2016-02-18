@@ -537,11 +537,15 @@ module Dor
 
             req.headers.update opts.except(:params)
           end
-
           response.body
         end
-      end
+      rescue *workflow_service_exceptions_to_catch => e
+        raise e unless meth == 'get'
+        @@logger.error "#{meth} #{workflow_resource.url_prefix}/#{uri_string} => #{e}"
 
+        # dor-workflow-service 1.x behavior is to silently ignore missing workflow information for GET requests..
+        ''
+      end
     end
   end
 end

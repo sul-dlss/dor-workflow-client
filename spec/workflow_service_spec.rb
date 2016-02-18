@@ -189,6 +189,7 @@ describe Dor::WorkflowService do
       expect(Dor::WorkflowService.get_workflow_status('dor', 'druid:123', 'etdSubmitWF', 'registrar-approval')).to eq('completed')
     end
     it 'should throw an exception if it fails for any reason' do
+      allow(@mock_logger).to receive(:error)
       expect{ Dor::WorkflowService.get_workflow_status('dor', 'druid:123', 'missingWF', 'registrar-approval') }.to raise_error Faraday::ResourceNotFound
     end
     it 'should throw an exception if it cannot parse the response' do
@@ -206,11 +207,19 @@ describe Dor::WorkflowService do
         stub.get("dor/objects/druid:123/workflows/etdSubmitWF") do |env|
           [200, {}, xml]
         end
+          stub.get("dor/objects/druid:123/workflows/brokenWF") do |env|
+            [404, {}, xml]
+          end
       end
     end
 
     it 'returns the xml for a given repository, druid, and workflow' do
       expect(Dor::WorkflowService.get_workflow_xml('dor', 'druid:123', 'etdSubmitWF')).to eq(xml)
+    end
+
+    it 'handles errors' do
+      expect(@mock_logger).to receive(:error).with /the server responded with status 404/
+      expect(Dor::WorkflowService.get_workflow_xml('dor', 'druid:123', 'brokenWF')).to eq('')
     end
   end
 
