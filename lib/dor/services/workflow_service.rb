@@ -432,6 +432,12 @@ module Dor
         @@http_conn
       end
 
+      ##
+      # Get the configured URL for the connection
+      def base_url
+        workflow_resource.url_prefix
+      end
+
       # Among other things, a distinct method helps tests mock default logger
       # @param [String, IO] logdev The log device. This is a filename (String) or IO object (typically STDOUT, STDERR, or an open file).
       # @param [String, Integer] shift_age Number of old log files to keep, or frequency of rotation (daily, weekly or monthly).
@@ -528,7 +534,7 @@ module Dor
       # @return [Object] response from method
       def workflow_resource_method(uri_string, meth = 'get', payload = '', opts = {})
         with_retries(:max_tries => 2, :handler => @@handler, :rescue => workflow_service_exceptions_to_catch) do |attempt|
-          @@logger.info "[Attempt #{attempt}] #{meth} #{workflow_resource.url_prefix}/#{uri_string}"
+          @@logger.info "[Attempt #{attempt}] #{meth} #{base_url}/#{uri_string}"
 
           response = workflow_resource.send(meth, uri_string) do |req|
             req.body = payload unless meth == 'delete'
