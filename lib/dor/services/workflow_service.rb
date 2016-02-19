@@ -3,6 +3,7 @@ require 'active_support/core_ext'
 require 'nokogiri'
 require 'retries'
 require 'faraday'
+require 'dor/workflow_exception'
 
 module Dor
 
@@ -95,7 +96,7 @@ module Dor
       def get_workflow_status(repo, druid, workflow, process)
         workflow_md = get_workflow_xml(repo, druid, workflow)
         doc = Nokogiri::XML(workflow_md)
-        raise Exception.new("Unable to parse response:\n#{workflow_md}") if doc.root.nil?
+        raise Dor::WorkflowException.new("Unable to parse response:\n#{workflow_md}") if doc.root.nil?
         status = doc.root.at_xpath("//process[@name='#{process}']/@status")
         status = status.content if status
         status
@@ -546,8 +547,11 @@ module Dor
 
           response.body
         end
+      rescue *workflow_service_exceptions_to_catch => e
+        msg = "Failed to retrieve resource: #{meth} #{base_url}/#{uri_string}"
+        msg += " (HTTP status #{e.response[:status]})" if e.respond_to?(:response) && e.response
+        raise Dor::WorkflowException, msg
       end
-
     end
   end
 end
