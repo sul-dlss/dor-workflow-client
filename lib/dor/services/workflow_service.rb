@@ -3,6 +3,7 @@ require 'active_support/core_ext'
 require 'nokogiri'
 require 'retries'
 require 'faraday'
+require 'dor/workflow_exception'
 
 module Dor
 
@@ -95,7 +96,7 @@ module Dor
       def get_workflow_status(repo, druid, workflow, process)
         workflow_md = get_workflow_xml(repo, druid, workflow)
         doc = Nokogiri::XML(workflow_md)
-        raise Exception.new("Unable to parse response:\n#{workflow_md}") if doc.root.nil?
+        raise Dor::WorkflowException.new("Unable to parse response:\n#{workflow_md}") if doc.root.nil?
         status = doc.root.at_xpath("//process[@name='#{process}']/@status")
         status = status.content if status
         status
@@ -432,6 +433,12 @@ module Dor
         @@http_conn
       end
 
+      ##
+      # Get the configured URL for the connection
+      def base_url
+        workflow_resource.url_prefix
+      end
+
       # Among other things, a distinct method helps tests mock default logger
       # @param [String, IO] logdev The log device. This is a filename (String) or IO object (typically STDOUT, STDERR, or an open file).
       # @param [String, Integer] shift_age Number of old log files to keep, or frequency of rotation (daily, weekly or monthly).
@@ -528,7 +535,7 @@ module Dor
       # @return [Object] response from method
       def workflow_resource_method(uri_string, meth = 'get', payload = '', opts = {})
         with_retries(:max_tries => 2, :handler => @@handler, :rescue => workflow_service_exceptions_to_catch) do |attempt|
-          @@logger.info "[Attempt #{attempt}] #{meth} #{workflow_resource.url_prefix}/#{uri_string}"
+          @@logger.info "[Attempt #{attempt}] #{meth} #{base_url}/#{uri_string}"
 
           response = workflow_resource.send(meth, uri_string) do |req|
             req.body = payload unless meth == 'delete'
@@ -540,8 +547,11 @@ module Dor
 
           response.body
         end
+      rescue *workflow_service_exceptions_to_catch => e
+        msg = "Failed to retrieve resource: #{meth} #{base_url}/#{uri_string}"
+        msg += " (HTTP status #{e.response[:status]})" if e.respond_to?(:response) && e.response
+        raise Dor::WorkflowException, msg
       end
-
     end
   end
 end

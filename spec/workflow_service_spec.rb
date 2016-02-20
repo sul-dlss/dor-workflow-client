@@ -74,7 +74,7 @@ describe Dor::WorkflowService do
 
     it 'should log an error and retry upon a targetted Faraday exception' do
       expect(@mock_logger).to receive(:warn).with(/\[Attempt 1\] Faraday::ClientError: the server responded with status 418/)
-      expect { Dor::WorkflowService.create_workflow(@repo, @druid, 'httpException', wf_xml) }.to raise_error Faraday::ClientError
+      expect { Dor::WorkflowService.create_workflow(@repo, @druid, 'httpException', wf_xml) }.to raise_error Dor::WorkflowException
     end
 
     it 'should raise on an unexpected Exception' do
@@ -128,7 +128,7 @@ describe Dor::WorkflowService do
     end
 
     it 'should return false if the PUT to the DOR workflow service throws an exception' do
-      expect{ Dor::WorkflowService.update_workflow_status(@repo, @druid, 'errorWF', 'reader-approval', 'completed') }.to raise_error(Exception, /the server responded with status 400/)
+      expect{ Dor::WorkflowService.update_workflow_status(@repo, @druid, 'errorWF', 'reader-approval', 'completed') }.to raise_error(Dor::WorkflowException, /status 400/)
     end
 
     it 'performs a conditional update when current-status is passed as a parameter' do
@@ -160,7 +160,7 @@ describe Dor::WorkflowService do
       Dor::WorkflowService.update_workflow_error_status(@repo, @druid, 'etdSubmitWF', 'reader-approval', 'Some exception', :error_text =>'The optional stacktrace')
     end
     it 'should return false if the PUT to the DOR workflow service throws an exception' do
-      expect{ Dor::WorkflowService.update_workflow_status(@repo, @druid, 'errorWF', 'reader-approval', 'completed') }.to raise_error(Exception, /the server responded with status 400/)
+      expect{ Dor::WorkflowService.update_workflow_status(@repo, @druid, 'errorWF', 'reader-approval', 'completed') }.to raise_error(Dor::WorkflowException, /status 400/)
     end
   end
 
@@ -189,10 +189,10 @@ describe Dor::WorkflowService do
       expect(Dor::WorkflowService.get_workflow_status('dor', 'druid:123', 'etdSubmitWF', 'registrar-approval')).to eq('completed')
     end
     it 'should throw an exception if it fails for any reason' do
-      expect{ Dor::WorkflowService.get_workflow_status('dor', 'druid:123', 'missingWF', 'registrar-approval') }.to raise_error Faraday::ResourceNotFound
+      expect{ Dor::WorkflowService.get_workflow_status('dor', 'druid:123', 'missingWF', 'registrar-approval') }.to raise_error Dor::WorkflowException
     end
     it 'should throw an exception if it cannot parse the response' do
-      expect{ Dor::WorkflowService.get_workflow_status('dor', 'druid:123', 'errorWF', 'registrar-approval') }.to raise_error(Exception, "Unable to parse response:\nsomething not xml")
+      expect{ Dor::WorkflowService.get_workflow_status('dor', 'druid:123', 'errorWF', 'registrar-approval') }.to raise_error(Dor::WorkflowException, "Unable to parse response:\nsomething not xml")
     end
     it 'should return nil if the workflow/process combination doesnt exist' do
       expect(Dor::WorkflowService.get_workflow_status('dor', 'druid:123', 'accessionWF', 'publish')).to be_nil
