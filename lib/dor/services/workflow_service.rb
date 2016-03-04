@@ -18,7 +18,6 @@ module Dor
   # Create and update workflows
   class WorkflowService
     class << self
-
       @@handler  = nil
       @@logger   = nil
       @@resource = nil
@@ -486,6 +485,7 @@ module Dor
                           faraday.response :logger if opts[:debug] # logs to STDOUT
                           faraday.adapter  :net_http_persistent    # use Keep-Alive connections
                           faraday.use Faraday::Response::RaiseError
+                          faraday.options.params_encoder = Faraday::FlatParamsEncoder
                           if opts.key? :timeout
                             faraday.options.timeout = opts[:timeout]
                             faraday.options.open_timeout = opts[:timeout]
@@ -551,13 +551,7 @@ module Dor
         with_retries(:max_tries => 2, :handler => @@handler, :rescue => workflow_service_exceptions_to_catch) do |attempt|
           @@logger.info "[Attempt #{attempt}] #{meth} #{base_url}/#{uri_string}"
 
-          response = workflow_resource.send(meth, uri_string) do |req|
-            req.body = payload unless meth == 'delete'
-
-            req.params.update opts[:params] if opts[:params]
-
-            req.headers.update opts.except(:params)
-          end
+          response = send_workflow_resource_request(uri_string, meth, payload, opts)
 
           response.body
         end
@@ -565,6 +559,14 @@ module Dor
         msg = "Failed to retrieve resource: #{meth} #{base_url}/#{uri_string}"
         msg += " (HTTP status #{e.response[:status]})" if e.respond_to?(:response) && e.response
         raise Dor::WorkflowException, msg
+      end
+
+      def send_workflow_resource_request(uri_string, meth = 'get', payload = '', opts = {})
+        workflow_resource.send(meth, uri_string) do |req|
+          req.body = payload unless meth == 'delete'
+          req.params.update opts[:params] if opts[:params]
+          req.headers.update opts.except(:params)
+        end
       end
     end
   end
