@@ -31,6 +31,7 @@ describe Dor::WorkflowService do
   let(:mock_http_connection) do
     Faraday.new(url: 'http://example.com/') do |builder|
       builder.use Faraday::Response::RaiseError
+      builder.options.params_encoder = Faraday::FlatParamsEncoder
 
       builder.adapter :test, stubs
     end
@@ -584,6 +585,33 @@ describe Dor::WorkflowService do
 
     it 'returns the lane ids for a given workflow step' do
       expect(Dor::WorkflowService.get_lane_ids('dor', 'accessionWF', 'shelve')).to eq(%w(lane1 lane2))
+    end
+  end
+
+  describe '.workflow_resource_method' do
+    let(:stubs) do
+      Faraday::Adapter::Test::Stubs.new do |stub|
+        stub.get('x?complete=a&complete=b') do |env|
+          [200, {}, 'ab']
+        end
+      end
+    end
+
+    it 'uses the flat params encoder' do
+      response = Dor::WorkflowService.send(:send_workflow_resource_request, 'x?complete=a&complete=b')
+
+      expect(response.body).to eq 'ab'
+      expect(response.env.url.query).to eq 'complete=a&complete=b'
+    end
+  end
+
+  describe '.workflow_resource' do
+    before do
+      Dor::WorkflowService.configure 'http://example.com'
+    end
+
+    it 'defaults to using the flat params encoder' do
+      expect(Dor::WorkflowService.workflow_resource.options.params_encoder).to eq Faraday::FlatParamsEncoder
     end
   end
 end
