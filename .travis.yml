@@ -4,8 +4,14 @@ notifications:
   email: false
 
 rvm:
-  - 2.1.2
-  - 2.3.1 
+  - 2.2.5
+  - 2.3.1
+  
+matrix:
+  include:
+    - rvm: 2.1.2
+      env: RAILS_VERSION=4.2.7.1
 
-gemfile:
-  - gemfiles/rails4.gemfile
+env:
+  - "RAILS_VERSION=4.2.7.1"
+  - "RAILS_VERSION=5.0.0.1"
