@@ -21,8 +21,8 @@ Gem::Specification.new do |gem|
   gem.add_dependency 'nokogiri', '~> 1.6.0'
   gem.add_dependency 'retries'
   gem.add_dependency 'confstruct', '>= 0.2.7', '< 2'
-  gem.add_dependency 'faraday', '~> 0.9.2'
-  gem.add_dependency 'net-http-persistent', '~> 2.9.4'
+  gem.add_dependency 'faraday', '~> 0.9', '>= 0.9.2'
+  gem.add_dependency 'net-http-persistent', '>= 2.9.4', '< 4.a'
 
   gem.add_development_dependency 'rake'
   gem.add_development_dependency 'rspec', '~> 3.3'
