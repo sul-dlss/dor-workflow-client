@@ -452,7 +452,11 @@ module Dor
       # @param [String, IO] logdev The log device. This is a filename (String) or IO object (typically STDOUT, STDERR, or an open file).
       # @param [String, Integer] shift_age Number of old log files to keep, or frequency of rotation (daily, weekly or monthly).
       # @return [Logger] default logger object
-      def default_logger(logdev = 'workflow_service.log', shift_age = 'weekly')
+      def default_logger(logdev = nil, shift_age = 'weekly')
+        logdev ||= begin
+          FileUtils.mkdir('log')
+          logdev = 'log/workflow_service.log'
+        end
         Logger.new(logdev, shift_age)
       end
 
