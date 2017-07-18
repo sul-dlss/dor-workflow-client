@@ -18,7 +18,7 @@ Gem::Specification.new do |gem|
   gem.require_paths = ['lib']
 
   gem.add_dependency 'activesupport', '>= 3.2.1', '< 5'
-  gem.add_dependency 'nokogiri', '~> 1.6.0'
+  gem.add_dependency 'nokogiri', '~> 1.6'
   gem.add_dependency 'rest-client', '~> 1.7'
   gem.add_dependency 'retries'
   gem.add_dependency 'confstruct', '>= 0.2.7', '< 2'
