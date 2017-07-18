@@ -1,7 +1,7 @@
 module Dor
   module Workflow
     module Service
-      VERSION = '1.7.7'
+      VERSION = '1.7.8'
     end
   end
 end
