@@ -132,7 +132,7 @@ module Dor
       # @param [String] pid id of object
       # @return [Array<String>] list of active worklows.  Returns an empty Array if none are found
       # @example
-      #   Dor::WorkflowService.get_workflows('dor', 'druid:sr100hp0609')
+      #   Dor::WorkflowService.get_active_workflows('dor', 'druid:sr100hp0609')
       #   => ["accessionWF", "assemblyWF", "disseminationWF"]
       def get_active_workflows(repo, pid)
         doc = Nokogiri::XML(get_workflow_xml(repo, pid, ''))
