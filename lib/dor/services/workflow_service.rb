@@ -483,8 +483,8 @@ module Dor
                       when String
                         Faraday.new(url: url_or_connection) do |faraday|
                           faraday.response :logger if opts[:debug] # logs to STDOUT
-                          faraday.adapter  :net_http_persistent    # use Keep-Alive connections
                           faraday.use Faraday::Response::RaiseError
+                          faraday.adapter  :net_http_persistent    # use Keep-Alive connections
                           faraday.options.params_encoder = Faraday::FlatParamsEncoder
                           if opts.key? :timeout
                             faraday.options.timeout = opts[:timeout]
