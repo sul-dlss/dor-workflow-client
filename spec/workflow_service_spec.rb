@@ -409,7 +409,7 @@ describe Dor::WorkflowService do
         end
       end
     end
-    
+
     it 'returns error messages for errored objects' do
       expect(Dor::WorkflowService.get_errored_objects_for_workstep(@workflow, @step, @repository)).to eq({'druid:ab123cd4567'=>'This is an error message'})
     end
@@ -461,6 +461,31 @@ describe Dor::WorkflowService do
 
     it 'counts how many workflows are archived' do
       expect(Dor::WorkflowService.count_archived_for_workflow(@workflow, @repository)).to eq(20)
+    end
+  end
+
+  describe '#count_objects_in_step' do
+    before(:all) do
+      @workflow   = 'sdrIngestWF'
+      @step       = 'start-ingest'
+      @type       = 'waiting'
+      @repository = 'sdr'
+    end
+
+    let(:stubs) do
+      Faraday::Adapter::Test::Stubs.new do |stub|
+        stub.get("/workflow_queue?repository=#{@repository}&workflow=#{@workflow}&#{@type}=#{@step}") do |env|
+          [200, {}, <<-EOXML ]
+            <objects count="1">
+              <object id="druid:oo000ra0001" url="null/fedora/objects/druid:oo000ra0001"/>
+            </objects>
+            EOXML
+        end
+      end
+    end
+
+    it 'counts how many objects are at the type of step' do
+      expect(Dor::WorkflowService.count_objects_in_step(@workflow, @step, @type, @repository)).to eq(1)
     end
   end
 

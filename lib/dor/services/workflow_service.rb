@@ -496,6 +496,10 @@ module Dor
                       end
       end
 
+      def count_objects_in_step(workflow, step, type, repo)
+        resp = workflow_resource_method "workflow_queue?repository=#{repo}&workflow=#{workflow}&#{type}=#{step}"
+        extract_object_count(resp)
+      end
 
       protected
 
@@ -527,11 +531,6 @@ module Dor
         doc = Nokogiri::XML(wf_xml)
         doc.xpath('/workflow/process').each { |proc| proc['laneId'] = lane_id }
         doc.to_xml
-      end
-
-      def count_objects_in_step(workflow, step, type, repo)
-        resp = workflow_resource_method "workflow_queue?repository=#{repo}&workflow=#{workflow}&#{type}=#{step}"
-        extract_object_count(resp)
       end
 
       def extract_object_count(resp)
