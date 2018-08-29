@@ -555,7 +555,7 @@ module Dor
           response.body
         end
       rescue *workflow_service_exceptions_to_catch => e
-        msg = "Failed to retrieve resource: #{meth} #{base_url}/#{uri_string}"
+        msg = "Failed to retrieve resource: #{meth} #{base_url}#{uri_string}"
         msg += " (HTTP status #{e.response[:status]})" if e.respond_to?(:response) && e.response
         raise Dor::WorkflowException, msg
       end
