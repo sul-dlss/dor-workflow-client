@@ -166,37 +166,73 @@ describe Dor::WorkflowService do
   end
 
   describe '#get_workflow_status' do
+    let(:repo) { @repo }
+    let(:druid) { @druid }
     let(:stubs) do
       Faraday::Adapter::Test::Stubs.new do |stub|
-        stub.get("#{@repo}/objects/#{@druid}/workflows/etdSubmitWF") do |env|
-          [200, {}, '<process name="registrar-approval" status="completed" />']
-        end
-
-        stub.get("#{@repo}/objects/#{@druid}/workflows/missingWF") do |env|
-          [404, {}, '']
-        end
-
-        stub.get("#{@repo}/objects/#{@druid}/workflows/errorWF") do |env|
-          [200, {}, 'something not xml']
-        end
-
-        stub.get("#{@repo}/objects/#{@druid}/workflows/accessionWF") do |env|
-          [200, {}, '<process name="registrar-approval" status="completed" />']
+        stub.get("#{repo}/objects/#{druid}/workflows/#{workflow_name}") do |env|
+          response
         end
       end
     end
 
-    it 'parses workflow xml and returns status as a string' do
-      expect(Dor::WorkflowService.get_workflow_status('dor', 'druid:123', 'etdSubmitWF', 'registrar-approval')).to eq('completed')
+    subject { Dor::WorkflowService.get_workflow_status(repo, druid, workflow_name, step_name) }
+    let(:step_name) { 'registrar-approval' }
+    let(:workflow_name) { 'etdSubmitWF' }
+    let(:status) { 200 }
+    let(:response) do
+      [status, {}, xml]
     end
-    it 'should throw an exception if it fails for any reason' do
-      expect{ Dor::WorkflowService.get_workflow_status('dor', 'druid:123', 'missingWF', 'registrar-approval') }.to raise_error Dor::WorkflowException
+    let(:xml) { '' }
+
+    context 'when a single result is returned' do
+      let(:xml) do
+        '<workflow><process name="registrar-approval" status="completed" /></workflow>'
+      end
+
+      it 'returns status as a string' do
+        expect(subject).to eq('completed')
+      end
     end
-    it 'should throw an exception if it cannot parse the response' do
-      expect{ Dor::WorkflowService.get_workflow_status('dor', 'druid:123', 'errorWF', 'registrar-approval') }.to raise_error(Dor::WorkflowException, "Unable to parse response:\nsomething not xml")
+
+    context 'when a multiple versions are returned' do
+      let(:xml) do
+        '<workflow><process name="registrar-approval" version="1" status="completed" />
+          <process name="registrar-approval" version="2" status="waiting" /></workflow>'
+      end
+
+      it 'returns the status for the highest version' do
+        expect(subject).to eq('waiting')
+      end
     end
-    it 'should return nil if the workflow/process combination doesnt exist' do
-      expect(Dor::WorkflowService.get_workflow_status('dor', 'druid:123', 'accessionWF', 'publish')).to be_nil
+
+    context 'when it fails for any reason' do
+      let(:status) { 404 }
+
+      it 'throws an exception' do
+        expect{ subject }.to raise_error Dor::WorkflowException
+      end
+    end
+
+    context 'when it cannot parse the response' do
+      let(:xml) do
+        'something not xml'
+      end
+
+      it 'throws an exception' do
+        expect{ subject }.to raise_error Dor::WorkflowException, "Unable to parse response:\nsomething not xml"
+      end
+    end
+
+    context 'when the workflow/process combination doesnt exist' do
+      let(:xml) do
+        '<workflow><process name="registrar-approval" status="completed" /></workflow>'
+      end
+      let(:step_name) { 'publish' }
+
+      it 'returns nil' do
+        expect(subject).to be_nil
+      end
     end
   end
 

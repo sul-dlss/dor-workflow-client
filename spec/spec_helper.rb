@@ -6,6 +6,7 @@ SimpleCov.start do
   add_filter 'spec'
 end
 
+require 'byebug'
 require 'dor-workflow-service'
 require 'equivalent-xml'
 require 'equivalent-xml/rspec_matchers'
