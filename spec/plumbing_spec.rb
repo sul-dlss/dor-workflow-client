@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Dor::WorkflowService do
@@ -12,7 +14,7 @@ describe Dor::WorkflowService do
     end
     it 'accepts :logger if specified' do
       expect(Dor::WorkflowService).not_to receive(:default_logger)
-      Dor::WorkflowService.configure('https://dortest.stanford.edu/workflow', {:logger => @logger1})
+      Dor::WorkflowService.configure('https://dortest.stanford.edu/workflow', logger: @logger1)
     end
   end
 end

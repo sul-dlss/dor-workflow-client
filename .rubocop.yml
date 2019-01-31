@@ -1,5 +1,11 @@
 inherit_from: .rubocop_todo.yml
 
+AllCops:
+  TargetRubyVersion: 2.3
 # Configuration parameters: AllowURI, URISchemes.
 Metrics/LineLength:
   Max: 300
+
+Metrics/BlockLength:
+  Exclude:
+    - spec/**/*_spec.rb

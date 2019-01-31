@@ -1,13 +1,16 @@
+# frozen_string_literal: true
+
 require 'bundler/setup'
 require 'bundler/gem_tasks'
 
 require 'rspec/core/rake_task'
+require 'rubocop/rake_task'
 
-task :default => [:spec]
+RuboCop::RakeTask.new
+RSpec::Core::RakeTask.new(:spec)
 
-RSpec::Core::RakeTask.new(:spec) do |spec|
-  spec.pattern = 'spec/**/*_spec.rb', 'test/**/*.rb'
-end
+desc 'Run linter and tests'
+task default: %i[rubocop spec]
 
 require 'yard'
 YARD::Rake::YardocTask.new
