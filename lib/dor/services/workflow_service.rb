@@ -96,9 +96,9 @@ module Dor
         workflow_md = get_workflow_xml(repo, druid, workflow)
         doc = Nokogiri::XML(workflow_md)
         raise Dor::WorkflowException.new("Unable to parse response:\n#{workflow_md}") if doc.root.nil?
-        status = doc.root.at_xpath("//process[@name='#{process}']/@status")
-        status = status.content if status
-        status
+        processes = doc.root.xpath("//process[@name='#{process}']")
+        process = processes.max { |a, b| a.attr('version').to_i <=> b.attr('version').to_i }
+        process&.attr('status')
       end
 
       #

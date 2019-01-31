@@ -179,21 +179,35 @@ describe Dor::WorkflowService do
     subject { Dor::WorkflowService.get_workflow_status(repo, druid, workflow_name, step_name) }
     let(:step_name) { 'registrar-approval' }
     let(:workflow_name) { 'etdSubmitWF' }
+    let(:status) { 200 }
+    let(:response) do
+      [status, {}, xml]
+    end
+    let(:xml) { '' }
 
     context 'when a single result is returned' do
-      let(:response) do
-        [200, {}, '<process name="registrar-approval" status="completed" />']
+      let(:xml) do
+        '<workflow><process name="registrar-approval" status="completed" /></workflow>'
       end
 
-      it 'parses workflow xml and returns status as a string' do
+      it 'returns status as a string' do
         expect(subject).to eq('completed')
       end
     end
 
-    context 'when it fails for any reason' do
-      let(:response) do
-        [404, {}, '']
+    context 'when a multiple versions are returned' do
+      let(:xml) do
+        '<workflow><process name="registrar-approval" version="1" status="completed" />
+          <process name="registrar-approval" version="2" status="waiting" /></workflow>'
       end
+
+      it 'returns the status for the highest version' do
+        expect(subject).to eq('waiting')
+      end
+    end
+
+    context 'when it fails for any reason' do
+      let(:status) { 404 }
 
       it 'throws an exception' do
         expect{ subject }.to raise_error Dor::WorkflowException
@@ -201,8 +215,8 @@ describe Dor::WorkflowService do
     end
 
     context 'when it cannot parse the response' do
-      let(:response) do
-        [200, {}, 'something not xml']
+      let(:xml) do
+        'something not xml'
       end
 
       it 'throws an exception' do
@@ -211,10 +225,9 @@ describe Dor::WorkflowService do
     end
 
     context 'when the workflow/process combination doesnt exist' do
-      let(:response) do
-        [200, {}, '<process name="registrar-approval" status="completed" />']
+      let(:xml) do
+        '<workflow><process name="registrar-approval" status="completed" /></workflow>'
       end
-
       let(:step_name) { 'publish' }
 
       it 'returns nil' do
