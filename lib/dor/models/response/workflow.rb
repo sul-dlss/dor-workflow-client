@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'dor/models/response/process'
+
 module Dor
   module Workflow
     module Response
@@ -15,7 +17,25 @@ module Dor
           result ? true : false
         end
 
+        # Returns the process, for the most recent version that matches the given name:
+        def process_for_recent_version(name:)
+          nodes = process_nodes_for(name: name)
+          node = nodes.max { |a, b| a.attr('version').to_i <=> b.attr('version').to_i }
+          attributes = node ? Hash[node.attributes.collect { |k, v| [k.to_sym, v.value] }] : {}
+          Process.new(parent: self, **attributes)
+        end
+
+        def empty?
+          ng_xml.xpath('/workflow/process').empty?
+        end
+
+        attr_reader :xml
+
         private
+
+        def process_nodes_for(name:)
+          ng_xml.xpath("/workflow/process[@name = '#{name}']")
+        end
 
         def ng_xml
           @ng_xml ||= Nokogiri::XML(@xml)
