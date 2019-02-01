@@ -6,6 +6,7 @@ require 'nokogiri'
 require 'retries'
 require 'faraday'
 require 'dor/workflow_exception'
+require 'dor/models/response/workflow'
 require 'deprecation'
 
 module Dor
@@ -141,6 +142,15 @@ module Dor
         Deprecation.warn(self, 'get_active_workflows will be removed without replacement because the workflow server no longer archives processes')
         doc = Nokogiri::XML(get_workflow_xml(repo, pid, ''))
         doc.xpath(%(//workflow[not(process/@archived)]/@id )).map(&:value)
+      end
+
+      # @param [String] repo repository of the object
+      # @param [String] pid id of object
+      # @param [String] workflow_name The name of the workflow
+      # @return [Workflow::Response::Workflow]
+      def workflow(repo: 'dor', pid:, workflow_name:)
+        xml = get_workflow_xml(repo, pid, workflow_name)
+        Workflow::Response::Workflow.new(xml: xml)
       end
 
       # Updates the status of one step in a workflow to error.

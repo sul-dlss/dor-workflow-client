@@ -573,6 +573,23 @@ describe Dor::WorkflowService do
     end
   end
 
+  describe '.workflow' do
+    let(:xml) do
+      <<~XML
+        <workflow repository="dor" objectId="druid:mw971zk1113" id="accessionWF">
+          <process laneId="default" lifecycle="submitted" elapsed="0.0" attempts="1" datetime="2013-02-18T15:08:10-0800" status="completed" name="start-accession"/>
+        </workflow>
+      XML
+    end
+    before do
+      allow(Dor::WorkflowService).to receive(:get_workflow_xml) { xml }
+    end
+
+    it 'it returns a workflow' do
+      expect(Dor::WorkflowService.workflow(pid: 'druid:mw971zk1113', workflow_name: 'accessionWF')).to be_kind_of Dor::Workflow::Response::Workflow
+    end
+  end
+
   describe '#close_version' do
     let(:stubs) do
       Faraday::Adapter::Test::Stubs.new do |stub|
