@@ -6,6 +6,7 @@ require 'nokogiri'
 require 'retries'
 require 'faraday'
 require 'dor/workflow_exception'
+require 'deprecation'
 
 module Dor
   # TODO: major version revision: change pattern of usage to be normal non-singleton class
@@ -18,6 +19,7 @@ module Dor
 
   # Create and update workflows
   class WorkflowService
+    extend Deprecation
     class << self
       @@handler  = nil
       @@logger   = nil
@@ -136,6 +138,7 @@ module Dor
       #   Dor::WorkflowService.get_active_workflows('dor', 'druid:sr100hp0609')
       #   => ["accessionWF", "assemblyWF", "disseminationWF"]
       def get_active_workflows(repo, pid)
+        Deprecation.warn(self, 'get_active_workflows will be removed without replacement because the workflow server no longer archives processes')
         doc = Nokogiri::XML(get_workflow_xml(repo, pid, ''))
         doc.xpath(%(//workflow[not(process/@archived)]/@id )).map(&:value)
       end
