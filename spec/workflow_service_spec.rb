@@ -568,6 +568,7 @@ describe Dor::WorkflowService do
       </workflows>
       XML
       allow(Dor::WorkflowService).to receive(:get_workflow_xml) { xml }
+      expect(Deprecation).to receive(:warn)
       expect(Dor::WorkflowService.get_active_workflows('dor', 'druid:mw971zk1113')).to eq(['accessionWF'])
     end
   end
