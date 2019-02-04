@@ -102,14 +102,15 @@ RSpec.describe Dor::Workflow::Response::Workflow do
           <workflow repository="dor" objectId="druid:mw971zk1113" id="assemblyWF">
             <process version="1" laneId="default" elapsed="0.0" attempts="1" datetime="2013-02-18T14:40:25-0800" status="completed" name="start-assembly"/>
             <process version="1" laneId="default" elapsed="0.509" attempts="1" datetime="2013-02-18T14:42:24-0800" status="completed" name="jp2-create"/>
-            <process version="2" laneId="default" elapsed="0.509" attempts="1" datetime="2013-02-18T14:42:24-0800" status="waiting" name="jp2-create"/>
+            <process version="2" laneId="default" elapsed="0.509" attempts="1" datetime="2013-02-18T14:42:24-0800" status="error" name="jp2-create" errorMessage="it just broke"/>
           </workflow>
         XML
       end
 
       it 'returns a process' do
         expect(process).to be_kind_of Dor::Workflow::Response::Process
-        expect(process.status).to eq 'waiting'
+        expect(process.status).to eq 'error'
+        expect(process.error_message).to eq 'it just broke'
         expect(process.name).to eq 'jp2-create'
       end
     end

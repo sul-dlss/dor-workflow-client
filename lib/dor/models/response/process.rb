@@ -40,6 +40,10 @@ module Dor
           @attributes[:note].presence
         end
 
+        def error_message
+          @attributes[:errorMessage].presence
+        end
+
         delegate :pid, :workflow_name, to: :parent
 
         private
