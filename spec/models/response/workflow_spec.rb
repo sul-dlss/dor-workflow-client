@@ -5,6 +5,18 @@ require 'spec_helper'
 RSpec.describe Dor::Workflow::Response::Workflow do
   subject(:instance) { described_class.new(xml: xml) }
 
+  describe '#pid' do
+    subject { instance.pid }
+
+    let(:xml) do
+      <<~XML
+        <workflow repository="dor" objectId="druid:mw971zk1113" id="assemblyWF">
+        </workflow>
+      XML
+    end
+    it { is_expected.to eq 'druid:mw971zk1113' }
+  end
+
   describe '#active?' do
     subject { instance.active_for?(version: 2) }
 
