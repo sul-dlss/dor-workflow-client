@@ -15,6 +15,10 @@ module Dor
           ng_xml.at_xpath('/workflow/@objectId').text
         end
 
+        def workflow_name
+          ng_xml.at_xpath('/workflow/@id').text
+        end
+
         # @param [Integer] version the version we are checking for.
         def active_for?(version:)
           result = ng_xml.at_xpath("/workflow/process[@version=#{version}]")

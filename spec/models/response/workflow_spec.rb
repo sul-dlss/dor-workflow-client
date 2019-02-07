@@ -17,6 +17,18 @@ RSpec.describe Dor::Workflow::Response::Workflow do
     it { is_expected.to eq 'druid:mw971zk1113' }
   end
 
+  describe '#workflow_name' do
+    subject { instance.workflow_name }
+
+    let(:xml) do
+      <<~XML
+        <workflow repository="dor" objectId="druid:mw971zk1113" id="assemblyWF">
+        </workflow>
+      XML
+    end
+    it { is_expected.to eq 'assemblyWF' }
+  end
+
   describe '#active?' do
     subject { instance.active_for?(version: 2) }
 
