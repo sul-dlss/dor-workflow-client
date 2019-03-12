@@ -499,16 +499,7 @@ module Dor
         end
         @@http_conn = case url_or_connection
                       when String
-                        Faraday.new(url: url_or_connection) do |faraday|
-                          faraday.response :logger if opts[:debug] # logs to STDOUT
-                          faraday.use Faraday::Response::RaiseError
-                          faraday.adapter :net_http_persistent # use Keep-Alive connections
-                          faraday.options.params_encoder = Faraday::FlatParamsEncoder
-                          if opts.key? :timeout
-                            faraday.options.timeout = opts[:timeout]
-                            faraday.options.open_timeout = opts[:timeout]
-                          end
-                        end
+                        build_connection(url_or_connection, opts)
                       else
                         url_or_connection
                       end
@@ -520,6 +511,24 @@ module Dor
       end
 
       protected
+
+      def build_connection(url, opts)
+        Faraday.new(url: url) do |faraday|
+          faraday.response :logger if opts[:debug] # logs to STDOUT
+          faraday.use Faraday::Response::RaiseError
+          faraday.adapter :net_http_persistent # use Keep-Alive connections
+          faraday.options.params_encoder = Faraday::FlatParamsEncoder
+          if opts.key? :timeout
+            faraday.options.timeout = opts[:timeout]
+            faraday.options.open_timeout = opts[:timeout]
+          end
+          faraday.headers[:user_agent] = user_agent
+        end
+      end
+
+      def user_agent
+        "dor-workflow-service #{Dor::Workflow::Service::VERSION}"
+      end
 
       def build_queued_uri(repository, opts = {})
         uri_string = "workflow_queue/all_queued?repository=#{repository}"
