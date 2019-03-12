@@ -55,11 +55,16 @@ describe Dor::WorkflowService do
   end
 
   describe '#configure' do
-    it 'should handle a string and timeout' do
-      conn = Dor::WorkflowService.configure 'http://externalhost/', timeout: 99
+    let(:conn) { Dor::WorkflowService.configure 'http://externalhost/', timeout: 99 }
+
+    it 'has a timeout' do
       expect(conn).to be_a(Faraday::Connection)
       expect(conn.options.timeout).to eq(99)
       expect(conn.options.open_timeout).to eq(99)
+    end
+
+    it 'has a user_agent' do
+      expect(conn.headers).to include('User-Agent' => /dor-workflow-service \d+\.\d+\.\d+/)
     end
   end
 
