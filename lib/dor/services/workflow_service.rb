@@ -24,7 +24,6 @@ module Dor
     class << self
       @@handler  = nil
       @@logger   = nil
-      @@resource = nil
       @@dor_services_url = nil
       @@http_conn = nil
 
