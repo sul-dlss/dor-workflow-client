@@ -515,7 +515,7 @@ module Dor
         Faraday.new(url: url) do |faraday|
           faraday.response :logger if opts[:debug] # logs to STDOUT
           faraday.use Faraday::Response::RaiseError
-          faraday.adapter :net_http_persistent # use Keep-Alive connections
+          faraday.adapter Faraday.default_adapter
           faraday.options.params_encoder = Faraday::FlatParamsEncoder
           if opts.key? :timeout
             faraday.options.timeout = opts[:timeout]
