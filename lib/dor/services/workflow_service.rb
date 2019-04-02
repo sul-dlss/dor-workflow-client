@@ -356,6 +356,7 @@ module Dor
       # @param [String] repository -- optional, default=dor
       # @return [Integer] Number of objects with this repository:workflow that have been archived
       def count_archived_for_workflow(workflow, repository = 'dor')
+        Deprecation.warn(self, 'count_archived_for_workflow will be removed without replacement because the workflow server no longer archives processes')
         resp = workflow_resource_method "workflow_archive?repository=#{repository}&workflow=#{workflow}&count-only=true"
         extract_object_count(resp)
       end

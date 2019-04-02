@@ -505,6 +505,7 @@ describe Dor::WorkflowService do
     end
 
     it 'counts how many workflows are archived' do
+      expect(Deprecation).to receive(:warn)
       expect(Dor::WorkflowService.count_archived_for_workflow(@workflow, @repository)).to eq(20)
     end
   end
