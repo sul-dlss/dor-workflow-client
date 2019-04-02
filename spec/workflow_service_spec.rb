@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-describe Dor::WorkflowService do
+RSpec.describe Dor::WorkflowService do
   let(:wf_xml) do
     <<-EOXML
     <workflow id="etdSubmitWF">
@@ -49,13 +49,13 @@ describe Dor::WorkflowService do
     allow(@mock_logger).to receive(:info)  # silence log output
     allow(@mock_logger).to receive(:debug) # silence log output
     allow(@mock_logger).to receive(:warn) # silence log output
-    allow(Dor::WorkflowService).to receive(:default_logger).and_return(@mock_logger)
+    allow(described_class).to receive(:default_logger).and_return(@mock_logger)
 
-    Dor::WorkflowService.configure mock_http_connection
+    described_class.configure mock_http_connection
   end
 
   describe '#configure' do
-    let(:conn) { Dor::WorkflowService.configure 'http://externalhost/', timeout: 99 }
+    let(:conn) { described_class.configure 'http://externalhost/', timeout: 99 }
 
     it 'has a timeout' do
       expect(conn).to be_a(Faraday::Connection)
@@ -79,20 +79,20 @@ describe Dor::WorkflowService do
     end
 
     it 'should pass workflow xml to the DOR workflow service and return the URL to the workflow' do
-      Dor::WorkflowService.create_workflow(@repo, @druid, 'etdSubmitWF', wf_xml)
+      described_class.create_workflow(@repo, @druid, 'etdSubmitWF', wf_xml)
     end
 
     it 'should log an error and retry upon a targetted Faraday exception' do
       expect(@mock_logger).to receive(:warn).with(/\[Attempt 1\] Faraday::ClientError: the server responded with status 418/)
-      expect { Dor::WorkflowService.create_workflow(@repo, @druid, 'httpException', wf_xml) }.to raise_error Dor::WorkflowException
+      expect { described_class.create_workflow(@repo, @druid, 'httpException', wf_xml) }.to raise_error Dor::WorkflowException
     end
 
     it 'should raise on an unexpected Exception' do
-      expect { Dor::WorkflowService.create_workflow(@repo, @druid, 'raiseException', wf_xml) }.to raise_error(Exception, 'broken')
+      expect { described_class.create_workflow(@repo, @druid, 'raiseException', wf_xml) }.to raise_error(Exception, 'broken')
     end
 
     it 'sets the create-ds param to the value of the passed in options hash' do
-      Dor::WorkflowService.create_workflow(@repo, @druid, 'noCreateDsWF', wf_xml, create_ds: false)
+      described_class.create_workflow(@repo, @druid, 'noCreateDsWF', wf_xml, create_ds: false)
     end
 
     it 'adds lane_id attributes to all steps if passed in as an option' do
@@ -111,7 +111,7 @@ describe Dor::WorkflowService do
           <process name="start-accession" status="waiting" laneId="lane1"/>
         </workflow>
       XML
-      expect(Dor::WorkflowService.send(:add_lane_id_to_workflow_xml, 'lane1', wf_xml)).to be_equivalent_to(expected)
+      expect(described_class.send(:add_lane_id_to_workflow_xml, 'lane1', wf_xml)).to be_equivalent_to(expected)
     end
   end
 
@@ -134,21 +134,21 @@ describe Dor::WorkflowService do
     end
 
     it 'should update workflow status and return true if successful' do
-      expect(Dor::WorkflowService.update_workflow_status(@repo, @druid, 'etdSubmitWF', 'reader-approval', 'completed', version: 2, note: 'annotation', lane_id: 'lane2')).to be true
+      expect(described_class.update_workflow_status(@repo, @druid, 'etdSubmitWF', 'reader-approval', 'completed', version: 2, note: 'annotation', lane_id: 'lane2')).to be true
     end
 
     it 'should return false if the PUT to the DOR workflow service throws an exception' do
-      expect { Dor::WorkflowService.update_workflow_status(@repo, @druid, 'errorWF', 'reader-approval', 'completed') }.to raise_error(Dor::WorkflowException, /status 400/)
+      expect { described_class.update_workflow_status(@repo, @druid, 'errorWF', 'reader-approval', 'completed') }.to raise_error(Dor::WorkflowException, /status 400/)
     end
 
     it 'performs a conditional update when current-status is passed as a parameter' do
       expect(mock_http_connection).to receive(:put).with("#{@repo}/objects/#{@druid}/workflows/etdSubmitWF/reader-approval?current-status=queued").and_call_original
 
-      expect(Dor::WorkflowService.update_workflow_status(@repo, @druid, 'etdSubmitWF', 'reader-approval', 'completed', version: 2, note: 'annotation', lane_id: 'lane1', current_status: 'queued')).to be true
+      expect(described_class.update_workflow_status(@repo, @druid, 'etdSubmitWF', 'reader-approval', 'completed', version: 2, note: 'annotation', lane_id: 'lane1', current_status: 'queued')).to be true
     end
 
     it 'should throw exception if invalid status provided' do
-      expect { Dor::WorkflowService.update_workflow_status(@repo, @druid, 'accessionWF', 'publish', 'NOT_VALID_STATUS') }.to raise_error(ArgumentError)
+      expect { described_class.update_workflow_status(@repo, @druid, 'accessionWF', 'publish', 'NOT_VALID_STATUS') }.to raise_error(ArgumentError)
     end
   end
 
@@ -167,10 +167,10 @@ describe Dor::WorkflowService do
     end
 
     it 'should update workflow status to error and return true if successful' do
-      Dor::WorkflowService.update_workflow_error_status(@repo, @druid, 'etdSubmitWF', 'reader-approval', 'Some exception', error_text: 'The optional stacktrace')
+      described_class.update_workflow_error_status(@repo, @druid, 'etdSubmitWF', 'reader-approval', 'Some exception', error_text: 'The optional stacktrace')
     end
     it 'should return false if the PUT to the DOR workflow service throws an exception' do
-      expect { Dor::WorkflowService.update_workflow_status(@repo, @druid, 'errorWF', 'reader-approval', 'completed') }.to raise_error(Dor::WorkflowException, /status 400/)
+      expect { described_class.update_workflow_status(@repo, @druid, 'errorWF', 'reader-approval', 'completed') }.to raise_error(Dor::WorkflowException, /status 400/)
     end
   end
 
@@ -185,7 +185,7 @@ describe Dor::WorkflowService do
       end
     end
 
-    subject { Dor::WorkflowService.get_workflow_status(repo, druid, workflow_name, step_name) }
+    subject { described_class.get_workflow_status(repo, druid, workflow_name, step_name) }
     let(:step_name) { 'registrar-approval' }
     let(:workflow_name) { 'etdSubmitWF' }
     let(:status) { 200 }
@@ -256,7 +256,7 @@ describe Dor::WorkflowService do
     end
 
     it 'returns the xml for a given repository, druid, and workflow' do
-      expect(Dor::WorkflowService.get_workflow_xml('dor', 'druid:123', 'etdSubmitWF')).to eq(xml)
+      expect(described_class.get_workflow_xml('dor', 'druid:123', 'etdSubmitWF')).to eq(xml)
     end
   end
 
@@ -271,7 +271,7 @@ describe Dor::WorkflowService do
     end
 
     it 'returns the workflows associated with druid' do
-      expect(Dor::WorkflowService.get_workflows(@druid)).to eq(['accessionWF'])
+      expect(described_class.get_workflows(@druid)).to eq(['accessionWF'])
     end
   end
 
@@ -297,11 +297,11 @@ describe Dor::WorkflowService do
     end
 
     it 'returns a Time object reprenting when the milestone was reached' do
-      expect(Dor::WorkflowService.get_lifecycle('dor', 'druid:123', 'released').beginning_of_day).to eq(Time.parse('2010-06-15T16:08:58-0700').beginning_of_day)
+      expect(described_class.get_lifecycle('dor', 'druid:123', 'released').beginning_of_day).to eq(Time.parse('2010-06-15T16:08:58-0700').beginning_of_day)
     end
 
     it "returns nil if the milestone hasn't been reached yet" do
-      expect(Dor::WorkflowService.get_lifecycle('dor', 'druid:abc', 'inprocess')).to be_nil
+      expect(described_class.get_lifecycle('dor', 'druid:abc', 'inprocess')).to be_nil
     end
   end
 
@@ -327,11 +327,11 @@ describe Dor::WorkflowService do
     end
 
     it 'parses out the active lifecycle' do
-      expect(Dor::WorkflowService.get_active_lifecycle('dor', @druid, 'released').beginning_of_day).to eq(Time.parse('2010-06-15T16:08:58-0700').beginning_of_day)
+      expect(described_class.get_active_lifecycle('dor', @druid, 'released').beginning_of_day).to eq(Time.parse('2010-06-15T16:08:58-0700').beginning_of_day)
     end
 
     it 'handles missing lifecycle' do
-      expect(Dor::WorkflowService.get_active_lifecycle('dor', @druid, 'NOT_FOUND')).to be_nil
+      expect(described_class.get_active_lifecycle('dor', @druid, 'NOT_FOUND')).to be_nil
     end
   end
 
@@ -353,7 +353,7 @@ describe Dor::WorkflowService do
 
     describe 'a query with one step completed and one waiting' do
       it 'creates the URI string with only the one completed step' do
-        expect(Dor::WorkflowService.get_objects_for_workstep(@completed, @waiting, 'default', default_repository: @repository, default_workflow: @workflow)).to eq(['druid:ab123de4567', 'druid:ab123de9012'])
+        expect(described_class.get_objects_for_workstep(@completed, @waiting, 'default', default_repository: @repository, default_workflow: @workflow)).to eq(['druid:ab123de4567', 'druid:ab123de9012'])
       end
     end
 
@@ -362,7 +362,7 @@ describe Dor::WorkflowService do
         second_completed = 'google-convert'
         xml = %(<objects count="1"><object id="druid:ab123de4567"/><object id="druid:ab123de9012"/></objects>)
         allow(mock_http_connection).to receive(:get).with("workflow_queue?waiting=#{@repository}:#{@workflow}:#{@waiting}&completed=#{@repository}:#{@workflow}:#{@completed}&completed=#{@repository}:#{@workflow}:#{second_completed}&lane-id=default").and_return(double(Faraday::Response, body: xml))
-        expect(Dor::WorkflowService.get_objects_for_workstep([@completed, second_completed], @waiting, 'default', default_repository: @repository, default_workflow: @workflow)).to eq(['druid:ab123de4567', 'druid:ab123de9012'])
+        expect(described_class.get_objects_for_workstep([@completed, second_completed], @waiting, 'default', default_repository: @repository, default_workflow: @workflow)).to eq(['druid:ab123de4567', 'druid:ab123de9012'])
       end
     end
 
@@ -380,7 +380,7 @@ describe Dor::WorkflowService do
           allow(mock_http_connection).to receive(:get).with("workflow_queue?waiting=#{@qualified_waiting}&completed=#{@qualified_completed}&completed=#{qualified_completed2}&completed=#{qualified_completed3}&lane-id=#{laneid}").and_return(double(Faraday::Response, body: xml))
           args = [[@qualified_completed, qualified_completed2, qualified_completed3], @qualified_waiting]
           args << laneid if laneid != 'default'
-          expect(Dor::WorkflowService.get_objects_for_workstep(*args)).to eq(['druid:ab123de4567', 'druid:ab123de9012'])
+          expect(described_class.get_objects_for_workstep(*args)).to eq(['druid:ab123de4567', 'druid:ab123de9012'])
         end
       end
 
@@ -401,15 +401,15 @@ describe Dor::WorkflowService do
         end
         it 'with only one completed step passed in as a String' do
           allow(mock_http_connection).to receive(:get).with("workflow_queue?waiting=#{@qualified_waiting}&completed=#{@qualified_completed}&lane-id=default").and_return(double(Faraday::Response, body: @xml))
-          expect(Dor::WorkflowService.get_objects_for_workstep(@qualified_completed, @qualified_waiting)).to eq(['druid:ab123de4567'])
+          expect(described_class.get_objects_for_workstep(@qualified_completed, @qualified_waiting)).to eq(['druid:ab123de4567'])
         end
         it 'without any completed steps, only waiting' do
           allow(mock_http_connection).to receive(:get).with("workflow_queue?waiting=#{@qualified_waiting}&lane-id=default").and_return(double(Faraday::Response, body: @xml))
-          expect(Dor::WorkflowService.get_objects_for_workstep(nil, @qualified_waiting)).to eq(['druid:ab123de4567'])
+          expect(described_class.get_objects_for_workstep(nil, @qualified_waiting)).to eq(['druid:ab123de4567'])
         end
         it 'same but with lane_id' do
           allow(mock_http_connection).to receive(:get).with("workflow_queue?waiting=#{@qualified_waiting}&lane-id=lane1").and_return(double(Faraday::Response, body: @xml))
-          expect(Dor::WorkflowService.get_objects_for_workstep(nil, @qualified_waiting, 'lane1')).to eq(['druid:ab123de4567'])
+          expect(described_class.get_objects_for_workstep(nil, @qualified_waiting, 'lane1')).to eq(['druid:ab123de4567'])
         end
       end
     end
@@ -432,7 +432,7 @@ describe Dor::WorkflowService do
     end
 
     it 'returns an empty list if it encounters an empty workflow queue' do
-      expect(Dor::WorkflowService.get_objects_for_workstep(@completed, @waiting, 'default', default_repository: @repository, default_workflow: @workflow)).to eq([])
+      expect(described_class.get_objects_for_workstep(@completed, @waiting, 'default', default_repository: @repository, default_workflow: @workflow)).to eq([])
     end
   end
 
@@ -456,11 +456,11 @@ describe Dor::WorkflowService do
     end
 
     it 'returns error messages for errored objects' do
-      expect(Dor::WorkflowService.get_errored_objects_for_workstep(@workflow, @step, @repository)).to eq('druid:ab123cd4567' => 'This is an error message')
+      expect(described_class.get_errored_objects_for_workstep(@workflow, @step, @repository)).to eq('druid:ab123cd4567' => 'This is an error message')
     end
 
     it 'counts how many steps are errored out' do
-      expect(Dor::WorkflowService.count_errored_for_workstep(@workflow, @step, @repository)).to eq(1)
+      expect(described_class.count_errored_for_workstep(@workflow, @step, @repository)).to eq(1)
     end
   end
 
@@ -484,7 +484,7 @@ describe Dor::WorkflowService do
     end
 
     it 'counts how many steps are errored out' do
-      expect(Dor::WorkflowService.count_queued_for_workstep(@workflow, @step, @repository)).to eq(1)
+      expect(described_class.count_queued_for_workstep(@workflow, @step, @repository)).to eq(1)
     end
   end
 
@@ -506,7 +506,7 @@ describe Dor::WorkflowService do
 
     it 'counts how many workflows are archived' do
       expect(Deprecation).to receive(:warn)
-      expect(Dor::WorkflowService.count_archived_for_workflow(@workflow, @repository)).to eq(20)
+      expect(described_class.count_archived_for_workflow(@workflow, @repository)).to eq(20)
     end
   end
 
@@ -531,7 +531,7 @@ describe Dor::WorkflowService do
     end
 
     it 'counts how many objects are at the type of step' do
-      expect(Dor::WorkflowService.count_objects_in_step(@workflow, @step, @type, @repository)).to eq(1)
+      expect(described_class.count_objects_in_step(@workflow, @step, @type, @repository)).to eq(1)
     end
   end
 
@@ -546,15 +546,15 @@ describe Dor::WorkflowService do
 
     it 'sends a delete request to the workflow service' do
       expect(mock_http_connection).to receive(:delete).with(url).and_call_original
-      Dor::WorkflowService.delete_workflow(@repo, @druid, 'accessionWF')
+      described_class.delete_workflow(@repo, @druid, 'accessionWF')
     end
   end
   describe 'get_milestones' do
     it 'should include the version in with the milestones' do
       xml = '<?xml version="1.0" encoding="UTF-8"?><lifecycle objectId="druid:gv054hp4128"><milestone date="2012-01-26T21:06:54-0800" version="2">published</milestone></lifecycle>'
       xml = Nokogiri::XML(xml)
-      allow(Dor::WorkflowService).to receive(:query_lifecycle).and_return(xml)
-      milestones = Dor::WorkflowService.get_milestones(@repo, @druid)
+      allow(described_class).to receive(:query_lifecycle).and_return(xml)
+      milestones = described_class.get_milestones(@repo, @druid)
       expect(milestones.first[:milestone]).to eq('published')
       expect(milestones.first[:version]).to eq('2')
     end
@@ -573,9 +573,9 @@ describe Dor::WorkflowService do
         </workflow>
       </workflows>
       XML
-      allow(Dor::WorkflowService).to receive(:get_workflow_xml) { xml }
+      allow(described_class).to receive(:get_workflow_xml) { xml }
       expect(Deprecation).to receive(:warn)
-      expect(Dor::WorkflowService.get_active_workflows('dor', 'druid:mw971zk1113')).to eq(['accessionWF'])
+      expect(described_class.get_active_workflows('dor', 'druid:mw971zk1113')).to eq(['accessionWF'])
     end
   end
 
@@ -588,11 +588,11 @@ describe Dor::WorkflowService do
       XML
     end
     before do
-      allow(Dor::WorkflowService).to receive(:get_workflow_xml) { xml }
+      allow(described_class).to receive(:get_workflow_xml) { xml }
     end
 
     it 'it returns a workflow' do
-      expect(Dor::WorkflowService.workflow(pid: 'druid:mw971zk1113', workflow_name: 'accessionWF')).to be_kind_of Dor::Workflow::Response::Workflow
+      expect(described_class.workflow(pid: 'druid:mw971zk1113', workflow_name: 'accessionWF')).to be_kind_of Dor::Workflow::Response::Workflow
     end
   end
 
@@ -611,12 +611,12 @@ describe Dor::WorkflowService do
 
     let(:url) { 'dor/objects/druid:123/versionClose' }
     it 'calls the versionClose endpoint with druid' do
-      Dor::WorkflowService.close_version(@repo, @druid)
+      described_class.close_version(@repo, @druid)
     end
 
     it 'optionally prevents creation of accessionWF' do
       expect(mock_http_connection).to receive(:post).with('dor/objects/druid:123/versionClose?create-accession=false').and_call_original
-      Dor::WorkflowService.close_version(@repo, @druid, false)
+      described_class.close_version(@repo, @druid, false)
     end
   end
 
@@ -635,7 +635,7 @@ describe Dor::WorkflowService do
     end
 
     it 'returns an Array of Hashes containing each workflow step' do
-      ah = Dor::WorkflowService.get_stale_queued_workflows 'dor', hours_ago: 24, limit: 100
+      ah = described_class.get_stale_queued_workflows 'dor', hours_ago: 24, limit: 100
       expected = [
         { workflow: 'accessionWF', step: 'content-metadata', druid: 'dr:123', lane_id: 'lane1' },
         { workflow: 'assemblyWF',  step: 'jp2-create',       druid: 'dr:456', lane_id: 'lane2' }
@@ -654,7 +654,7 @@ describe Dor::WorkflowService do
     end
 
     it 'returns the number of queued workflow steps' do
-      expect(Dor::WorkflowService.count_stale_queued_workflows('dor', hours_ago: 48)).to eq(10)
+      expect(described_class.count_stale_queued_workflows('dor', hours_ago: 48)).to eq(10)
     end
   end
 
@@ -673,7 +673,7 @@ describe Dor::WorkflowService do
     end
 
     it 'returns the lane ids for a given workflow step' do
-      expect(Dor::WorkflowService.get_lane_ids('dor', 'accessionWF', 'shelve')).to eq(%w[lane1 lane2])
+      expect(described_class.get_lane_ids('dor', 'accessionWF', 'shelve')).to eq(%w[lane1 lane2])
     end
   end
 
@@ -687,7 +687,7 @@ describe Dor::WorkflowService do
     end
 
     it 'uses the flat params encoder' do
-      response = Dor::WorkflowService.send(:send_workflow_resource_request, 'x?complete=a&complete=b')
+      response = described_class.send(:send_workflow_resource_request, 'x?complete=a&complete=b')
 
       expect(response.body).to eq 'ab'
       expect(response.env.url.query).to eq 'complete=a&complete=b'
@@ -696,11 +696,11 @@ describe Dor::WorkflowService do
 
   describe '.workflow_resource' do
     before do
-      Dor::WorkflowService.configure 'http://example.com'
+      described_class.configure 'http://example.com'
     end
 
     it 'defaults to using the flat params encoder' do
-      expect(Dor::WorkflowService.workflow_resource.options.params_encoder).to eq Faraday::FlatParamsEncoder
+      expect(described_class.workflow_resource.options.params_encoder).to eq Faraday::FlatParamsEncoder
     end
   end
 end
