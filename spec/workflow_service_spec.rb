@@ -488,28 +488,6 @@ describe Dor::WorkflowService do
     end
   end
 
-  describe '#count_archived_for_workflow' do
-    before(:all) do
-      @repository = 'dor'
-      @workflow   = 'accessionWF'
-    end
-
-    let(:stubs) do
-      Faraday::Adapter::Test::Stubs.new do |stub|
-        stub.get("/workflow_archive?repository=#{@repository}&workflow=#{@workflow}&count-only=true") do |_env|
-          [200, {}, <<-EOXML]
-            <objects count="20" />
-          EOXML
-        end
-      end
-    end
-
-    it 'counts how many workflows are archived' do
-      expect(Deprecation).to receive(:warn)
-      expect(Dor::WorkflowService.count_archived_for_workflow(@workflow, @repository)).to eq(20)
-    end
-  end
-
   describe '#count_objects_in_step' do
     before(:all) do
       @workflow   = 'sdrIngestWF'

@@ -350,17 +350,6 @@ module Dor
         count_objects_in_step(workflow, step, 'queued', repository)
       end
 
-      ##
-      # Returns the number of objects that have completed a particular workflow
-      # @param [String] workflow name
-      # @param [String] repository -- optional, default=dor
-      # @return [Integer] Number of objects with this repository:workflow that have been archived
-      def count_archived_for_workflow(workflow, repository = 'dor')
-        Deprecation.warn(self, 'count_archived_for_workflow will be removed without replacement because the workflow server no longer archives processes')
-        resp = workflow_resource_method "workflow_archive?repository=#{repository}&workflow=#{workflow}&count-only=true"
-        extract_object_count(resp)
-      end
-
       # Gets all of the workflow steps that have a status of 'queued' that have a last-updated timestamp older than the number of hours passed in
       #   This will enable re-queueing of jobs that have been lost by the job manager
       # @param [String] repository name of the repository you want to query, like 'dor' or 'sdr'
