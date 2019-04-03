@@ -22,7 +22,6 @@ module Dor
     class << self
       @@handler  = nil
       @@logger   = nil
-      @@dor_services_url = nil
       @@http_conn = nil
 
       # From Workflow Service's admin/Process.java
@@ -446,12 +445,10 @@ module Dor
       # @param [String] url points to the workflow service
       # @param [Hash] opts optional params
       # @option opts [Logger] :logger defaults writing to workflow_service.log with weekly rotation
-      # @option opts [String] :dor_services_url uri to the DOR REST service
       # @option opts [Integer] :timeout number of seconds for HTTP timeout
       # @return [Faraday::Connection] the REST client resource
       def configure(url_or_connection, opts = {})
-        @@logger           = opts[:logger] || default_logger
-        @@dor_services_url = opts[:dor_services_url] if opts[:dor_services_url]
+        @@logger = opts[:logger] || default_logger
         @@handler = proc do |exception, attempt_number, total_delay|
           @@logger.warn "[Attempt #{attempt_number}] #{exception.class}: #{exception.message}; #{total_delay} seconds elapsed."
         end
