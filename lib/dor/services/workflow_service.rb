@@ -94,8 +94,8 @@ module Dor
       # @param [String] workflow The name of the workflow
       # @param [String] process The name of the process step
       # @return [String] status for repo-workflow-process-druid
-      def get_workflow_status(repo, druid, workflow, process)
-        workflow_md = get_workflow_xml(repo, druid, workflow)
+      def workflow_status(repo, druid, workflow, process)
+        workflow_md = workflow_xml(repo, druid, workflow)
         doc = Nokogiri::XML(workflow_md)
         raise Dor::WorkflowException, "Unable to parse response:\n#{workflow_md}" if doc.root.nil?
 
@@ -104,14 +104,24 @@ module Dor
         process&.attr('status')
       end
 
+      def get_workflow_status(repo, druid, workflow, process)
+        Deprecation.warn(self, 'use workflow_status instead. This will be removed in dor-workflow-service version 3')
+        workflow_status(repo, druid, workflow, process)
+      end
+
       #
       # Retrieves the raw XML for the given workflow
       # @param [String] repo The repository the object resides in.  Currently recoginzes "dor" and "sdr".
       # @param [String] druid The id of the object
       # @param [String] workflow The name of the workflow
       # @return [String] XML of the workflow
-      def get_workflow_xml(repo, druid, workflow)
+      def workflow_xml(repo, druid, workflow)
         workflow_resource_method "#{repo}/objects/#{druid}/workflows/#{workflow}"
+      end
+
+      def get_workflow_xml(repo, druid, workflow)
+        Deprecation.warn(self, 'use workflow_xml instead. This will be removed in dor-workflow-service version 3')
+        workflow_xml(repo, druid, workflow)
       end
 
       # Get workflow names into an array for given PID
@@ -121,11 +131,16 @@ module Dor
       # @param [String] repo repository for the object
       # @return [Array<String>] list of worklows
       # @example
-      #   Dor::WorkflowService.get_workflows('druid:sr100hp0609')
+      #   Dor::WorkflowService.workflows('druid:sr100hp0609')
       #   => ["accessionWF", "assemblyWF", "disseminationWF"]
-      def get_workflows(pid, repo = 'dor')
-        xml_doc = Nokogiri::XML(get_workflow_xml(repo, pid, ''))
+      def workflows(pid, repo = 'dor')
+        xml_doc = Nokogiri::XML(workflow_xml(repo, pid, ''))
         xml_doc.xpath('//workflow').collect { |workflow| workflow['id'] }
+      end
+
+      def get_workflows(pid, repo = 'dor')
+        Deprecation.warn(self, 'use workflows instead. This will be removed in dor-workflow-service version 3')
+        workflows(pid, repo)
       end
 
       # Get active workflow names into an array for given PID
@@ -135,13 +150,15 @@ module Dor
       # @param [String] pid id of object
       # @return [Array<String>] list of active worklows.  Returns an empty Array if none are found
       # @example
-      #   Dor::WorkflowService.get_active_workflows('dor', 'druid:sr100hp0609')
+      #   Dor::WorkflowService.active_workflows('dor', 'druid:sr100hp0609')
       #   => ["accessionWF", "assemblyWF", "disseminationWF"]
-      def get_active_workflows(repo, pid)
+      def active_workflows(repo, pid)
         Deprecation.warn(self, 'get_active_workflows will be removed without replacement because the workflow server no longer archives processes')
         doc = Nokogiri::XML(get_workflow_xml(repo, pid, ''))
         doc.xpath(%(//workflow[not(process/@archived)]/@id )).map(&:value)
       end
+
+      alias get_active_workflows active_workflows
 
       # @param [String] repo repository of the object
       # @param [String] pid id of object
@@ -197,12 +214,17 @@ module Dor
       #     <milestone date="2010-04-29T10:12:51-0700">inprocess</milestone>
       #     <milestone date="2010-06-15T16:08:58-0700">released</milestone>
       #   </lifecycle>
-      def get_lifecycle(repo, druid, milestone)
+      def lifecycle(repo, druid, milestone)
         doc = query_lifecycle(repo, druid)
         milestone = doc.at_xpath("//lifecycle/milestone[text() = '#{milestone}']")
         return Time.parse(milestone['date']) if milestone
 
         nil
+      end
+
+      def get_lifecycle(repo, druid, milestone)
+        Deprecation.warn(self, 'use lifecycle instead. This will be removed in dor-workflow-service version 3')
+        lifecycle(repo, druid, milestone)
       end
 
       # Returns the Date for a requested milestone ONLY FROM THE ACTIVE workflow table
@@ -216,7 +238,7 @@ module Dor
       #     <milestone date="2010-04-29T10:12:51-0700">inprocess</milestone>
       #     <milestone date="2010-06-15T16:08:58-0700">released</milestone>
       #   </lifecycle>
-      def get_active_lifecycle(repo, druid, milestone)
+      def active_lifecycle(repo, druid, milestone)
         doc = query_lifecycle(repo, druid, true)
         milestone = doc.at_xpath("//lifecycle/milestone[text() = '#{milestone}']")
         return Time.parse(milestone['date']) if milestone
@@ -224,12 +246,22 @@ module Dor
         nil
       end
 
+      def get_active_lifecycle(repo, druid, milestone)
+        Deprecation.warn(self, 'use active_lifecycle instead. This will be removed in dor-workflow-service version 3')
+        active_lifecycle(repo, druid, milestone)
+      end
+
       # @return [Hash]
-      def get_milestones(repo, druid)
+      def milestones(repo, druid)
         doc = query_lifecycle(repo, druid)
         doc.xpath('//lifecycle/milestone').collect do |node|
           { milestone: node.text, at: Time.parse(node['date']), version: node['version'] }
         end
+      end
+
+      def get_milestones(repo, druid)
+        Deprecation.warn(self, 'use milestones instead. This will be removed in dor-workflow-service version 3')
+        milestones(repo, druid)
       end
 
       # Converts repo-workflow-step into repo:workflow:step
@@ -260,7 +292,7 @@ module Dor
       # @return [Array<String>]  Array of druids
       #
       # @example
-      #     get_objects_for_workstep(...)
+      #     objects_for_workstep(...)
       #     => [
       #        "druid:py156ps0477",
       #        "druid:tt628cb6479",
@@ -268,19 +300,19 @@ module Dor
       #      ]
       #
       # @example
-      #     get_objects_for_workstep(..., "lane1")
+      #     objects_for_workstep(..., "lane1")
       #     => {
       #      "druid:py156ps0477",
       #      "druid:tt628cb6479",
       #     }
       #
       # @example
-      #     get_objects_for_workstep(..., "lane1", limit: 1)
+      #     objects_for_workstep(..., "lane1", limit: 1)
       #     => {
       #      "druid:py156ps0477",
       #     }
       #
-      def get_objects_for_workstep(completed, waiting, lane_id = 'default', options = {})
+      def objects_for_workstep(completed, waiting, lane_id = 'default', options = {})
         waiting_param = qualify_step(options[:default_repository], options[:default_workflow], waiting)
         uri_string = "workflow_queue?waiting=#{waiting_param}"
         if completed
@@ -308,6 +340,11 @@ module Dor
         result.map { |n| n[:id] }
       end
 
+      def get_objects_for_workstep(completed, waiting, lane_id = 'default', options = {})
+        Deprecation.warn(self, 'use objects_for_workstep instead. This will be removed in dor-workflow-service version 3')
+        objects_for_workstep(completed, waiting, lane_id, options)
+      end
+
       # Get a list of druids that have errored out in a particular workflow and step
       #
       # @param [String] workflow name
@@ -316,16 +353,21 @@ module Dor
       #
       # @return [Hash] hash of results, with key has a druid, and value as the error message
       # @example
-      #     Dor::WorkflowService.get_errored_objects_for_workstep('accessionWF','content-metadata')
+      #     Dor::WorkflowService.errored_objects_for_workstep('accessionWF','content-metadata')
       #     => {"druid:qd556jq0580"=>"druid:qd556jq0580 - Item error; caused by
       #        #<Rubydora::FedoraInvalidRequest: Error modifying datastream contentMetadata for druid:qd556jq0580. See logger for details>"}
-      def get_errored_objects_for_workstep(workflow, step, repository = 'dor')
+      def errored_objects_for_workstep(workflow, step, repository = 'dor')
         resp = workflow_resource_method "workflow_queue?repository=#{repository}&workflow=#{workflow}&error=#{step}"
         result = {}
         Nokogiri::XML(resp).xpath('//object').collect do |node|
           result.merge!(node['id'] => node['errorMessage'])
         end
         result
+      end
+
+      def get_errored_objects_for_workstep(workflow, step, repository = 'dor')
+        Deprecation.warn(self, 'use errored_objects_for_workstep instead. This will be removed in dor-workflow-service version 3')
+        errored_objects_for_workstep(workflow, step, repository)
       end
 
       # Returns the number of objects that have a status of 'error' in a particular workflow and step
@@ -370,9 +412,14 @@ module Dor
       # @option opts [Integer] :limit sets the maximum number of workflow steps that can be returned.  Defaults to no limit
       # @return [Array[Hash]] each Hash represents a workflow step.  It will have the following keys:
       #  :workflow, :step, :druid, :lane_id
-      def get_stale_queued_workflows(repository, opts = {})
+      def stale_queued_workflows(repository, opts = {})
         uri_string = build_queued_uri(repository, opts)
         parse_queued_workflows_response workflow_resource_method(uri_string)
+      end
+
+      def get_stale_queued_workflows(repository, opts = {})
+        Deprecation.warn(self, 'use stale_queued_workflows instead. This will be removed in dor-workflow-service version 3')
+        stale_queued_workflows(repository, opts)
       end
 
       # Returns a count of workflow steps that have a status of 'queued' that have a last-updated timestamp older than the number of hours passed in
@@ -445,11 +492,16 @@ module Dor
       # @param [String] workflow name
       # @param [String] process name
       # @return [Array<String>] all of the distinct laneIds.  Array will be empty if no lane ids were found
-      def get_lane_ids(repo, workflow, process)
+      def lane_ids(repo, workflow, process)
         uri = "workflow_queue/lane_ids?step=#{repo}:#{workflow}:#{process}"
         doc = Nokogiri::XML(workflow_resource_method(uri))
         nodes = doc.xpath('/lanes/lane')
         nodes.map { |n| n['id'] }
+      end
+
+      def get_lane_ids(repo, workflow, process)
+        Deprecation.warn(self, 'use lane_ids instead. This will be removed in dor-workflow-service version 3')
+        lane_ids(repo, workflow, process)
       end
 
       ### MIMICKING ATTRIBUTE READER
