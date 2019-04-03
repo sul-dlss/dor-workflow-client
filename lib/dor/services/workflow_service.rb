@@ -7,7 +7,6 @@ require 'retries'
 require 'faraday'
 require 'dor/workflow_exception'
 require 'dor/models/response/workflow'
-require 'deprecation'
 
 module Dor
   # TODO: major version revision: change pattern of usage to be normal non-singleton class
@@ -20,7 +19,6 @@ module Dor
 
   # Create and update workflows
   class WorkflowService
-    extend Deprecation
     class << self
       @@handler  = nil
       @@logger   = nil
@@ -104,11 +102,6 @@ module Dor
         process&.attr('status')
       end
 
-      def get_workflow_status(repo, druid, workflow, process)
-        Deprecation.warn(self, 'use workflow_status instead. This will be removed in dor-workflow-service version 3')
-        workflow_status(repo, druid, workflow, process)
-      end
-
       #
       # Retrieves the raw XML for the given workflow
       # @param [String] repo The repository the object resides in.  Currently recoginzes "dor" and "sdr".
@@ -116,16 +109,9 @@ module Dor
       # @param [String] workflow The name of the workflow
       # @return [String] XML of the workflow
       def workflow_xml(repo, druid, workflow)
-        unless workflow
-          Deprecation.warn(self, 'calling workflow_xml without a workflow is deprecated and will be removed in version 3. Use all_workflows_xml instead.')
-          return all_workflows_xml(druid)
-        end
-        workflow_resource_method "#{repo}/objects/#{druid}/workflows/#{workflow}"
-      end
+        raise ArgumentError, 'missing workflow' unless workflow
 
-      def get_workflow_xml(repo, druid, workflow)
-        Deprecation.warn(self, 'use workflow_xml instead. This will be removed in dor-workflow-service version 3')
-        workflow_xml(repo, druid, workflow)
+        workflow_resource_method "#{repo}/objects/#{druid}/workflows/#{workflow}"
       end
 
       #
@@ -149,28 +135,6 @@ module Dor
         xml_doc = Nokogiri::XML(workflow_xml(repo, pid, ''))
         xml_doc.xpath('//workflow').collect { |workflow| workflow['id'] }
       end
-
-      def get_workflows(pid, repo = 'dor')
-        Deprecation.warn(self, 'use workflows instead. This will be removed in dor-workflow-service version 3')
-        workflows(pid, repo)
-      end
-
-      # Get active workflow names into an array for given PID
-      # This method only works when this gem is used in a project that is configured to connect to DOR
-      #
-      # @param [String] repo repository of the object
-      # @param [String] pid id of object
-      # @return [Array<String>] list of active worklows.  Returns an empty Array if none are found
-      # @example
-      #   Dor::WorkflowService.active_workflows('dor', 'druid:sr100hp0609')
-      #   => ["accessionWF", "assemblyWF", "disseminationWF"]
-      def active_workflows(repo, pid)
-        Deprecation.warn(self, 'get_active_workflows will be removed without replacement because the workflow server no longer archives processes')
-        doc = Nokogiri::XML(get_workflow_xml(repo, pid, ''))
-        doc.xpath(%(//workflow[not(process/@archived)]/@id )).map(&:value)
-      end
-
-      alias get_active_workflows active_workflows
 
       # @param [String] repo repository of the object
       # @param [String] pid id of object
@@ -234,11 +198,6 @@ module Dor
         nil
       end
 
-      def get_lifecycle(repo, druid, milestone)
-        Deprecation.warn(self, 'use lifecycle instead. This will be removed in dor-workflow-service version 3')
-        lifecycle(repo, druid, milestone)
-      end
-
       # Returns the Date for a requested milestone ONLY FROM THE ACTIVE workflow table
       # @param [String] repo repository name
       # @param [String] druid object id
@@ -258,22 +217,12 @@ module Dor
         nil
       end
 
-      def get_active_lifecycle(repo, druid, milestone)
-        Deprecation.warn(self, 'use active_lifecycle instead. This will be removed in dor-workflow-service version 3')
-        active_lifecycle(repo, druid, milestone)
-      end
-
       # @return [Hash]
       def milestones(repo, druid)
         doc = query_lifecycle(repo, druid)
         doc.xpath('//lifecycle/milestone').collect do |node|
           { milestone: node.text, at: Time.parse(node['date']), version: node['version'] }
         end
-      end
-
-      def get_milestones(repo, druid)
-        Deprecation.warn(self, 'use milestones instead. This will be removed in dor-workflow-service version 3')
-        milestones(repo, druid)
       end
 
       # Converts repo-workflow-step into repo:workflow:step
@@ -352,11 +301,6 @@ module Dor
         result.map { |n| n[:id] }
       end
 
-      def get_objects_for_workstep(completed, waiting, lane_id = 'default', options = {})
-        Deprecation.warn(self, 'use objects_for_workstep instead. This will be removed in dor-workflow-service version 3')
-        objects_for_workstep(completed, waiting, lane_id, options)
-      end
-
       # Get a list of druids that have errored out in a particular workflow and step
       #
       # @param [String] workflow name
@@ -375,11 +319,6 @@ module Dor
           result.merge!(node['id'] => node['errorMessage'])
         end
         result
-      end
-
-      def get_errored_objects_for_workstep(workflow, step, repository = 'dor')
-        Deprecation.warn(self, 'use errored_objects_for_workstep instead. This will be removed in dor-workflow-service version 3')
-        errored_objects_for_workstep(workflow, step, repository)
       end
 
       # Returns the number of objects that have a status of 'error' in a particular workflow and step
@@ -404,17 +343,6 @@ module Dor
         count_objects_in_step(workflow, step, 'queued', repository)
       end
 
-      ##
-      # Returns the number of objects that have completed a particular workflow
-      # @param [String] workflow name
-      # @param [String] repository -- optional, default=dor
-      # @return [Integer] Number of objects with this repository:workflow that have been archived
-      def count_archived_for_workflow(workflow, repository = 'dor')
-        Deprecation.warn(self, 'count_archived_for_workflow will be removed without replacement because the workflow server no longer archives processes')
-        resp = workflow_resource_method "workflow_archive?repository=#{repository}&workflow=#{workflow}&count-only=true"
-        extract_object_count(resp)
-      end
-
       # Gets all of the workflow steps that have a status of 'queued' that have a last-updated timestamp older than the number of hours passed in
       #   This will enable re-queueing of jobs that have been lost by the job manager
       # @param [String] repository name of the repository you want to query, like 'dor' or 'sdr'
@@ -427,11 +355,6 @@ module Dor
       def stale_queued_workflows(repository, opts = {})
         uri_string = build_queued_uri(repository, opts)
         parse_queued_workflows_response workflow_resource_method(uri_string)
-      end
-
-      def get_stale_queued_workflows(repository, opts = {})
-        Deprecation.warn(self, 'use stale_queued_workflows instead. This will be removed in dor-workflow-service version 3')
-        stale_queued_workflows(repository, opts)
       end
 
       # Returns a count of workflow steps that have a status of 'queued' that have a last-updated timestamp older than the number of hours passed in
@@ -464,25 +387,6 @@ module Dor
         Nokogiri::XML(workflow_resource_method(req))
       end
 
-      # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
-      # @param [String] druid The id of the object to archive the workflows from
-      def archive_active_workflow(repo, druid)
-        workflows = get_active_workflows(repo, druid)
-        workflows.each do |wf|
-          archive_workflow(repo, druid, wf)
-        end
-      end
-
-      # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
-      # @param [String] druid The id of the object to delete the workflow from
-      def archive_workflow(_repo, druid, wf_name, version_num = nil)
-        raise 'Please call Dor::WorkflowService.configure(workflow_service_url, :dor_services_url => DOR_SERVIES_URL) once before archiving workflow' if @@dor_services_url.nil?
-
-        url = "/v1/objects/#{druid}/workflows/#{wf_name}/archive"
-        url += "/#{version_num}" if version_num
-        workflow_resource_method(url, 'post', '')
-      end
-
       # Calls the versionClose endpoint of the WorkflowService:
       #
       # - completes the versioningWF:submit-version and versioningWF:start-accession steps
@@ -509,11 +413,6 @@ module Dor
         doc = Nokogiri::XML(workflow_resource_method(uri))
         nodes = doc.xpath('/lanes/lane')
         nodes.map { |n| n['id'] }
-      end
-
-      def get_lane_ids(repo, workflow, process)
-        Deprecation.warn(self, 'use lane_ids instead. This will be removed in dor-workflow-service version 3')
-        lane_ids(repo, workflow, process)
       end
 
       ### MIMICKING ATTRIBUTE READER
@@ -549,15 +448,10 @@ module Dor
       # @option opts [Logger] :logger defaults writing to workflow_service.log with weekly rotation
       # @option opts [String] :dor_services_url uri to the DOR REST service
       # @option opts [Integer] :timeout number of seconds for HTTP timeout
-      # @option opts [String] :client_cert_file path to an SSL client certificate (deprecated)
-      # @option opts [String] :client_key_file path to an SSL key file (deprecated)
-      # @option opts [String] :client_key_pass password for the key file (deprecated)
       # @return [Faraday::Connection] the REST client resource
       def configure(url_or_connection, opts = {})
         @@logger           = opts[:logger] || default_logger
         @@dor_services_url = opts[:dor_services_url] if opts[:dor_services_url]
-        # params[:ssl_client_cert] = OpenSSL::X509::Certificate.new(File.read(opts[:client_cert_file])) if opts[:client_cert_file]
-        # params[:ssl_client_key]  = OpenSSL::PKey::RSA.new(File.read(opts[:client_key_file]), opts[:client_key_pass]) if opts[:client_key_file]
         @@handler = proc do |exception, attempt_number, total_delay|
           @@logger.warn "[Attempt #{attempt_number}] #{exception.class}: #{exception.message}; #{total_delay} seconds elapsed."
         end

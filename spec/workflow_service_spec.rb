@@ -174,21 +174,6 @@ RSpec.describe Dor::WorkflowService do
     end
   end
 
-  describe '#get_workflow_status' do
-    subject(:get_workflow_status) { described_class.get_workflow_status(repo, druid, workflow_name, step_name) }
-
-    let(:step_name) { 'registrar-approval' }
-    let(:workflow_name) { 'etdSubmitWF' }
-    let(:repo) { 'dor' }
-    let(:druid) { 'druid:123' }
-
-    it 'calls workflow_status' do
-      expect(Deprecation).to receive(:warn)
-      expect(described_class).to receive(:workflow_status)
-      get_workflow_status
-    end
-  end
-
   describe '#workflow_status' do
     let(:repo) { @repo }
     let(:druid) { @druid }
@@ -260,20 +245,6 @@ RSpec.describe Dor::WorkflowService do
     end
   end
 
-  describe '#get_workflow_xml' do
-    subject(:get_workflow_xml) { described_class.get_workflow_xml(repo, druid, workflow_name) }
-
-    let(:workflow_name) { 'etdSubmitWF' }
-    let(:repo) { 'dor' }
-    let(:druid) { 'druid:123' }
-
-    it 'calls workflow_xml' do
-      expect(Deprecation).to receive(:warn)
-      expect(described_class).to receive(:workflow_xml)
-      get_workflow_xml
-    end
-  end
-
   describe '#workflow_xml' do
     subject(:workflow_xml) { described_class.workflow_xml('dor', 'druid:123', workflow) }
 
@@ -296,23 +267,9 @@ RSpec.describe Dor::WorkflowService do
     context 'when no workflow name is provided' do
       let(:workflow) { nil }
 
-      it 'calls all_workflows' do
-        expect(Deprecation).to receive(:warn)
-        expect(described_class).to receive(:all_workflows_xml).with('druid:123')
-        workflow_xml
+      it 'raises an error' do
+        expect { workflow_xml }.to raise_error ArgumentError
       end
-    end
-  end
-
-  describe '#get_workflows' do
-    subject(:get_workflows) { described_class.get_workflows(druid) }
-
-    let(:druid) { 'druid:123' }
-
-    it 'calls workflows' do
-      expect(Deprecation).to receive(:warn)
-      expect(described_class).to receive(:workflows)
-      get_workflows
     end
   end
 
@@ -356,16 +313,6 @@ RSpec.describe Dor::WorkflowService do
     end
   end
 
-  describe '#get_lifecycle' do
-    subject(:get_lifecycle) { described_class.get_lifecycle('dor', 'druid:123', 'released') }
-
-    it 'calls lifecycle' do
-      expect(Deprecation).to receive(:warn)
-      expect(described_class).to receive(:lifecycle)
-      get_lifecycle
-    end
-  end
-
   describe '#lifecycle' do
     let(:stubs) do
       Faraday::Adapter::Test::Stubs.new do |stub|
@@ -396,16 +343,6 @@ RSpec.describe Dor::WorkflowService do
     end
   end
 
-  describe '#get_active_lifecycle' do
-    subject(:get_active_lifecycle) { described_class.get_active_lifecycle('dor', 'druid:123', 'released') }
-
-    it 'calls active_lifecycle' do
-      expect(Deprecation).to receive(:warn)
-      expect(described_class).to receive(:active_lifecycle)
-      get_active_lifecycle
-    end
-  end
-
   describe '#active_lifecycle' do
     let(:stubs) do
       Faraday::Adapter::Test::Stubs.new do |stub|
@@ -433,16 +370,6 @@ RSpec.describe Dor::WorkflowService do
 
     it 'handles missing lifecycle' do
       expect(described_class.active_lifecycle('dor', @druid, 'NOT_FOUND')).to be_nil
-    end
-  end
-
-  describe '#get_objects_for_workstep' do
-    subject(:get_objects_for_workstep) { described_class.get_objects_for_workstep('google-download', 'process-content', 'default', default_repository: 'dor', default_workflow: 'googleScannedBookWF') }
-
-    it 'calls objects_for_workstep' do
-      expect(Deprecation).to receive(:warn)
-      expect(described_class).to receive(:objects_for_workstep)
-      get_objects_for_workstep
     end
   end
 
@@ -566,16 +493,6 @@ RSpec.describe Dor::WorkflowService do
       end
     end
 
-    describe 'get_errored_objects_for_workstep' do
-      subject(:get_errored_objects_for_workstep) { described_class.get_errored_objects_for_workstep(@workflow, @step, @repository) }
-
-      it 'calls errored_objects_for_workstep' do
-        expect(Deprecation).to receive(:warn)
-        expect(described_class).to receive(:errored_objects_for_workstep)
-        get_errored_objects_for_workstep
-      end
-    end
-
     describe 'errored_objects_for_workstep' do
       it 'returns error messages for errored objects' do
         expect(described_class.errored_objects_for_workstep(@workflow, @step, @repository)).to eq('druid:ab123cd4567' => 'This is an error message')
@@ -610,28 +527,6 @@ RSpec.describe Dor::WorkflowService do
 
     it 'counts how many steps are errored out' do
       expect(described_class.count_queued_for_workstep(@workflow, @step, @repository)).to eq(1)
-    end
-  end
-
-  describe '#count_archived_for_workflow' do
-    before(:all) do
-      @repository = 'dor'
-      @workflow   = 'accessionWF'
-    end
-
-    let(:stubs) do
-      Faraday::Adapter::Test::Stubs.new do |stub|
-        stub.get("/workflow_archive?repository=#{@repository}&workflow=#{@workflow}&count-only=true") do |_env|
-          [200, {}, <<-EOXML]
-            <objects count="20" />
-          EOXML
-        end
-      end
-    end
-
-    it 'counts how many workflows are archived' do
-      expect(Deprecation).to receive(:warn)
-      expect(described_class.count_archived_for_workflow(@workflow, @repository)).to eq(20)
     end
   end
 
@@ -683,35 +578,6 @@ RSpec.describe Dor::WorkflowService do
       milestones = described_class.milestones(@repo, @druid)
       expect(milestones.first[:milestone]).to eq('published')
       expect(milestones.first[:version]).to eq('2')
-    end
-  end
-
-  describe 'get_milestones' do
-    subject(:get_milestones) { described_class.get_milestones('dor', 'abc:1233') }
-
-    it 'calls milestones' do
-      expect(Deprecation).to receive(:warn)
-      expect(described_class).to receive(:milestones)
-      get_milestones
-    end
-  end
-
-  describe '.get_active_workflows' do
-    it 'it returns an array of active workflows only' do
-      xml = <<-XML
-      <workflows objectId="druid:mw971zk1113">
-        <workflow repository="dor" objectId="druid:mw971zk1113" id="accessionWF">
-          <process laneId="default" lifecycle="submitted" elapsed="0.0" attempts="1" datetime="2013-02-18T15:08:10-0800" status="completed" name="start-accession"/>
-        </workflow>
-        <workflow repository="dor" objectId="druid:mw971zk1113" id="assemblyWF">
-          <process version="1" laneId="default" elapsed="0.0" archived="true" attempts="1" datetime="2013-02-18T14:40:25-0800" status="completed" name="start-assembly"/>
-          <process version="1" laneId="default" elapsed="0.509" archived="true" attempts="1" datetime="2013-02-18T14:42:24-0800" status="completed" name="jp2-create"/>
-        </workflow>
-      </workflows>
-      XML
-      allow(described_class).to receive(:get_workflow_xml) { xml }
-      expect(Deprecation).to receive(:warn)
-      expect(described_class.get_active_workflows('dor', 'druid:mw971zk1113')).to eq(['accessionWF'])
     end
   end
 
@@ -780,16 +646,6 @@ RSpec.describe Dor::WorkflowService do
     end
   end
 
-  describe '.get_stale_queued_workflows' do
-    subject(:get_stale_queued_workflows) { described_class.get_stale_queued_workflows('dor', hours_ago: 24, limit: 100) }
-
-    it 'calls stale_queued_workflows' do
-      expect(Deprecation).to receive(:warn)
-      expect(described_class).to receive(:stale_queued_workflows)
-      get_stale_queued_workflows
-    end
-  end
-
   describe '.count_stale_queued_workflows' do
     let(:stubs) do
       Faraday::Adapter::Test::Stubs.new do |stub|
@@ -820,16 +676,6 @@ RSpec.describe Dor::WorkflowService do
 
     it 'returns the lane ids for a given workflow step' do
       expect(described_class.lane_ids('dor', 'accessionWF', 'shelve')).to eq(%w[lane1 lane2])
-    end
-  end
-
-  describe '.get_lane_ids' do
-    subject(:get_lane_ids) { described_class.get_lane_ids('dor', 'accessionWF', 'shelve') }
-
-    it 'calls lane_ids' do
-      expect(Deprecation).to receive(:warn)
-      expect(described_class).to receive(:lane_ids)
-      get_lane_ids
     end
   end
 
