@@ -275,17 +275,32 @@ RSpec.describe Dor::WorkflowService do
   end
 
   describe '#workflow_xml' do
-    let(:xml) { '<workflow id="etdSubmitWF"><process name="registrar-approval" status="completed" /></workflow>' }
-    let(:stubs) do
-      Faraday::Adapter::Test::Stubs.new do |stub|
-        stub.get('dor/objects/druid:123/workflows/etdSubmitWF') do |_env|
-          [200, {}, xml]
+    subject(:workflow_xml) { described_class.workflow_xml('dor', 'druid:123', workflow) }
+
+    context 'when a workflow name is provided' do
+      let(:workflow) { 'etdSubmitWF' }
+      let(:xml) { '<workflow id="etdSubmitWF"><process name="registrar-approval" status="completed" /></workflow>' }
+      let(:stubs) do
+        Faraday::Adapter::Test::Stubs.new do |stub|
+          stub.get('dor/objects/druid:123/workflows/etdSubmitWF') do |_env|
+            [200, {}, xml]
+          end
         end
+      end
+
+      it 'returns the xml for a given repository, druid, and workflow' do
+        expect(workflow_xml).to eq(xml)
       end
     end
 
-    it 'returns the xml for a given repository, druid, and workflow' do
-      expect(described_class.workflow_xml('dor', 'druid:123', 'etdSubmitWF')).to eq(xml)
+    context 'when no workflow name is provided' do
+      let(:workflow) { nil }
+
+      it 'calls all_workflows' do
+        expect(Deprecation).to receive(:warn)
+        expect(described_class).to receive(:all_workflows_xml).with('druid:123')
+        workflow_xml
+      end
     end
   end
 
@@ -298,6 +313,31 @@ RSpec.describe Dor::WorkflowService do
       expect(Deprecation).to receive(:warn)
       expect(described_class).to receive(:workflows)
       get_workflows
+    end
+  end
+
+  describe '#all_workflows_xml' do
+    subject(:all_workflows_xml) { described_class.all_workflows_xml('druid:123') }
+
+    let(:workflow) { 'etdSubmitWF' }
+    let(:xml) do
+      <<~XML
+        <workflows>
+        <workflow id="etdSubmitWF"><process name="registrar-approval" status="completed" /></workflow>
+        <workflow id="etdSubmitWF"><process name="registrar-approval" status="completed" /></workflow>
+        </workflows>
+      XML
+    end
+    let(:stubs) do
+      Faraday::Adapter::Test::Stubs.new do |stub|
+        stub.get('objects/druid:123/workflows') do |_env|
+          [200, {}, xml]
+        end
+      end
+    end
+
+    it 'returns the xml for a given druid' do
+      expect(all_workflows_xml).to eq(xml)
     end
   end
 

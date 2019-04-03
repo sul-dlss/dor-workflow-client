@@ -116,12 +116,24 @@ module Dor
       # @param [String] workflow The name of the workflow
       # @return [String] XML of the workflow
       def workflow_xml(repo, druid, workflow)
+        unless workflow
+          Deprecation.warn(self, 'calling workflow_xml without a workflow is deprecated and will be removed in version 3. Use all_workflows_xml instead.')
+          return all_workflows_xml(druid)
+        end
         workflow_resource_method "#{repo}/objects/#{druid}/workflows/#{workflow}"
       end
 
       def get_workflow_xml(repo, druid, workflow)
         Deprecation.warn(self, 'use workflow_xml instead. This will be removed in dor-workflow-service version 3')
         workflow_xml(repo, druid, workflow)
+      end
+
+      #
+      # Retrieves the raw XML for all the workflows for the the given object
+      # @param [String] druid The id of the object
+      # @return [String] XML of the workflow
+      def all_workflows_xml(druid)
+        workflow_resource_method "objects/#{druid}/workflows"
       end
 
       # Get workflow names into an array for given PID
