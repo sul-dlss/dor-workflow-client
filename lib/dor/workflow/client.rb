@@ -5,6 +5,7 @@ require 'active_support/core_ext'
 require 'nokogiri'
 require 'retries'
 require 'faraday'
+require 'faraday_middleware'
 require 'dor/workflow_exception'
 require 'dor/models/response/workflow'
 
@@ -448,7 +449,8 @@ module Dor
 
       def build_connection(url, timeout:)
         Faraday.new(url: url) do |faraday|
-          faraday.use Faraday::Response::RaiseError
+          faraday.use Faraday::Response::RaiseError # raise exceptions on 40x, 50x responses
+          faraday.use FaradayMiddleware::FollowRedirects, limit: 3
           faraday.adapter Faraday.default_adapter
           faraday.options.params_encoder = Faraday::FlatParamsEncoder
           if timeout
