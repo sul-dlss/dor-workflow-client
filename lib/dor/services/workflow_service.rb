@@ -9,14 +9,9 @@ require 'dor/workflow_exception'
 require 'dor/models/response/workflow'
 
 module Dor
-  # TODO: major version revision: change pattern of usage to be normal non-singleton class
-  # TODO: convert @@class_vars to regular attributes
-  # TODO: create normal initalize method, deprecate configure
   # TODO: hardcoded 'true' returns are dumb, instead return the response object where possible
   # TODO: VALID_STATUS should be just another attribute w/ default
-  # TODO: allow constructor/initalizer to receive Faraday object(s), not just URLs (solves SSL/proxy config problem)
-  # TODO: allow constructor/initalizer to receive logger
-
+  #
   # Create and update workflows
   class WorkflowService
     # From Workflow Service's admin/Process.java
