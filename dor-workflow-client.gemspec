@@ -21,6 +21,7 @@ Gem::Specification.new do |gem|
   gem.add_dependency 'activesupport', '>= 3.2.1', '< 6'
   gem.add_dependency 'confstruct', '>= 0.2.7', '< 2'
   gem.add_dependency 'faraday', '~> 0.9', '>= 0.9.2'
+  gem.add_dependency 'faraday_middleware'
   gem.add_dependency 'net-http-persistent', '>= 2.9.4', '< 4.a'
   gem.add_dependency 'nokogiri', '~> 1.6'
   gem.add_dependency 'retries'
