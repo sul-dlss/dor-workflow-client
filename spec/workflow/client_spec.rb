@@ -51,7 +51,7 @@ RSpec.describe Dor::Workflow::Client do
   let(:client) { described_class.new connection: mock_http_connection, logger: mock_logger }
 
   describe '#connection' do
-    subject(:conn) { client.connection }
+    subject(:conn) { client.requestor.connection }
     let(:client) { described_class.new url: 'http://example.com', timeout: 99, logger: mock_logger }
 
     it 'has a timeout' do
@@ -677,23 +677,6 @@ RSpec.describe Dor::Workflow::Client do
 
     it 'returns the lane ids for a given workflow step' do
       expect(client.lane_ids('dor', 'accessionWF', 'shelve')).to eq(%w[lane1 lane2])
-    end
-  end
-
-  describe '.workflow_resource_method' do
-    let(:stubs) do
-      Faraday::Adapter::Test::Stubs.new do |stub|
-        stub.get('x?complete=a&complete=b') do |_env|
-          [200, {}, 'ab']
-        end
-      end
-    end
-
-    it 'uses the flat params encoder' do
-      response = client.send(:send_workflow_resource_request, 'x?complete=a&complete=b')
-
-      expect(response.body).to eq 'ab'
-      expect(response.env.url.query).to eq 'complete=a&complete=b'
     end
   end
 end

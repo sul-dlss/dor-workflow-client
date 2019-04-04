@@ -7,6 +7,8 @@ require 'retries'
 require 'dor/workflow_exception'
 require 'dor/models/response/workflow'
 require 'dor/workflow/client/connection_factory'
+require 'dor/workflow/client/requestor'
+require 'dor/workflow/client/queues'
 
 module Dor
   module Workflow
@@ -18,7 +20,7 @@ module Dor
       # From Workflow Service's admin/Process.java
       VALID_STATUS = %w[waiting completed error queued skipped hold].freeze
 
-      attr_accessor :logger, :handler, :connection
+      attr_accessor :requestor
 
       # Configure the workflow service
       # @param [String] :url points to the workflow service
@@ -28,11 +30,8 @@ module Dor
       def initialize(url: nil, logger: default_logger, timeout: nil, connection: nil)
         raise ArgumentError, 'You must provide either a connection or a url' if !url && !connection
 
-        @logger = logger
-        @handler = proc do |exception, attempt_number, total_delay|
-          @logger.warn "[Attempt #{attempt_number}] #{exception.class}: #{exception.message}; #{total_delay} seconds elapsed."
-        end
-        @connection = connection || ConnectionFactory.build_connection(url, timeout: timeout)
+        @requestor = Requestor.new(connection: connection || ConnectionFactory.build_connection(url, timeout: timeout),
+                                   logger: logger)
       end
 
       # Creates a workflow for a given object in the repository.  If this particular workflow for this objects exists,
@@ -52,9 +51,9 @@ module Dor
       def create_workflow(repo, druid, workflow_name, wf_xml, opts = { create_ds: true })
         lane_id = opts.fetch(:lane_id, 'default')
         xml = add_lane_id_to_workflow_xml(lane_id, wf_xml)
-        _status = workflow_resource_method "#{repo}/objects/#{druid}/workflows/#{workflow_name}", 'put', xml,
-                                           content_type: 'application/xml',
-                                           params: { 'create-ds' => opts[:create_ds] }
+        _status = requestor.request "#{repo}/objects/#{druid}/workflows/#{workflow_name}", 'put', xml,
+                                    content_type: 'application/xml',
+                                    params: { 'create-ds' => opts[:create_ds] }
         true
       end
 
@@ -88,7 +87,7 @@ module Dor
         xml = create_process_xml({ name: process, status: status.downcase }.merge!(opts))
         uri = "#{repo}/objects/#{druid}/workflows/#{workflow}/#{process}"
         uri += "?current-status=#{current_status.downcase}" if current_status
-        workflow_resource_method(uri, 'put', xml, content_type: 'application/xml')
+        requestor.request(uri, 'put', xml, content_type: 'application/xml')
         true
       end
 
@@ -118,7 +117,7 @@ module Dor
       def workflow_xml(repo, druid, workflow)
         raise ArgumentError, 'missing workflow' unless workflow
 
-        workflow_resource_method "#{repo}/objects/#{druid}/workflows/#{workflow}"
+        requestor.request "#{repo}/objects/#{druid}/workflows/#{workflow}"
       end
 
       #
@@ -126,7 +125,7 @@ module Dor
       # @param [String] druid The id of the object
       # @return [String] XML of the workflow
       def all_workflows_xml(druid)
-        workflow_resource_method "objects/#{druid}/workflows"
+        requestor.request "objects/#{druid}/workflows"
       end
 
       # Get workflow names into an array for given PID
@@ -172,7 +171,7 @@ module Dor
       def update_workflow_error_status(repo, druid, workflow, process, error_msg, opts = {})
         opts = { error_text: nil }.merge!(opts)
         xml = create_process_xml({ name: process, status: 'error', errorMessage: error_msg }.merge!(opts))
-        workflow_resource_method "#{repo}/objects/#{druid}/workflows/#{workflow}/#{process}", 'put', xml, content_type: 'application/xml'
+        requestor.request "#{repo}/objects/#{druid}/workflows/#{workflow}/#{process}", 'put', xml, content_type: 'application/xml'
         true
       end
 
@@ -182,7 +181,7 @@ module Dor
       # @param [String] workflow The name of the workflow to be deleted
       # @return [Boolean] always true
       def delete_workflow(repo, druid, workflow)
-        workflow_resource_method "#{repo}/objects/#{druid}/workflows/#{workflow}", 'delete'
+        requestor.request "#{repo}/objects/#{druid}/workflows/#{workflow}", 'delete'
         true
       end
 
@@ -232,103 +231,6 @@ module Dor
         end
       end
 
-      # Converts repo-workflow-step into repo:workflow:step
-      # @param [String] default_repository
-      # @param [String] default_workflow
-      # @param [String] step if contains colon :, then the value for workflow and/or workflow/repository. For example: 'jp2-create', 'assemblyWF:jp2-create' or 'dor:assemblyWF:jp2-create'
-      # @return [String] repo:workflow:step
-      # @example
-      #   dor:assemblyWF:jp2-create
-      def qualify_step(default_repository, default_workflow, step)
-        current = step.split(/:/, 3)
-        current.unshift(default_workflow)   if current.length < 3
-        current.unshift(default_repository) if current.length < 3
-        current.join(':')
-      end
-
-      # Returns a list of druids from the workflow service that meet the criteria
-      # of the passed in completed and waiting params
-      #
-      # @param [Array<String>, String] completed An array or single String of the completed steps, should use the qualified format: `repository:workflow:step-name`
-      # @param [String] waiting name of the waiting step
-      # @param [String] repository default repository to use if it isn't passed in the qualified-step-name
-      # @param [String] workflow default workflow to use if it isn't passed in the qualified-step-name
-      # @param [String] lane_id issue a query for a specific lane_id for the waiting step
-      # @param [Hash] options
-      # @param options  [String]  :default_repository repository to query for if not using the qualified format
-      # @param options  [String]  :default_workflow workflow to query for if not using the qualified format
-      # @option options [Integer] :limit maximum number of druids to return (nil for no limit)
-      # @return [Array<String>]  Array of druids
-      #
-      # @example
-      #     objects_for_workstep(...)
-      #     => [
-      #        "druid:py156ps0477",
-      #        "druid:tt628cb6479",
-      #        "druid:ct021wp7863"
-      #      ]
-      #
-      # @example
-      #     objects_for_workstep(..., "lane1")
-      #     => {
-      #      "druid:py156ps0477",
-      #      "druid:tt628cb6479",
-      #     }
-      #
-      # @example
-      #     objects_for_workstep(..., "lane1", limit: 1)
-      #     => {
-      #      "druid:py156ps0477",
-      #     }
-      #
-      def objects_for_workstep(completed, waiting, lane_id = 'default', options = {})
-        waiting_param = qualify_step(options[:default_repository], options[:default_workflow], waiting)
-        uri_string = "workflow_queue?waiting=#{waiting_param}"
-        if completed
-          Array(completed).each do |step|
-            completed_param = qualify_step(options[:default_repository], options[:default_workflow], step)
-            uri_string += "&completed=#{completed_param}"
-          end
-        end
-
-        uri_string += "&limit=#{options[:limit].to_i}" if options[:limit]&.to_i&.positive?
-        uri_string += "&lane-id=#{lane_id}"
-
-        resp = workflow_resource_method uri_string
-        #
-        # response looks like:
-        #    <objects count="2">
-        #      <object id="druid:ab123de4567"/>
-        #      <object id="druid:ab123de9012"/>
-        #    </objects>
-        #
-        # convert into:
-        #   ['druid:ab123de4567', 'druid:ab123de9012']
-        #
-        result = Nokogiri::XML(resp).xpath('//object[@id]')
-        result.map { |n| n[:id] }
-      end
-
-      # Get a list of druids that have errored out in a particular workflow and step
-      #
-      # @param [String] workflow name
-      # @param [String] step name
-      # @param [String] repository -- optional, default=dor
-      #
-      # @return [Hash] hash of results, with key has a druid, and value as the error message
-      # @example
-      #     client.errored_objects_for_workstep('accessionWF','content-metadata')
-      #     => {"druid:qd556jq0580"=>"druid:qd556jq0580 - Item error; caused by
-      #        #<Rubydora::FedoraInvalidRequest: Error modifying datastream contentMetadata for druid:qd556jq0580. See logger for details>"}
-      def errored_objects_for_workstep(workflow, step, repository = 'dor')
-        resp = workflow_resource_method "workflow_queue?repository=#{repository}&workflow=#{workflow}&error=#{step}"
-        result = {}
-        Nokogiri::XML(resp).xpath('//object').collect do |node|
-          result.merge!(node['id'] => node['errorMessage'])
-        end
-        result
-      end
-
       # Returns the number of objects that have a status of 'error' in a particular workflow and step
       #
       # @param [String] workflow name
@@ -351,32 +253,6 @@ module Dor
         count_objects_in_step(workflow, step, 'queued', repository)
       end
 
-      # Gets all of the workflow steps that have a status of 'queued' that have a last-updated timestamp older than the number of hours passed in
-      #   This will enable re-queueing of jobs that have been lost by the job manager
-      # @param [String] repository name of the repository you want to query, like 'dor' or 'sdr'
-      # @param [Hash] opts optional values for query
-      # @option opts [Integer] :hours_ago steps older than this value will be returned by the query.  If not passed in, the service defaults to 0 hours,
-      #   meaning you will get all queued workflows
-      # @option opts [Integer] :limit sets the maximum number of workflow steps that can be returned.  Defaults to no limit
-      # @return [Array[Hash]] each Hash represents a workflow step.  It will have the following keys:
-      #  :workflow, :step, :druid, :lane_id
-      def stale_queued_workflows(repository, opts = {})
-        uri_string = build_queued_uri(repository, opts)
-        parse_queued_workflows_response workflow_resource_method(uri_string)
-      end
-
-      # Returns a count of workflow steps that have a status of 'queued' that have a last-updated timestamp older than the number of hours passed in
-      # @param [String] repository name of the repository you want to query, like 'dor' or 'sdr'
-      # @param [Hash] opts optional values for query
-      # @option opts [Integer] :hours_ago steps older than this value will be returned by the query.  If not passed in, the service defaults to 0 hours,
-      #   meaning you will get all queued workflows
-      # @return [Integer] number of stale, queued steps if the :count_only option was set to true
-      def count_stale_queued_workflows(repository, opts = {})
-        uri_string = build_queued_uri(repository, opts) + '&count-only=true'
-        doc = Nokogiri::XML(workflow_resource_method(uri_string))
-        doc.at_xpath('/objects/@count').value.to_i
-      end
-
       # @param [Hash] params
       # @return [String]
       def create_process_xml(params)
@@ -392,7 +268,7 @@ module Dor
       def query_lifecycle(repo, druid, active_only = false)
         req = "#{repo}/objects/#{druid}/lifecycle"
         req += '?active-only=true' if active_only
-        Nokogiri::XML(workflow_resource_method(req))
+        Nokogiri::XML(requestor.request(req))
       end
 
       # Calls the versionClose endpoint of the workflow service:
@@ -406,37 +282,17 @@ module Dor
       def close_version(repo, druid, create_accession_wf = true)
         uri = "#{repo}/objects/#{druid}/versionClose"
         uri += '?create-accession=false' unless create_accession_wf
-        workflow_resource_method(uri, 'post', '')
+        requestor.request(uri, 'post', '')
         true
       end
 
-      # Returns all the distinct laneIds for a given workflow step
-      #
-      # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
-      # @param [String] workflow name
-      # @param [String] process name
-      # @return [Array<String>] all of the distinct laneIds.  Array will be empty if no lane ids were found
-      def lane_ids(repo, workflow, process)
-        uri = "workflow_queue/lane_ids?step=#{repo}:#{workflow}:#{process}"
-        doc = Nokogiri::XML(workflow_resource_method(uri))
-        nodes = doc.xpath('/lanes/lane')
-        nodes.map { |n| n['id'] }
+      def queues
+        @queues ||= Queues.new(requestor: requestor)
       end
 
-      ##
-      # Get the configured URL for the connection
-      def base_url
-        connection.url_prefix
-      end
-
-      def workflow_service_exceptions_to_catch
-        [Faraday::Error]
-      end
-
-      def count_objects_in_step(workflow, step, type, repo)
-        resp = workflow_resource_method "workflow_queue?repository=#{repo}&workflow=#{workflow}&#{type}=#{step}"
-        extract_object_count(resp)
-      end
+      delegate :lane_ids, :stale_queued_workflows, :count_stale_queued_workflows,
+               :objects_for_workstep, :errored_objects_for_workstep, :count_objects_in_step,
+               to: :queues
 
       private
 
@@ -444,25 +300,6 @@ module Dor
       # @return [Logger] default logger object
       def default_logger
         Logger.new('workflow_service.log', 'weekly')
-      end
-
-      def build_queued_uri(repository, opts = {})
-        uri_string = "workflow_queue/all_queued?repository=#{repository}"
-        uri_string += "&hours-ago=#{opts[:hours_ago]}" if opts[:hours_ago]
-        uri_string += "&limit=#{opts[:limit]}"         if opts[:limit]
-        uri_string
-      end
-
-      def parse_queued_workflows_response(xml)
-        doc = Nokogiri::XML(xml)
-        doc.xpath('/workflows/workflow').collect do |wf_node|
-          {
-            workflow: wf_node['name'],
-            step: wf_node['process'],
-            druid: wf_node['druid'],
-            lane_id: wf_node['laneId']
-          }
-        end
       end
 
       # Adds laneId attributes to each process of workflow xml
@@ -474,42 +311,6 @@ module Dor
         doc = Nokogiri::XML(wf_xml)
         doc.xpath('/workflow/process').each { |proc| proc['laneId'] = lane_id }
         doc.to_xml
-      end
-
-      def extract_object_count(resp)
-        node = Nokogiri::XML(resp).at_xpath('/objects')
-        raise Dor::WorkflowException, 'Unable to determine count from response' if node.nil?
-
-        node['count'].to_i
-      end
-
-      # calls workflow_resource[uri_string]."#{meth}" with variable number of optional arguments
-      # The point of this is to wrap ALL remote calls with consistent error handling and logging
-      # @param [String] uri_string resource to request
-      # @param [String] meth REST method to use on resource (get, put, post, delete, etc.)
-      # @param [String] payload body for (e.g. put) request
-      # @param [Hash] opts addtional headers options
-      # @return [Object] response from method
-      def workflow_resource_method(uri_string, meth = 'get', payload = '', opts = {})
-        with_retries(max_tries: 2, handler: @handler, rescue: workflow_service_exceptions_to_catch) do |attempt|
-          @logger.info "[Attempt #{attempt}] #{meth} #{base_url}/#{uri_string}"
-
-          response = send_workflow_resource_request(uri_string, meth, payload, opts)
-
-          response.body
-        end
-      rescue *workflow_service_exceptions_to_catch => e
-        msg = "Failed to retrieve resource: #{meth} #{base_url}/#{uri_string}"
-        msg += " (HTTP status #{e.response[:status]})" if e.respond_to?(:response) && e.response
-        raise Dor::WorkflowException, msg
-      end
-
-      def send_workflow_resource_request(uri_string, meth = 'get', payload = '', opts = {})
-        connection.public_send(meth, uri_string) do |req|
-          req.body = payload unless meth == 'delete'
-          req.params.update opts[:params] if opts[:params]
-          req.headers.update opts.except(:params)
-        end
       end
     end
   end
