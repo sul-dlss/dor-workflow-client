@@ -12,6 +12,7 @@ require 'dor/workflow/client/connection_factory'
 require 'dor/workflow/client/lifecycle_routes'
 require 'dor/workflow/client/queues'
 require 'dor/workflow/client/requestor'
+require 'dor/workflow/client/version_routes'
 require 'dor/workflow/client/workflow_routes'
 
 module Dor
@@ -48,20 +49,7 @@ module Dor
                :count_errored_for_workstep, :count_queued_for_workstep,
                to: :queues
 
-      # Calls the versionClose endpoint of the workflow service:
-      #
-      # - completes the versioningWF:submit-version and versioningWF:start-accession steps
-      # - initiates accesssionWF
-      #
-      # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
-      # @param [String] druid The id of the object to delete the workflow from
-      # @param [Boolean] create_accession_wf Option to create accessionWF when closing a version.  Defaults to true
-      def close_version(repo, druid, create_accession_wf = true)
-        uri = "#{repo}/objects/#{druid}/versionClose"
-        uri += '?create-accession=false' unless create_accession_wf
-        requestor.request(uri, 'post', '')
-        true
-      end
+      delegate :close_version, to: :version_routes
 
       def queues
         @queues ||= Queues.new(requestor: requestor)
@@ -73,6 +61,10 @@ module Dor
 
       def lifecycle_routes
         @lifecycle_routes ||= LifecycleRoutes.new(requestor: requestor)
+      end
+
+      def version_routes
+        @version_routes ||= VersionRoutes.new(requestor: requestor)
       end
 
       private
