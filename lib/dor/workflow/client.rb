@@ -4,10 +4,9 @@ require 'active_support'
 require 'active_support/core_ext'
 require 'nokogiri'
 require 'retries'
-require 'faraday'
-require 'faraday_middleware'
 require 'dor/workflow_exception'
 require 'dor/models/response/workflow'
+require 'dor/workflow/client/connection_factory'
 
 module Dor
   module Workflow
@@ -33,7 +32,7 @@ module Dor
         @handler = proc do |exception, attempt_number, total_delay|
           @logger.warn "[Attempt #{attempt_number}] #{exception.class}: #{exception.message}; #{total_delay} seconds elapsed."
         end
-        @connection = connection || build_connection(url, timeout: timeout)
+        @connection = connection || ConnectionFactory.build_connection(url, timeout: timeout)
       end
 
       # Creates a workflow for a given object in the repository.  If this particular workflow for this objects exists,
@@ -445,24 +444,6 @@ module Dor
       # @return [Logger] default logger object
       def default_logger
         Logger.new('workflow_service.log', 'weekly')
-      end
-
-      def build_connection(url, timeout:)
-        Faraday.new(url: url) do |faraday|
-          faraday.use Faraday::Response::RaiseError # raise exceptions on 40x, 50x responses
-          faraday.use FaradayMiddleware::FollowRedirects, limit: 3
-          faraday.adapter Faraday.default_adapter
-          faraday.options.params_encoder = Faraday::FlatParamsEncoder
-          if timeout
-            faraday.options.timeout = timeout
-            faraday.options.open_timeout = timeout
-          end
-          faraday.headers[:user_agent] = user_agent
-        end
-      end
-
-      def user_agent
-        "dor-workflow-service #{VERSION}"
       end
 
       def build_queued_uri(repository, opts = {})
