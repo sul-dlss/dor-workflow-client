@@ -9,7 +9,7 @@ SimpleCov.start do
 end
 
 require 'byebug'
-require 'dor-workflow-service'
+require 'dor/workflow/client'
 require 'equivalent-xml'
 require 'equivalent-xml/rspec_matchers'
 

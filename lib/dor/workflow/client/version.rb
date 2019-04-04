@@ -2,7 +2,7 @@
 
 module Dor
   module Workflow
-    module Service
+    class Client
       VERSION = '3.0.0.alpha'
     end
   end
