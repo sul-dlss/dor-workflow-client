@@ -131,9 +131,32 @@ module Dor
           result
         end
 
+        # Used by preservation robots stats reporter
         def count_objects_in_step(workflow, step, type, repo)
           resp = requestor.request "workflow_queue?repository=#{repo}&workflow=#{workflow}&#{type}=#{step}"
           extract_object_count(resp)
+        end
+
+        # Returns the number of objects that have a status of 'error' in a particular workflow and step
+        #
+        # @param [String] workflow name
+        # @param [String] step name
+        # @param [String] repository -- optional, default=dor
+        #
+        # @return [Integer] Number of objects with this repository:workflow:step that have a status of 'error'
+        def count_errored_for_workstep(workflow, step, repository = 'dor')
+          count_objects_in_step(workflow, step, 'error', repository)
+        end
+
+        # Returns the number of objects that have a status of 'queued' in a particular workflow and step
+        #
+        # @param [String] workflow name
+        # @param [String] step name
+        # @param [String] repository -- optional, default=dor
+        #
+        # @return [Integer] Number of objects with this repository:workflow:step that have a status of 'queued'
+        def count_queued_for_workstep(workflow, step, repository = 'dor')
+          count_objects_in_step(workflow, step, 'queued', repository)
         end
 
         private
