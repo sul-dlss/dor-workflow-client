@@ -119,33 +119,33 @@ RSpec.describe Dor::Workflow::Client do
   describe '#update_workflow_status' do
     let(:stubs) do
       Faraday::Adapter::Test::Stubs.new do |stub|
-        stub.put("#{@repo}/objects/#{@druid}/workflows/etdSubmitWF/reader-approval?current-status=queued") do |_env|
-          [201, {}, '']
+        stub.put("#{@repo}/objects/#{@druid}/workflows/etdSubmitWF/registrar-approval?current-status=queued") do |_env|
+          [201, {}, '{"next_steps":["submit-marc"]}']
         end
 
-        stub.put("#{@repo}/objects/#{@druid}/workflows/etdSubmitWF/reader-approval") do |env|
-          expect(env.body).to eq "<?xml version=\"1.0\"?>\n<process name=\"reader-approval\" status=\"completed\" elapsed=\"0\" note=\"annotation\" version=\"2\" laneId=\"lane2\"/>\n"
-          [201, {}, '']
+        stub.put("#{@repo}/objects/#{@druid}/workflows/etdSubmitWF/registrar-approval") do |env|
+          expect(env.body).to eq "<?xml version=\"1.0\"?>\n<process name=\"registrar-approval\" status=\"completed\" elapsed=\"0\" note=\"annotation\" version=\"2\" laneId=\"lane2\"/>\n"
+          [201, {}, '{"next_steps":["submit-marc"]}']
         end
 
-        stub.put("#{@repo}/objects/#{@druid}/workflows/errorWF/reader-approval") do |_env|
+        stub.put("#{@repo}/objects/#{@druid}/workflows/errorWF/registrar-approval") do |_env|
           [400, {}, '']
         end
       end
     end
 
     it 'should update workflow status and return true if successful' do
-      expect(client.update_workflow_status(@repo, @druid, 'etdSubmitWF', 'reader-approval', 'completed', version: 2, note: 'annotation', lane_id: 'lane2')).to be true
+      expect(client.update_workflow_status(@repo, @druid, 'etdSubmitWF', 'registrar-approval', 'completed', version: 2, note: 'annotation', lane_id: 'lane2')).to be_kind_of Dor::Workflow::Response::Update
     end
 
     it 'should return false if the PUT to the DOR workflow service throws an exception' do
-      expect { client.update_workflow_status(@repo, @druid, 'errorWF', 'reader-approval', 'completed') }.to raise_error(Dor::WorkflowException, /status 400/)
+      expect { client.update_workflow_status(@repo, @druid, 'errorWF', 'registrar-approval', 'completed') }.to raise_error(Dor::WorkflowException, /status 400/)
     end
 
     it 'performs a conditional update when current-status is passed as a parameter' do
-      expect(mock_http_connection).to receive(:put).with("#{@repo}/objects/#{@druid}/workflows/etdSubmitWF/reader-approval?current-status=queued").and_call_original
+      expect(mock_http_connection).to receive(:put).with("#{@repo}/objects/#{@druid}/workflows/etdSubmitWF/registrar-approval?current-status=queued").and_call_original
 
-      expect(client.update_workflow_status(@repo, @druid, 'etdSubmitWF', 'reader-approval', 'completed', version: 2, note: 'annotation', lane_id: 'lane1', current_status: 'queued')).to be true
+      expect(client.update_workflow_status(@repo, @druid, 'etdSubmitWF', 'registrar-approval', 'completed', version: 2, note: 'annotation', lane_id: 'lane1', current_status: 'queued')).to be_kind_of Dor::Workflow::Response::Update
     end
 
     it 'should throw exception if invalid status provided' do
