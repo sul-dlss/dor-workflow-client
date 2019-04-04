@@ -2,11 +2,11 @@
 
 lib = File.expand_path('lib', __dir__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'dor/workflow_version'
+require 'dor/workflow/client/version'
 
 Gem::Specification.new do |gem|
-  gem.name          = 'dor-workflow-service'
-  gem.version       = Dor::Workflow::Service::VERSION
+  gem.name          = 'dor-workflow-client'
+  gem.version       = Dor::Workflow::Client::VERSION
   gem.authors       = ['Willy Mene', 'Darren Hardy']
   gem.email         = ['wmene@stanford.edu']
   gem.description   = 'Enables Ruby manipulation of the DOR Workflow Service via its REST API'

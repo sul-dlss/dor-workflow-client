@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-RSpec.describe Dor::WorkflowService do
+RSpec.describe Dor::Workflow::Client do
   let(:wf_xml) do
     <<-EOXML
     <workflow id="etdSubmitWF">
@@ -157,7 +157,7 @@ RSpec.describe Dor::WorkflowService do
     let(:stubs) do
       Faraday::Adapter::Test::Stubs.new do |stub|
         stub.put("#{@repo}/objects/#{@druid}/workflows/etdSubmitWF/reader-approval") do |env|
-          expect(env.body).to match /status="error" errorMessage="Some exception" errorText="The optional stacktrace"/
+          expect(env.body).to match(/status="error" errorMessage="Some exception" errorText="The optional stacktrace"/)
           [201, {}, '']
         end
 
