@@ -177,7 +177,7 @@ module Dor
       # @param [String] workflow_name The name of the workflow
       # @return [Workflow::Response::Workflow]
       def workflow(repo: 'dor', pid:, workflow_name:)
-        xml = get_workflow_xml(repo, pid, workflow_name)
+        xml = workflow_xml(repo, pid, workflow_name)
         Workflow::Response::Workflow.new(xml: xml)
       end
 

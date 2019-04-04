@@ -724,7 +724,7 @@ RSpec.describe Dor::WorkflowService do
       XML
     end
     before do
-      allow(described_class).to receive(:get_workflow_xml) { xml }
+      allow(described_class).to receive(:workflow_xml) { xml }
     end
 
     it 'it returns a workflow' do
