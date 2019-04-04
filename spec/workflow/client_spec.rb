@@ -556,17 +556,6 @@ RSpec.describe Dor::Workflow::Client do
     end
   end
 
-  describe 'milestones' do
-    it 'includes the version in with the milestones' do
-      xml = '<?xml version="1.0" encoding="UTF-8"?><lifecycle objectId="druid:gv054hp4128"><milestone date="2012-01-26T21:06:54-0800" version="2">published</milestone></lifecycle>'
-      xml = Nokogiri::XML(xml)
-      allow(client).to receive(:query_lifecycle).and_return(xml)
-      milestones = client.milestones(@repo, @druid)
-      expect(milestones.first[:milestone]).to eq('published')
-      expect(milestones.first[:version]).to eq('2')
-    end
-  end
-
   describe '#close_version' do
     let(:stubs) do
       Faraday::Adapter::Test::Stubs.new do |stub|

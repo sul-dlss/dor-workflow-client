@@ -34,7 +34,7 @@ RSpec.describe Dor::Workflow::Client::WorkflowRoutes do
     end
   end
 
-  describe '.workflow' do
+  describe '#workflow' do
     let(:xml) do
       <<~XML
         <workflow repository="dor" objectId="druid:mw971zk1113" id="accessionWF">

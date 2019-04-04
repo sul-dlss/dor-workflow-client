@@ -9,8 +9,9 @@ require 'dor/models/response/workflow'
 require 'dor/models/response/update'
 
 require 'dor/workflow/client/connection_factory'
-require 'dor/workflow/client/requestor'
+require 'dor/workflow/client/lifecycle_routes'
 require 'dor/workflow/client/queues'
+require 'dor/workflow/client/requestor'
 require 'dor/workflow/client/workflow_routes'
 
 module Dor
@@ -40,58 +41,12 @@ module Dor
                :update_workflow_error_status, :all_workflows_xml, :workflows,
                :workflow, :delete_workflow, to: :workflow_routes
 
-      # Returns the Date for a requested milestone from workflow lifecycle
-      # @param [String] repo repository name
-      # @param [String] druid object id
-      # @param [String] milestone name of the milestone being queried for
-      # @return [Time] when the milestone was achieved.  Returns nil if the milestone does not exist
-      # @example An example lifecycle xml from the workflow service.
-      #   <lifecycle objectId="druid:ct011cv6501">
-      #     <milestone date="2010-04-27T11:34:17-0700">registered</milestone>
-      #     <milestone date="2010-04-29T10:12:51-0700">inprocess</milestone>
-      #     <milestone date="2010-06-15T16:08:58-0700">released</milestone>
-      #   </lifecycle>
-      def lifecycle(repo, druid, milestone)
-        doc = query_lifecycle(repo, druid)
-        milestone = doc.at_xpath("//lifecycle/milestone[text() = '#{milestone}']")
-        return Time.parse(milestone['date']) if milestone
+      delegate :lifecycle, :active_lifecycle, :milestones, to: :lifecycle_routes
 
-        nil
-      end
-
-      # Returns the Date for a requested milestone ONLY FROM THE ACTIVE workflow table
-      # @param [String] repo repository name
-      # @param [String] druid object id
-      # @param [String] milestone name of the milestone being queried for
-      # @return [Time] when the milestone was achieved.  Returns nil if the milestone does not exist
-      # @example An example lifecycle xml from the workflow service.
-      #   <lifecycle objectId="druid:ct011cv6501">
-      #     <milestone date="2010-04-27T11:34:17-0700">registered</milestone>
-      #     <milestone date="2010-04-29T10:12:51-0700">inprocess</milestone>
-      #     <milestone date="2010-06-15T16:08:58-0700">released</milestone>
-      #   </lifecycle>
-      def active_lifecycle(repo, druid, milestone)
-        doc = query_lifecycle(repo, druid, true)
-        milestone = doc.at_xpath("//lifecycle/milestone[text() = '#{milestone}']")
-        return Time.parse(milestone['date']) if milestone
-
-        nil
-      end
-
-      # @return [Hash]
-      def milestones(repo, druid)
-        doc = query_lifecycle(repo, druid)
-        doc.xpath('//lifecycle/milestone').collect do |node|
-          { milestone: node.text, at: Time.parse(node['date']), version: node['version'] }
-        end
-      end
-
-      # @return [Nokogiri::XML::Document]
-      def query_lifecycle(repo, druid, active_only = false)
-        req = "#{repo}/objects/#{druid}/lifecycle"
-        req += '?active-only=true' if active_only
-        Nokogiri::XML(requestor.request(req))
-      end
+      delegate :lane_ids, :stale_queued_workflows, :count_stale_queued_workflows,
+               :objects_for_workstep, :errored_objects_for_workstep, :count_objects_in_step,
+               :count_errored_for_workstep, :count_queued_for_workstep,
+               to: :queues
 
       # Calls the versionClose endpoint of the workflow service:
       #
@@ -116,10 +71,9 @@ module Dor
         @workflow_routes ||= WorkflowRoutes.new(requestor: requestor)
       end
 
-      delegate :lane_ids, :stale_queued_workflows, :count_stale_queued_workflows,
-               :objects_for_workstep, :errored_objects_for_workstep, :count_objects_in_step,
-               :count_errored_for_workstep, :count_queued_for_workstep,
-               to: :queues
+      def lifecycle_routes
+        @lifecycle_routes ||= LifecycleRoutes.new(requestor: requestor)
+      end
 
       private
 
