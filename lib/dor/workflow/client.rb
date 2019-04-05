@@ -6,13 +6,14 @@ require 'nokogiri'
 require 'retries'
 require 'dor/workflow_exception'
 require 'dor/models/response/workflow'
+require 'dor/models/response/update'
+
 require 'dor/workflow/client/connection_factory'
 require 'dor/workflow/client/requestor'
 require 'dor/workflow/client/queues'
 
 module Dor
   module Workflow
-    # TODO: hardcoded 'true' returns are dumb, instead return the response object where possible
     # TODO: VALID_STATUS should be just another attribute w/ default
     #
     # Create and update workflows
@@ -71,7 +72,7 @@ module Dor
       # @option opts [String] :note Any kind of string annotation that you want to attach to the workflow
       # @option opts [String] :lane_id Id of processing lane used by the job manager.  Can convey priority or name of an applicaiton specific processing lane (e.g. 'high', 'critical', 'hydrus')
       # @option opts [String] :current_status Setting this string tells the workflow service to compare the current status to this value.  If the current value does not match this value, the update is not performed
-      # @return [Boolean] always true
+      # @return [Workflow::Response::Update] the update response information
       # Http Call
       # ==
       # The method does an HTTP PUT to the URL defined in `Dor::WF_URI`.  As an example:
@@ -87,8 +88,9 @@ module Dor
         xml = create_process_xml({ name: process, status: status.downcase }.merge!(opts))
         uri = "#{repo}/objects/#{druid}/workflows/#{workflow}/#{process}"
         uri += "?current-status=#{current_status.downcase}" if current_status
-        requestor.request(uri, 'put', xml, content_type: 'application/xml')
-        true
+        response = requestor.request(uri, 'put', xml, content_type: 'application/xml')
+
+        Workflow::Response::Update.new(json: response)
       end
 
       #
