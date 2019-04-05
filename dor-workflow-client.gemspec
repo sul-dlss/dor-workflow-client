@@ -24,7 +24,6 @@ Gem::Specification.new do |gem|
   gem.add_dependency 'faraday_middleware'
   gem.add_dependency 'net-http-persistent', '>= 2.9.4', '< 4.a'
   gem.add_dependency 'nokogiri', '~> 1.6'
-  gem.add_dependency 'retries'
 
   gem.add_development_dependency 'equivalent-xml', '~> 0.5', '>= 0.5.1'
   gem.add_development_dependency 'rake'
@@ -32,5 +31,6 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'rspec', '~> 3.3'
   gem.add_development_dependency 'rubocop', '~> 0.63.1'
   gem.add_development_dependency 'simplecov'
+  gem.add_development_dependency 'webmock'
   gem.add_development_dependency 'yard'
 end

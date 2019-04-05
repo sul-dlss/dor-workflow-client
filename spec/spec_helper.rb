@@ -12,6 +12,7 @@ require 'byebug'
 require 'dor/workflow/client'
 require 'equivalent-xml'
 require 'equivalent-xml/rspec_matchers'
+require 'webmock/rspec'
 
 # RSpec.configure do |conf|
 # end

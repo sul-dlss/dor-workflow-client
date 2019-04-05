@@ -74,18 +74,12 @@ RSpec.describe Dor::Workflow::Client do
       Faraday::Adapter::Test::Stubs.new do |stub|
         stub.put("#{@repo}/objects/#{@druid}/workflows/etdSubmitWF") { |_env| [201, {}, ''] }
         stub.put("#{@repo}/objects/#{@druid}/workflows/noCreateDsWF?create-ds=false") { |_env| [201, {}, ''] }
-        stub.put("#{@repo}/objects/#{@druid}/workflows/httpException") { |_env| [418, {}, "I'm A Teapot"] }
         stub.put("#{@repo}/objects/#{@druid}/workflows/raiseException") { |_env| raise 'broken' }
       end
     end
 
     it 'should pass workflow xml to the DOR workflow service and return the URL to the workflow' do
       client.create_workflow(@repo, @druid, 'etdSubmitWF', wf_xml)
-    end
-
-    it 'should log an error and retry upon a targetted Faraday exception' do
-      expect(mock_logger).to receive(:warn).with(/\[Attempt 1\] Faraday::ClientError: the server responded with status 418/)
-      expect { client.create_workflow(@repo, @druid, 'httpException', wf_xml) }.to raise_error Dor::WorkflowException
     end
 
     it 'should raise on an unexpected Exception' do

@@ -3,7 +3,6 @@
 require 'active_support'
 require 'active_support/core_ext'
 require 'nokogiri'
-require 'retries'
 require 'dor/workflow_exception'
 require 'dor/models/response/workflow'
 require 'dor/models/response/update'
@@ -34,8 +33,7 @@ module Dor
       def initialize(url: nil, logger: default_logger, timeout: nil, connection: nil)
         raise ArgumentError, 'You must provide either a connection or a url' if !url && !connection
 
-        @requestor = Requestor.new(connection: connection || ConnectionFactory.build_connection(url, timeout: timeout),
-                                   logger: logger)
+        @requestor = Requestor.new(connection: connection || ConnectionFactory.build_connection(url, timeout: timeout, logger: logger))
       end
 
       delegate :create_workflow, :update_workflow_status, :workflow_status, :workflow_xml,
