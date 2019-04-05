@@ -584,6 +584,7 @@ RSpec.describe Dor::WorkflowService do
 
     describe 'count_errored_for_workstep' do
       it 'counts how many steps are errored out' do
+        expect(Deprecation).to receive(:warn)
         expect(described_class.count_errored_for_workstep(@workflow, @step, @repository)).to eq(1)
       end
     end
@@ -609,6 +610,7 @@ RSpec.describe Dor::WorkflowService do
     end
 
     it 'counts how many steps are errored out' do
+      expect(Deprecation).to receive(:warn)
       expect(described_class.count_queued_for_workstep(@workflow, @step, @repository)).to eq(1)
     end
   end

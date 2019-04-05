@@ -390,6 +390,8 @@ module Dor
       #
       # @return [Integer] Number of objects with this repository:workflow:step that have a status of 'error'
       def count_errored_for_workstep(workflow, step, repository = 'dor')
+        Deprecation.warn(self, 'count_errored_for_workstep is deprecated and will be removed in dor-workflow-service version 3. Use count_objects_in_step instead.')
+
         count_objects_in_step(workflow, step, 'error', repository)
       end
 
@@ -401,6 +403,8 @@ module Dor
       #
       # @return [Integer] Number of objects with this repository:workflow:step that have a status of 'queued'
       def count_queued_for_workstep(workflow, step, repository = 'dor')
+        Deprecation.warn(self, 'count_queued_for_workstep is deprecated and will be removed in dor-workflow-service version 3. Use count_objects_in_step instead.')
+
         count_objects_in_step(workflow, step, 'queued', repository)
       end
 
