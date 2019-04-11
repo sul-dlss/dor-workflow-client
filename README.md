@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/sul-dlss/dor-workflow-service.svg?branch=master)](https://travis-ci.org/sul-dlss/dor-workflow-service)
+[![Build Status](https://travis-ci.org/sul-dlss/dor-workflow-client.svg?branch=master)](https://travis-ci.org/sul-dlss/dor-workflow-client)
 
 # dor-workflow-client gem
 
