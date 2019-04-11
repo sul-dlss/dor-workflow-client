@@ -12,8 +12,7 @@ RSpec.describe Dor::Workflow::Client::Requestor do
     end
   end
 
-  let(:mock_logger) { double('Logger', info: true, debug: true, warn: true) }
-  let(:requestor) { described_class.new(connection: mock_http_connection, logger: mock_logger) }
+  let(:requestor) { described_class.new(connection: mock_http_connection) }
 
   describe '.send_workflow_resource_request' do
     let(:stubs) do
