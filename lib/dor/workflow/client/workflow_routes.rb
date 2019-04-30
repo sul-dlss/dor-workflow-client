@@ -1,34 +1,54 @@
 # frozen_string_literal: true
 
+require 'deprecation'
+
 module Dor
   module Workflow
     class Client
       # Makes requests relating to a workflow
       class WorkflowRoutes
+        extend Deprecation
+
         def initialize(requestor:)
           @requestor = requestor
         end
 
-        # Creates a workflow for a given object in the repository.  If this particular workflow for this objects exists,
-        # it will replace the old workflow with wf_xml passed to this method.  You have the option of creating a datastream or not.
-        # Returns true on success.  Caller must handle any exceptions
+        # This method is deprecated and calls create_workflow_by_name.
         #
-        # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
+        # @param [String] repo Ignored
         # @param [String] druid The id of the object
         # @param [String] workflow_name The name of the workflow you want to create
-        # @param [String] wf_xml The xml that represents the workflow
+        # @param [String] wf_xml Ignored
         # @param [Hash] opts optional params
         # @option opts [Boolean] :create_ds if true, a workflow datastream will be created in Fedora.  Set to false if you do not want a datastream to be created
         #   If you do not pass in an <b>opts</b> Hash, then :create_ds is set to true by default
         # @option opts [String] :lane_id adds laneId attribute to all process elements in the wf_xml workflow xml.  Defaults to a value of 'default'
         # @return [Boolean] always true
         #
-        def create_workflow(repo, druid, workflow_name, wf_xml, opts = { create_ds: true })
-          lane_id = opts.fetch(:lane_id, 'default')
-          xml = add_lane_id_to_workflow_xml(lane_id, wf_xml)
-          _status = requestor.request "#{repo}/objects/#{druid}/workflows/#{workflow_name}", 'put', xml,
-                                      content_type: 'application/xml',
-                                      params: { 'create-ds' => opts[:create_ds] }
+        def create_workflow(_repo, druid, workflow_name, _wf_xml, opts = { create_ds: true })
+          create_workflow_by_name(druid, workflow_name, opts)
+        end
+        deprecation_deprecate create_workflow: 'use create_workflow_by_name instead'
+
+        # Creates a workflow for a given object in the repository.  If this particular workflow for this objects exists,
+        # it will replace the old workflow.  You have the option of creating a datastream or not.
+        # Returns true on success.  Caller must handle any exceptions.
+        #
+        # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
+        # @param [String] druid The id of the object
+        # @param [String] workflow_name The name of the workflow you want to create. This must correspond with a workflow
+        # name that is known by the workflow service.
+        # @param [Hash] opts optional params
+        # @option opts [Boolean] :create_ds if true, a workflow datastream will be created in Fedora.  Set to false if you do not want a datastream to be created
+        #   If you do not pass in an <b>opts</b> Hash, then :create_ds is set to true by default
+        # @option opts [String] :lane_id adds laneId attribute to all process elements in the wf_xml workflow xml.  Defaults to a value of 'default'
+        # @return [Boolean] always true
+        #
+        def create_workflow_by_name(druid, workflow_name, opts = { create_ds: true })
+          requestor.request "objects/#{druid}/workflows/#{workflow_name}", 'post', '',
+                            content_type: 'application/xml',
+                            params: { 'create-ds' => opts[:create_ds],
+                                      'lane-id' => opts.fetch(:lane_id, 'default') }
           true
         end
 
@@ -164,17 +184,6 @@ module Dor
         private
 
         attr_reader :requestor
-
-        # Adds laneId attributes to each process of workflow xml
-        #
-        # @param [String] lane_id to add to each process element
-        # @param [String] wf_xml the workflow xml
-        # @return [String] wf_xml with lane_id attributes
-        def add_lane_id_to_workflow_xml(lane_id, wf_xml)
-          doc = Nokogiri::XML(wf_xml)
-          doc.xpath('/workflow/process').each { |proc| proc['laneId'] = lane_id }
-          doc.to_xml
-        end
 
         # @param [Hash] params
         # @return [String]
