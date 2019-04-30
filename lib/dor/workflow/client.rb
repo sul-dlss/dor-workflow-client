@@ -36,8 +36,8 @@ module Dor
         @requestor = Requestor.new(connection: connection || ConnectionFactory.build_connection(url, timeout: timeout, logger: logger))
       end
 
-      delegate :create_workflow, :update_workflow_status, :workflow_status, :workflow_xml,
-               :update_workflow_error_status, :all_workflows_xml, :workflows,
+      delegate :create_workflow, :create_workflow_by_name, :update_workflow_status, :workflow_status,
+               :workflow_xml, :update_workflow_error_status, :all_workflows_xml, :workflows,
                :workflow, :delete_workflow, to: :workflow_routes
 
       delegate :lifecycle, :active_lifecycle, :milestones, to: :lifecycle_routes

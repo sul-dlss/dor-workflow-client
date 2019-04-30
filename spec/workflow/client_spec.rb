@@ -72,26 +72,62 @@ RSpec.describe Dor::Workflow::Client do
   describe '#create_workflow' do
     let(:stubs) do
       Faraday::Adapter::Test::Stubs.new do |stub|
-        stub.put("#{@repo}/objects/#{@druid}/workflows/etdSubmitWF") { |_env| [201, {}, ''] }
-        stub.put("#{@repo}/objects/#{@druid}/workflows/noCreateDsWF?create-ds=false") { |_env| [201, {}, ''] }
-        stub.put("#{@repo}/objects/#{@druid}/workflows/raiseException") { |_env| raise 'broken' }
+        stub.post("objects/#{@druid}/workflows/etdSubmitWF") { |_env| [201, {}, ''] }
+        stub.post("objects/#{@druid}/workflows/noCreateDsWF?create-ds=false") { |_env| [201, {}, ''] }
+        stub.post("objects/#{@druid}/workflows/raiseException") { |_env| raise 'broken' }
+        stub.post("objects/#{@druid}/workflows/noCreateDsWF?lane-id=foo_lane") { |_env| [201, {}, ''] }
       end
     end
 
-    it 'should pass workflow xml to the DOR workflow service and return the URL to the workflow' do
+    before do
+      allow(Deprecation).to receive(:warn)
+    end
+
+    it 'should request the workflow by name and return the URL to the workflow' do
       client.create_workflow(@repo, @druid, 'etdSubmitWF', wf_xml)
+      expect(Deprecation).to have_received(:warn)
     end
 
     it 'should raise on an unexpected Exception' do
       expect { client.create_workflow(@repo, @druid, 'raiseException', wf_xml) }.to raise_error(Exception, 'broken')
+      expect(Deprecation).to have_received(:warn)
     end
 
     it 'sets the create-ds param to the value of the passed in options hash' do
       client.create_workflow(@repo, @druid, 'noCreateDsWF', wf_xml, create_ds: false)
+      expect(Deprecation).to have_received(:warn)
     end
 
-    it 'adds lane_id attributes to all steps if passed in as an option' do
-      skip 'test not implemented'
+    it 'sets the lane_id param if provided in options hash' do
+      client.create_workflow(@repo, @druid, 'noCreateDsWF', wf_xml, lane_id: 'foo_lane')
+      expect(Deprecation).to have_received(:warn)
+    end
+  end
+
+  describe '#create_workflow_by_name' do
+    let(:stubs) do
+      Faraday::Adapter::Test::Stubs.new do |stub|
+        stub.post("objects/#{@druid}/workflows/etdSubmitWF") { |_env| [201, {}, ''] }
+        stub.post("objects/#{@druid}/workflows/noCreateDsWF?create-ds=false") { |_env| [201, {}, ''] }
+        stub.post("objects/#{@druid}/workflows/raiseException") { |_env| raise 'broken' }
+        stub.post("objects/#{@druid}/workflows/noCreateDsWF?lane-id=foo_lane") { |_env| [201, {}, ''] }
+      end
+    end
+
+    it 'should request the workflow by name and return the URL to the workflow' do
+      client.create_workflow_by_name(@druid, 'etdSubmitWF')
+    end
+
+    it 'should raise on an unexpected Exception' do
+      expect { client.create_workflow_by_name(@druid, 'raiseException') }.to raise_error(Exception, 'broken')
+    end
+
+    it 'sets the create-ds param to the value of the passed in options hash' do
+      client.create_workflow_by_name(@druid, 'noCreateDsWF', create_ds: false)
+    end
+
+    it 'sets the lane_id param if provided in options hash' do
+      client.create_workflow_by_name(@druid, 'noCreateDsWF', lane_id: 'foo_lane')
     end
   end
 
