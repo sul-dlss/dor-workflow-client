@@ -73,9 +73,8 @@ RSpec.describe Dor::Workflow::Client do
     let(:stubs) do
       Faraday::Adapter::Test::Stubs.new do |stub|
         stub.post("objects/#{@druid}/workflows/etdSubmitWF") { |_env| [201, {}, ''] }
-        stub.post("objects/#{@druid}/workflows/noCreateDsWF?create-ds=false") { |_env| [201, {}, ''] }
         stub.post("objects/#{@druid}/workflows/raiseException") { |_env| raise 'broken' }
-        stub.post("objects/#{@druid}/workflows/noCreateDsWF?lane-id=foo_lane") { |_env| [201, {}, ''] }
+        stub.post("objects/#{@druid}/workflows/laneIdWF?lane-id=foo_lane") { |_env| [201, {}, ''] }
       end
     end
 
@@ -93,13 +92,8 @@ RSpec.describe Dor::Workflow::Client do
       expect(Deprecation).to have_received(:warn)
     end
 
-    it 'sets the create-ds param to the value of the passed in options hash' do
-      client.create_workflow(@repo, @druid, 'noCreateDsWF', wf_xml, create_ds: false)
-      expect(Deprecation).to have_received(:warn)
-    end
-
     it 'sets the lane_id param if provided in options hash' do
-      client.create_workflow(@repo, @druid, 'noCreateDsWF', wf_xml, lane_id: 'foo_lane')
+      client.create_workflow(@repo, @druid, 'laneIdWF', wf_xml, lane_id: 'foo_lane')
       expect(Deprecation).to have_received(:warn)
     end
   end
@@ -108,9 +102,8 @@ RSpec.describe Dor::Workflow::Client do
     let(:stubs) do
       Faraday::Adapter::Test::Stubs.new do |stub|
         stub.post("objects/#{@druid}/workflows/etdSubmitWF") { |_env| [201, {}, ''] }
-        stub.post("objects/#{@druid}/workflows/noCreateDsWF?create-ds=false") { |_env| [201, {}, ''] }
         stub.post("objects/#{@druid}/workflows/raiseException") { |_env| raise 'broken' }
-        stub.post("objects/#{@druid}/workflows/noCreateDsWF?lane-id=foo_lane") { |_env| [201, {}, ''] }
+        stub.post("objects/#{@druid}/workflows/laneIdWF?lane-id=foo_lane") { |_env| [201, {}, ''] }
       end
     end
 
@@ -122,12 +115,8 @@ RSpec.describe Dor::Workflow::Client do
       expect { client.create_workflow_by_name(@druid, 'raiseException') }.to raise_error(Exception, 'broken')
     end
 
-    it 'sets the create-ds param to the value of the passed in options hash' do
-      client.create_workflow_by_name(@druid, 'noCreateDsWF', create_ds: false)
-    end
-
     it 'sets the lane_id param if provided in options hash' do
-      client.create_workflow_by_name(@druid, 'noCreateDsWF', lane_id: 'foo_lane')
+      client.create_workflow_by_name(@druid, 'laneIdWF', lane_id: 'foo_lane')
     end
   end
 
