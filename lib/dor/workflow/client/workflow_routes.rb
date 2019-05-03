@@ -148,6 +148,14 @@ module Dor
           requestor.request "objects/#{druid}/workflows"
         end
 
+        # Retrieves all workflows for the given object
+        # @param [String] pid The id of the object
+        # @return [Workflow::Response::Workflows]
+        def all_workflows(pid:)
+          xml = all_workflows_xml(pid)
+          Workflow::Response::Workflows.new(xml: xml)
+        end
+
         # Get workflow names into an array for given PID
         # This method only works when this gem is used in a project that is configured to connect to DOR
         #

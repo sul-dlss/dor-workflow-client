@@ -5,7 +5,7 @@ require 'dor/models/response/process'
 module Dor
   module Workflow
     module Response
-      # The response form asking the server about a workflow for an item
+      # The response from asking the server about a workflow for an item
       class Workflow
         def initialize(xml:)
           @xml = xml

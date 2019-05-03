@@ -4,6 +4,7 @@ require 'active_support'
 require 'active_support/core_ext'
 require 'nokogiri'
 require 'dor/workflow_exception'
+require 'dor/models/response/workflows'
 require 'dor/models/response/workflow'
 require 'dor/models/response/update'
 
