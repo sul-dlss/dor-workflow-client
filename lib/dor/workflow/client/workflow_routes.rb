@@ -20,12 +20,10 @@ module Dor
         # @param [String] workflow_name The name of the workflow you want to create
         # @param [String] wf_xml Ignored
         # @param [Hash] opts optional params
-        # @option opts [Boolean] :create_ds if true, a workflow datastream will be created in Fedora.  Set to false if you do not want a datastream to be created
-        #   If you do not pass in an <b>opts</b> Hash, then :create_ds is set to true by default
         # @option opts [String] :lane_id adds laneId attribute to all process elements in the wf_xml workflow xml.  Defaults to a value of 'default'
         # @return [Boolean] always true
         #
-        def create_workflow(_repo, druid, workflow_name, _wf_xml, opts = { create_ds: true })
+        def create_workflow(_repo, druid, workflow_name, _wf_xml, opts = {})
           create_workflow_by_name(druid, workflow_name, opts)
         end
         deprecation_deprecate create_workflow: 'use create_workflow_by_name instead'
@@ -42,7 +40,7 @@ module Dor
         # @option opts [String] :lane_id adds laneId attribute to all process elements in the wf_xml workflow xml.  Defaults to a value of 'default'
         # @return [Boolean] always true
         #
-        def create_workflow_by_name(druid, workflow_name, opts = { create_ds: true })
+        def create_workflow_by_name(druid, workflow_name, opts = {})
           requestor.request "objects/#{druid}/workflows/#{workflow_name}", 'post', '',
                             content_type: 'application/xml',
                             params: { 'lane-id' => opts.fetch(:lane_id, 'default') }
