@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/sul-dlss/dor-workflow-client.svg?branch=master)](https://travis-ci.org/sul-dlss/dor-workflow-client)
+[![Gem Version](https://badge.fury.io/rb/dor-workflow-client.svg)](https://badge.fury.io/rb/dor-workflow-client)
 
 # dor-workflow-client gem
 
