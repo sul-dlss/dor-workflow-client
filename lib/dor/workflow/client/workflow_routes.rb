@@ -38,12 +38,15 @@ module Dor
         # name that is known by the workflow service.
         # @param [Hash] opts optional params
         # @option opts [String] :lane_id adds laneId attribute to all process elements in the wf_xml workflow xml.  Defaults to a value of 'default'
+        # @option opts [Integer] :version specifies the version so that workflow service doesn't need to query dor-services.
         # @return [Boolean] always true
         #
         def create_workflow_by_name(druid, workflow_name, opts = {})
+          params = { 'lane-id' => opts.fetch(:lane_id, 'default') }
+          params['version'] = opts[:version] if opts[:version]
           requestor.request "objects/#{druid}/workflows/#{workflow_name}", 'post', '',
                             content_type: 'application/xml',
-                            params: { 'lane-id' => opts.fetch(:lane_id, 'default') }
+                            params: params
           true
         end
 

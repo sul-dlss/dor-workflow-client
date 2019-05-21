@@ -75,6 +75,7 @@ RSpec.describe Dor::Workflow::Client do
         stub.post("objects/#{@druid}/workflows/etdSubmitWF") { |_env| [201, {}, ''] }
         stub.post("objects/#{@druid}/workflows/raiseException") { |_env| raise 'broken' }
         stub.post("objects/#{@druid}/workflows/laneIdWF?lane-id=foo_lane") { |_env| [201, {}, ''] }
+        stub.post("objects/#{@druid}/workflows/versionWF?version=2") { |_env| [201, {}, ''] }
       end
     end
 
@@ -104,6 +105,7 @@ RSpec.describe Dor::Workflow::Client do
         stub.post("objects/#{@druid}/workflows/etdSubmitWF") { |_env| [201, {}, ''] }
         stub.post("objects/#{@druid}/workflows/raiseException") { |_env| raise 'broken' }
         stub.post("objects/#{@druid}/workflows/laneIdWF?lane-id=foo_lane") { |_env| [201, {}, ''] }
+        stub.post("objects/#{@druid}/workflows/versionWF?version=2") { |_env| [201, {}, ''] }
       end
     end
 
@@ -117,6 +119,10 @@ RSpec.describe Dor::Workflow::Client do
 
     it 'sets the lane_id param if provided in options hash' do
       client.create_workflow_by_name(@druid, 'laneIdWF', lane_id: 'foo_lane')
+    end
+
+    it 'sets the version param if provided in options hash' do
+      client.create_workflow_by_name(@druid, 'versionWF', version: 2)
     end
   end
 
