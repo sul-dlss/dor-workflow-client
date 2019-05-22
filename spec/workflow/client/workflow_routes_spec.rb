@@ -20,8 +20,21 @@ RSpec.describe Dor::Workflow::Client::WorkflowRoutes do
       allow(routes).to receive(:workflow_xml) { xml }
     end
 
-    it 'it returns a workflow' do
+    it 'returns a workflow' do
       expect(routes.workflow(pid: 'druid:mw971zk1113', workflow_name: 'accessionWF')).to be_kind_of Dor::Workflow::Response::Workflow
+    end
+  end
+
+  describe '#delete_all_workflows' do
+    subject(:delete_all_workflows) do
+      routes.delete_all_workflows(pid: 'druid:mw971zk1113')
+    end
+    let(:mock_requestor) { instance_double(Dor::Workflow::Client::Requestor, request: nil) }
+
+    it 'sends a delete request' do
+      delete_all_workflows
+      expect(mock_requestor).to have_received(:request)
+        .with('objects/druid:mw971zk1113/workflows', 'delete')
     end
   end
 

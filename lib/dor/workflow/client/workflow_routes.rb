@@ -187,6 +187,14 @@ module Dor
           true
         end
 
+        # Deletes all workflow steps for a particular druid
+        # @param [String] pid The id of the object to delete the workflow from
+        # @return [Boolean] always true
+        def delete_all_workflows(pid:)
+          requestor.request "objects/#{pid}/workflows", 'delete'
+          true
+        end
+
         private
 
         attr_reader :requestor
