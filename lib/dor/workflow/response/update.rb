@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'dor/models/response/process'
-
 module Dor
   module Workflow
     module Response

@@ -3,17 +3,11 @@
 require 'active_support'
 require 'active_support/core_ext'
 require 'nokogiri'
-require 'dor/workflow_exception'
-require 'dor/models/response/workflows'
-require 'dor/models/response/workflow'
-require 'dor/models/response/update'
+require 'zeitwerk'
 
-require 'dor/workflow/client/connection_factory'
-require 'dor/workflow/client/lifecycle_routes'
-require 'dor/workflow/client/queues'
-require 'dor/workflow/client/requestor'
-require 'dor/workflow/client/version_routes'
-require 'dor/workflow/client/workflow_routes'
+loader = Zeitwerk::Loader.new
+loader.push_dir(File.absolute_path("#{__FILE__}/../../.."))
+loader.setup
 
 module Dor
   module Workflow
