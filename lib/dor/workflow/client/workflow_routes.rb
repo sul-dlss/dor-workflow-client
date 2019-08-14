@@ -32,7 +32,6 @@ module Dor
         # it will replace the old workflow.  You have the option of creating a datastream or not.
         # Returns true on success.  Caller must handle any exceptions.
         #
-        # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
         # @param [String] druid The id of the object
         # @param [String] workflow_name The name of the workflow you want to create. This must correspond with a workflow
         # name that is known by the workflow service.
