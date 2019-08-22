@@ -17,7 +17,7 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^(spec)/})
   gem.require_paths = ['lib']
 
-  gem.add_dependency 'activesupport', '>= 3.2.1', '< 6'
+  gem.add_dependency 'activesupport', '>= 3.2.1', '< 7'
   gem.add_dependency 'deprecation', '>= 0.99.0'
   gem.add_dependency 'faraday', '~> 0.9', '>= 0.9.2'
   gem.add_dependency 'faraday_middleware'
