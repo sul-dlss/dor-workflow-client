@@ -6,9 +6,13 @@ require 'nokogiri'
 require 'zeitwerk'
 
 loader = Zeitwerk::Loader.new
-root_file = File.absolute_path("#{__FILE__}/../../..")
-loader.inflector = Zeitwerk::GemInflector.new(root_file)
-loader.push_dir(root_file)
+# Zeitwerk::GemInflector wants to be instantiated with the main .rb entrypoint
+# into a gem, which is this file.
+loader.inflector = Zeitwerk::GemInflector.new(__FILE__)
+# `#push_dir`, on the other hand, wants to be pointed at the dir that holds your
+# root namespace directory, which for dor-workflow-client is the `lib/`
+# directory. Our root namespace is `Dor::` which lives in `lib/dor/`
+loader.push_dir(File.absolute_path("#{__FILE__}/../../.."))
 loader.setup
 
 module Dor
