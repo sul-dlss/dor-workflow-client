@@ -6,7 +6,9 @@ require 'nokogiri'
 require 'zeitwerk'
 
 loader = Zeitwerk::Loader.new
-loader.push_dir(File.absolute_path("#{__FILE__}/../../.."))
+root_file = File.absolute_path("#{__FILE__}/../../..")
+loader.inflector = Zeitwerk::GemInflector.new(root_file)
+loader.push_dir(root_file)
 loader.setup
 
 module Dor
