@@ -5,7 +5,7 @@ require 'active_support/core_ext'
 require 'nokogiri'
 require 'zeitwerk'
 
-loader = Zeitwerk::Loader.new
+loader = Zeitwerk::Loader.for_gem
 loader.push_dir(File.absolute_path("#{__FILE__}/../../.."))
 loader.setup
 
