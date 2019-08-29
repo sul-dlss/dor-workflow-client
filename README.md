@@ -1,4 +1,6 @@
 [![Build Status](https://travis-ci.org/sul-dlss/dor-workflow-client.svg?branch=master)](https://travis-ci.org/sul-dlss/dor-workflow-client)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/fba77ff479c468f8510f/test_coverage)](https://codeclimate.com/github/sul-dlss/dor-services-client/test_coverage)
+[![Maintainability](https://api.codeclimate.com/v1/badges/fba77ff479c468f8510f/maintainability)](https://codeclimate.com/github/sul-dlss/dor-services-client/maintainability)
 [![Gem Version](https://badge.fury.io/rb/dor-workflow-client.svg)](https://badge.fury.io/rb/dor-workflow-client)
 
 # dor-workflow-client gem
