@@ -44,7 +44,7 @@ module Dor
           @attributes[:errorMessage].presence
         end
 
-        delegate :pid, :workflow_name, to: :parent
+        delegate :pid, :workflow_name, :repository, to: :parent
 
         private
 
