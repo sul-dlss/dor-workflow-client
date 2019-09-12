@@ -10,11 +10,15 @@ module Dor
         end
 
         def pid
-          ng_xml.at_xpath('/workflow/@objectId').text
+          workflow['objectId']
         end
 
         def workflow_name
-          ng_xml.at_xpath('/workflow/@id').text
+          workflow['id']
+        end
+
+        def repository
+          workflow['repository']
         end
 
         # @param [Integer] version the version we are checking for.
@@ -38,6 +42,10 @@ module Dor
         attr_reader :xml
 
         private
+
+        def workflow
+          ng_xml.at_xpath('workflow')
+        end
 
         def process_nodes_for(name:)
           ng_xml.xpath("/workflow/process[@name = '#{name}']")
