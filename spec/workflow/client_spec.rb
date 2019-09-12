@@ -185,6 +185,21 @@ RSpec.describe Dor::Workflow::Client do
     end
   end
 
+  describe '#workflow_template' do
+    subject(:workflow_template) { client.workflow_template('etdSubmitWF') }
+
+    let(:workflow_template_client) { instance_double Dor::Workflow::Client::WorkflowTemplate, retrieve: 'data' }
+
+    before do
+      allow(Dor::Workflow::Client::WorkflowTemplate).to receive(:new).and_return(workflow_template_client)
+    end
+
+    it 'delegates to the client' do
+      expect(workflow_template).to eq 'data'
+      expect(workflow_template_client).to have_received(:retrieve).with('etdSubmitWF')
+    end
+  end
+
   describe '#workflow_status' do
     let(:repo) { @repo }
     let(:druid) { @druid }

@@ -66,6 +66,10 @@ module Dor
         @version_routes ||= VersionRoutes.new(requestor: requestor)
       end
 
+      def workflow_template(name)
+        WorkflowTemplate.new(requestor: requestor).retrieve(name)
+      end
+
       private
 
       # Among other things, a distinct method helps tests mock default logger
