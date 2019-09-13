@@ -4,6 +4,8 @@ require 'active_support'
 require 'active_support/core_ext'
 require 'nokogiri'
 require 'zeitwerk'
+require 'faraday'
+require 'deprecation'
 
 loader = Zeitwerk::Loader.new
 # Zeitwerk::GemInflector wants to be instantiated with the main .rb entrypoint
@@ -39,7 +41,7 @@ module Dor
 
       delegate :create_workflow, :create_workflow_by_name, :update_workflow_status, :workflow_status,
                :workflow_xml, :update_workflow_error_status, :all_workflows_xml, :workflows,
-               :workflow, :delete_workflow, :delete_all_workflows, to: :workflow_routes
+               :workflow, :delete_workflow, :delete_all_workflows, :update_status, to: :workflow_routes
 
       delegate :lifecycle, :active_lifecycle, :milestones, to: :lifecycle_routes
 
