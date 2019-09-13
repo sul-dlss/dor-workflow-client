@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'deprecation'
-
 module Dor
   module Workflow
     class Client
@@ -57,6 +55,37 @@ module Dor
         # @param [String] workflow The name of the workflow
         # @param [String] process The name of the process step
         # @param [String] status The status that you want to set -- using one of the values in VALID_STATUS
+        # @param [Float] :elapsed The number of seconds it took to complete this step. Can have a decimal.  Is set to 0 if not passed in.
+        # @param [String] :lifecycle Bookeeping label for this particular workflow step.  Examples are: 'registered', 'shelved'
+        # @param [String] :note Any kind of string annotation that you want to attach to the workflow
+        # @param [String] :current_status Setting this string tells the workflow service to compare the current status to this value.  If the current value does not match this value, the update is not performed
+        # @return [Boolean] always true
+        # Http Call
+        # ==
+        # The method does an HTTP PUT to the URL defined in `Dor::WF_URI`.  As an example:
+        #
+        #     PUT "/objects/pid:123/workflows/GoogleScannedWF/convert"
+        #     <process name=\"convert\" status=\"completed\" />"
+        def update_status(druid:, workflow:, process:, status:, elapsed: 0, lifecycle: nil, note: nil, current_status: nil)
+          raise ArgumentError, "Unknown status value #{status}" unless VALID_STATUS.include?(status)
+          raise ArgumentError, "Unknown current_status value #{current_status}" if current_status && !VALID_STATUS.include?(current_status)
+
+          xml = create_process_xml(name: process, status: status, elapsed: elapsed, lifecycle: lifecycle, note: note)
+          uri = "objects/#{druid}/workflows/#{workflow}/#{process}"
+          uri += "?current-status=#{current_status}" if current_status
+          response = requestor.request(uri, 'put', xml, content_type: 'application/xml')
+
+          Workflow::Response::Update.new(json: response)
+        end
+
+        # Updates the status of one step in a workflow.
+        # Returns true on success.  Caller must handle any exceptions
+        #
+        # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
+        # @param [String] druid The id of the object
+        # @param [String] workflow The name of the workflow
+        # @param [String] process The name of the process step
+        # @param [String] status The status that you want to set -- using one of the values in VALID_STATUS
         # @param [Hash] opts optional values for the workflow step
         # @option opts [Float] :elapsed The number of seconds it took to complete this step. Can have a decimal.  Is set to 0 if not passed in.
         # @option opts [String] :lifecycle Bookeeping label for this particular workflow step.  Examples are: 'registered', 'shelved'
@@ -80,9 +109,9 @@ module Dor
           uri = "#{repo}/objects/#{druid}/workflows/#{workflow}/#{process}"
           uri += "?current-status=#{current_status.downcase}" if current_status
           response = requestor.request(uri, 'put', xml, content_type: 'application/xml')
-
           Workflow::Response::Update.new(json: response)
         end
+        deprecation_deprecate update_workflow_status: 'use update_status instead.'
 
         #
         # Retrieves the process status of the given workflow for the given object identifier

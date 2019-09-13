@@ -143,6 +143,9 @@ RSpec.describe Dor::Workflow::Client do
         end
       end
     end
+    before do
+      allow(Deprecation).to receive(:warn)
+    end
 
     it 'should update workflow status and return true if successful' do
       expect(client.update_workflow_status(@repo, @druid, 'etdSubmitWF', 'registrar-approval', 'completed', version: 2, note: 'annotation', lane_id: 'lane2')).to be_kind_of Dor::Workflow::Response::Update
@@ -181,7 +184,7 @@ RSpec.describe Dor::Workflow::Client do
       client.update_workflow_error_status(@repo, @druid, 'etdSubmitWF', 'reader-approval', 'Some exception', error_text: 'The optional stacktrace')
     end
     it 'should return false if the PUT to the DOR workflow service throws an exception' do
-      expect { client.update_workflow_status(@repo, @druid, 'errorWF', 'reader-approval', 'completed') }.to raise_error(Dor::WorkflowException, /status 400/)
+      expect { client.update_workflow_error_status(@repo, @druid, 'errorWF', 'reader-approval', 'completed') }.to raise_error(Dor::WorkflowException, /status 400/)
     end
   end
 
