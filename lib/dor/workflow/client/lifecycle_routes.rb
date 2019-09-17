@@ -13,20 +13,23 @@ module Dor
         # @param [String] repo repository name
         # @param [String] druid object id
         # @param [String] milestone_name the name of the milestone being queried for
+        # @param [Number] version the version to query for
         # @return [Time] when the milestone was achieved.  Returns nil if the milestone does not exist
         #
-        def lifecycle(repo, druid, milestone_name)
-          filter_milestone(query_lifecycle(repo, druid), milestone_name)
+        def lifecycle(repo, druid, milestone_name, version: nil)
+          filter_milestone(query_lifecycle(repo, druid, version: version), milestone_name)
         end
 
-        # Returns the Date for a requested milestone ONLY FROM THE ACTIVE workflow table
+        # Returns the Date for a requested milestone ONLY for the current version.
+        # This is slow as the workflow server will query dor-services-app for the version.
+        # A better approach is #lifecycle with the version tag.
         # @param [String] repo repository name
         # @param [String] druid object id
         # @param [String] milestone_name the name of the milestone being queried for
         # @return [Time] when the milestone was achieved.  Returns nil if the milestone does not exis
         #
         def active_lifecycle(repo, druid, milestone_name)
-          filter_milestone(query_lifecycle(repo, druid, true), milestone_name)
+          filter_milestone(query_lifecycle(repo, druid, active_only: true), milestone_name)
         end
 
         # @return [Hash]
@@ -54,9 +57,15 @@ module Dor
         #     <milestone date="2010-06-15T16:08:58-0700">released</milestone>
         #   </lifecycle>
         #
-        def query_lifecycle(repo, druid, active_only = false)
+        def query_lifecycle(repo, druid, active_only: false, version: nil)
           req = "#{repo}/objects/#{druid}/lifecycle"
-          req += '?active-only=true' if active_only
+          req += if version
+                   "?version=#{version}"
+                 elsif active_only
+                   '?active-only=true'
+                 else
+                   ''
+                 end
           Nokogiri::XML(requestor.request(req))
         end
 
