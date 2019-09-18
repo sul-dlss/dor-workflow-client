@@ -67,6 +67,31 @@ RSpec.describe Dor::Workflow::Client::WorkflowRoutes do
     end
   end
 
+  describe '#update_error_status' do
+    let(:mock_requestor) { instance_double(Dor::Workflow::Client::Requestor, request: '{"next_steps":["submit-marc"]}') }
+    let(:druid) { 'druid:mw971zk1113' }
+
+    context 'when the request is successful' do
+      it 'updates workflow status and return true if successful' do
+        expect(routes.update_error_status(druid: druid, workflow: 'etdSubmitWF', process: 'registrar-approval', error_msg: 'broken')).to be_kind_of Dor::Workflow::Response::Update
+        expect(mock_requestor).to have_received(:request)
+          .with('objects/druid:mw971zk1113/workflows/etdSubmitWF/registrar-approval',
+                'put',
+                "<?xml version=\"1.0\"?>\n<process name=\"registrar-approval\" status=\"error\" errorMessage=\"broken\"/>\n",
+                content_type: 'application/xml')
+      end
+    end
+
+    context 'when the PUT to the DOR workflow service throws an exception' do
+      before do
+        allow(mock_requestor).to receive(:request).and_raise(Dor::WorkflowException, 'status 400')
+      end
+      it 'raises an exception' do
+        expect { routes.update_error_status(druid: druid, workflow: 'errorWF', process: 'registrar-approval', error_msg: 'broken') }.to raise_error(Dor::WorkflowException, /status 400/)
+      end
+    end
+  end
+
   describe '#delete_all_workflows' do
     subject(:delete_all_workflows) do
       routes.delete_all_workflows(pid: 'druid:mw971zk1113')

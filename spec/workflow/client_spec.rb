@@ -169,15 +169,19 @@ RSpec.describe Dor::Workflow::Client do
   describe '#update_workflow_error_status' do
     let(:stubs) do
       Faraday::Adapter::Test::Stubs.new do |stub|
-        stub.put("#{@repo}/objects/#{@druid}/workflows/etdSubmitWF/reader-approval") do |env|
+        stub.put("objects/#{@druid}/workflows/etdSubmitWF/reader-approval") do |env|
           expect(env.body).to match(/status="error" errorMessage="Some exception" errorText="The optional stacktrace"/)
-          [201, {}, '']
+          [201, {}, '{"next_steps":["submit-marc"]}']
         end
 
-        stub.put("#{@repo}/objects/#{@druid}/workflows/errorWF/reader-approval") do |_env|
+        stub.put("objects/#{@druid}/workflows/errorWF/reader-approval") do |_env|
           [400, {}, '']
         end
       end
+    end
+
+    before do
+      allow(Deprecation).to receive(:warn)
     end
 
     it 'should update workflow status to error and return true if successful' do
