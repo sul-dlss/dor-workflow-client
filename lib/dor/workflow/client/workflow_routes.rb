@@ -145,9 +145,10 @@ module Dor
         # Updates the status of one step in a workflow to error.
         # Returns true on success.  Caller must handle any exceptions
         #
-        # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
+        # @param [String] _repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
         # @param [String] druid The id of the object
         # @param [String] workflow The name of the workflow
+        # @param [String] process The name of the workflow step
         # @param [String] error_msg The error message.  Ideally, this is a brief message describing the error
         # @param [Hash] opts optional values for the workflow step
         # @option opts [String] :error_text A slot to hold more information about the error, like a full stacktrace
@@ -157,13 +158,34 @@ module Dor
         # ==
         # The method does an HTTP PUT to the URL defined in `Dor::WF_URI`.
         #
-        #     PUT "/dor/objects/pid:123/workflows/GoogleScannedWF/convert"
+        #     PUT "/objects/pid:123/workflows/GoogleScannedWF/convert"
         #     <process name=\"convert\" status=\"error\" />"
-        def update_workflow_error_status(repo, druid, workflow, process, error_msg, opts = {})
-          opts = { error_text: nil }.merge!(opts)
-          xml = create_process_xml({ name: process, status: 'error', errorMessage: error_msg }.merge!(opts))
-          requestor.request "#{repo}/objects/#{druid}/workflows/#{workflow}/#{process}", 'put', xml, content_type: 'application/xml'
+        def update_workflow_error_status(_repo, druid, workflow, process, error_msg, opts = {})
+          update_error_status(druid: druid, workflow: workflow, process: process, error_msg: error_msg, error_text: opts[:error_text])
           true
+        end
+        deprecation_deprecate update_workflow_error_status: 'use update_error_status instead.'
+
+        # Updates the status of one step in a workflow to error.
+        # Returns true on success.  Caller must handle any exceptions
+        #
+        # @param [String] druid The id of the object
+        # @param [String] workflow The name of the workflow
+        # @param [String] process The name of the workflow step
+        # @param [String] error_msg The error message.  Ideally, this is a brief message describing the error
+        # @param [String] error_text A slot to hold more information about the error, like a full stacktrace
+        # @return [Workflow::Response::Update]
+        #
+        # Http Call
+        # ==
+        # The method does an HTTP PUT to the URL defined in `Dor::WF_URI`.
+        #
+        #     PUT "/objects/pid:123/workflows/GoogleScannedWF/convert"
+        #     <process name=\"convert\" status=\"error\" />"
+        def update_error_status(druid:, workflow:, process:, error_msg:, error_text: nil)
+          xml = create_process_xml(name: process, status: 'error', errorMessage: error_msg, error_text: error_text)
+          response = requestor.request "objects/#{druid}/workflows/#{workflow}/#{process}", 'put', xml, content_type: 'application/xml'
+          Workflow::Response::Update.new(json: response)
         end
 
         #
