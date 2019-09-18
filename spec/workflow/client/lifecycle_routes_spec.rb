@@ -3,9 +3,9 @@
 require 'spec_helper'
 
 RSpec.describe Dor::Workflow::Client::LifecycleRoutes do
-  let(:mock_requestor) { instance_double(Dor::Workflow::Client::Requestor) }
-
-  let(:routes) { described_class.new(requestor: mock_requestor) }
+  let(:requestor) { instance_double(Dor::Workflow::Client::Requestor, request: response) }
+  let(:response) { '<xml />' }
+  let(:routes) { described_class.new(requestor: requestor) }
 
   describe '#milestones' do
     let(:ng_xml) { Nokogiri::XML(xml) }
@@ -22,6 +22,26 @@ RSpec.describe Dor::Workflow::Client::LifecycleRoutes do
     it 'includes the version in with the milestones' do
       expect(milestones.first[:milestone]).to eq('published')
       expect(milestones.first[:version]).to eq('2')
+    end
+  end
+
+  describe '#lifecycle' do
+    context 'without version' do
+      subject(:lifecycle) { routes.lifecycle('dor', 'druid:gv054hp4128', 'submitted') }
+
+      it 'make the request' do
+        lifecycle
+        expect(requestor).to have_received(:request).with('dor/objects/druid:gv054hp4128/lifecycle')
+      end
+    end
+
+    context 'with version' do
+      subject(:lifecycle) { routes.lifecycle('dor', 'druid:gv054hp4128', 'submitted', version: 3) }
+
+      it 'makes the request with the version' do
+        lifecycle
+        expect(requestor).to have_received(:request).with('dor/objects/druid:gv054hp4128/lifecycle?version=3')
+      end
     end
   end
 end
