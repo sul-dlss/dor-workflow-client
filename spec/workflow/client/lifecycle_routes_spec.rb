@@ -44,4 +44,24 @@ RSpec.describe Dor::Workflow::Client::LifecycleRoutes do
       end
     end
   end
+
+  describe '#active_lifecycle' do
+    context 'without version' do
+      subject(:active_lifecycle) { routes.active_lifecycle('dor', 'druid:gv054hp4128', 'submitted') }
+
+      it 'make the request' do
+        active_lifecycle
+        expect(requestor).to have_received(:request).with('dor/objects/druid:gv054hp4128/lifecycle?active-only=true')
+      end
+    end
+
+    context 'with version' do
+      subject(:active_lifecycle) { routes.active_lifecycle('dor', 'druid:gv054hp4128', 'submitted', version: 3) }
+
+      it 'makes the request with the version' do
+        active_lifecycle
+        expect(requestor).to have_received(:request).with('dor/objects/druid:gv054hp4128/lifecycle?version=3&active-only=true')
+      end
+    end
+  end
 end
