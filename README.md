@@ -13,10 +13,35 @@ https://consul.stanford.edu/display/DOR/DOR+services#DORservices-initializeworkf
 You should initialize a `Dor::Workflow::Client` object in your application configuration, i.e. in a bootup or startup method like:
 
 ```ruby
-wfs = Dor::Workflow::Client.new(url: 'https://test-server.edu/workflow/')
+client = Dor::Workflow::Client.new(url: 'https://test-server.edu/workflow/')
 ```
 
 Consumers of recent versions of the [dor-services](https://github.com/sul-dlss/dor-services) gem can access the configured `Dor::Workflow::Client` object via `Dor::Config`.
+
+## API
+
+Create a workflow
+```
+client.create_workflow_by_name('druid:bc123df4567', 'etdSubmitWF')
+```
+
+Update a workflow step's status
+```
+client.update_status(druid: 'druid:bc123df4567',
+                     workflow: 'etdSubmitWF',
+                     process: 'registrar-approval',
+                     status: 'completed')
+```
+
+List workflow templates
+```
+client.workflow_templates
+```
+
+Show a workflow template
+```
+client.workflow_template('etdSubmitWF')
+```
 
 ## Underlying Clients
 
