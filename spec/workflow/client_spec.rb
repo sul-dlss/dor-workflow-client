@@ -207,6 +207,29 @@ RSpec.describe Dor::Workflow::Client do
     end
   end
 
+  describe '#workflow_templates' do
+    subject(:workflow_templates) { client.workflow_templates }
+
+    let(:workflow_template_client) { instance_double Dor::Workflow::Client::WorkflowTemplate, all: 'data' }
+
+    before do
+      allow(Dor::Workflow::Client::WorkflowTemplate).to receive(:new).and_return(workflow_template_client)
+    end
+
+    it 'delegates to the client' do
+      expect(workflow_templates).to eq 'data'
+      expect(workflow_template_client).to have_received(:all)
+    end
+  end
+
+  describe '#templates' do
+    subject(:templates) { client.templates }
+
+    it 'returns the template client' do
+      expect(templates).to be_instance_of Dor::Workflow::Client::WorkflowTemplate
+    end
+  end
+
   describe '#workflow_status' do
     let(:repo) { @repo }
     let(:druid) { @druid }
