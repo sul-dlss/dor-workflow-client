@@ -19,27 +19,35 @@ client = Dor::Workflow::Client.new(url: 'https://test-server.edu/workflow/')
 Consumers of recent versions of the [dor-services](https://github.com/sul-dlss/dor-services) gem can access the configured `Dor::Workflow::Client` object via `Dor::Config`.
 
 ## API
+[Rubydoc](https://www.rubydoc.info/github/sul-dlss/dor-workflow-client/master)
 
+### Example usage
 Create a workflow
 ```
 client.create_workflow_by_name('druid:bc123df4567', 'etdSubmitWF')
 ```
 
 Update a workflow step's status
-```
+```ruby
 client.update_status(druid: 'druid:bc123df4567',
                      workflow: 'etdSubmitWF',
                      process: 'registrar-approval',
                      status: 'completed')
 ```
 
-List workflow templates
+Show "milestones" for an object
+```ruby
+client.milestones('dor', 'druid:gv054hp4128')
+#=> [{version: '1', milestone: 'published'}]
 ```
+
+List workflow templates
+```ruby
 client.workflow_templates
 ```
 
 Show a workflow template
-```
+```ruby
 client.workflow_template('etdSubmitWF')
 ```
 
