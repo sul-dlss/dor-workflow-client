@@ -62,7 +62,7 @@ module Dor
         # @return [Boolean] always true
         # Http Call
         # ==
-        # The method does an HTTP PUT to the URL defined in `Dor::WF_URI`.  As an example:
+        # The method does an HTTP PUT to the base URL.  As an example:
         #
         #     PUT "/objects/pid:123/workflows/GoogleScannedWF/convert"
         #     <process name=\"convert\" status=\"completed\" />"
@@ -95,7 +95,7 @@ module Dor
         # @return [Boolean] always true
         # Http Call
         # ==
-        # The method does an HTTP PUT to the URL defined in `Dor::WF_URI`.  As an example:
+        # The method does an HTTP PUT to the base URL.  As an example:
         #
         #     PUT "/dor/objects/pid:123/workflows/GoogleScannedWF/convert"
         #     <process name=\"convert\" status=\"completed\" />"
@@ -156,7 +156,7 @@ module Dor
         #
         # Http Call
         # ==
-        # The method does an HTTP PUT to the URL defined in `Dor::WF_URI`.
+        # The method does an HTTP PUT to the base URL.
         #
         #     PUT "/objects/pid:123/workflows/GoogleScannedWF/convert"
         #     <process name=\"convert\" status=\"error\" />"
@@ -178,7 +178,7 @@ module Dor
         #
         # Http Call
         # ==
-        # The method does an HTTP PUT to the URL defined in `Dor::WF_URI`.
+        # The method does an HTTP PUT to the base URL.
         #
         #     PUT "/objects/pid:123/workflows/GoogleScannedWF/convert"
         #     <process name=\"convert\" status=\"error\" />"
