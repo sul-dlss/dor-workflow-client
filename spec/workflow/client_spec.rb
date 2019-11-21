@@ -235,13 +235,13 @@ RSpec.describe Dor::Workflow::Client do
     let(:druid) { @druid }
     let(:stubs) do
       Faraday::Adapter::Test::Stubs.new do |stub|
-        stub.get("#{repo}/objects/#{druid}/workflows/#{workflow_name}") do |_env|
+        stub.get("/objects/#{druid}/workflows/#{workflow_name}") do |_env|
           response
         end
       end
     end
 
-    subject { client.workflow_status(repo, druid, workflow_name, step_name) }
+    subject { client.workflow_status(druid: druid, workflow: workflow_name, process: step_name) }
     let(:step_name) { 'registrar-approval' }
     let(:workflow_name) { 'etdSubmitWF' }
     let(:status) { 200 }
@@ -249,6 +249,40 @@ RSpec.describe Dor::Workflow::Client do
       [status, {}, xml]
     end
     let(:xml) { '' }
+
+    context 'when repo is provided' do
+      before do
+        allow(Deprecation).to receive(:warn)
+      end
+      subject { client.workflow_status(repo: repo, druid: druid, workflow: workflow_name, process: step_name) }
+
+      context 'when a single result is returned' do
+        let(:xml) do
+          '<workflow><process name="registrar-approval" status="completed" /></workflow>'
+        end
+
+        it 'returns status as a string' do
+          expect(subject).to eq('completed')
+        end
+      end
+    end
+
+    context 'with positional arguments' do
+      before do
+        allow(Deprecation).to receive(:warn)
+      end
+      subject { client.workflow_status(repo, druid, workflow_name, step_name) }
+
+      context 'when a single result is returned' do
+        let(:xml) do
+          '<workflow><process name="registrar-approval" status="completed" /></workflow>'
+        end
+
+        it 'returns status as a string' do
+          expect(subject).to eq('completed')
+        end
+      end
+    end
 
     context 'when a single result is returned' do
       let(:xml) do
@@ -302,29 +336,82 @@ RSpec.describe Dor::Workflow::Client do
   end
 
   describe '#workflow_xml' do
-    subject(:workflow_xml) { client.workflow_xml('dor', 'druid:123', workflow) }
+    context 'with positional args' do
+      before do
+        allow(Deprecation).to receive(:warn)
+      end
+      subject(:workflow_xml) { client.workflow_xml('dor', 'druid:123', workflow) }
 
-    context 'when a workflow name is provided' do
-      let(:workflow) { 'etdSubmitWF' }
-      let(:xml) { '<workflow id="etdSubmitWF"><process name="registrar-approval" status="completed" /></workflow>' }
-      let(:stubs) do
-        Faraday::Adapter::Test::Stubs.new do |stub|
-          stub.get('dor/objects/druid:123/workflows/etdSubmitWF') do |_env|
-            [200, {}, xml]
+      context 'when a workflow name is provided' do
+        let(:workflow) { 'etdSubmitWF' }
+        let(:xml) { '<workflow id="etdSubmitWF"><process name="registrar-approval" status="completed" /></workflow>' }
+        let(:stubs) do
+          Faraday::Adapter::Test::Stubs.new do |stub|
+            stub.get('dor/objects/druid:123/workflows/etdSubmitWF') do |_env|
+              [200, {}, xml]
+            end
           end
+        end
+
+        it 'returns the xml for a given repository, druid, and workflow' do
+          expect(workflow_xml).to eq(xml)
         end
       end
 
-      it 'returns the xml for a given repository, druid, and workflow' do
-        expect(workflow_xml).to eq(xml)
+      context 'when no workflow name is provided' do
+        let(:workflow) { nil }
+
+        it 'raises an error' do
+          expect { workflow_xml }.to raise_error ArgumentError
+        end
       end
     end
+    context 'with keyword args' do
+      subject(:workflow_xml) { client.workflow_xml(druid: 'druid:123', workflow: workflow) }
 
-    context 'when no workflow name is provided' do
-      let(:workflow) { nil }
+      context 'when a repo is provided' do
+        subject(:workflow_xml) { client.workflow_xml(repo: 'dor', druid: 'druid:123', workflow: workflow) }
+        before do
+          allow(Deprecation).to receive(:warn)
+        end
 
-      it 'raises an error' do
-        expect { workflow_xml }.to raise_error ArgumentError
+        let(:workflow) { 'etdSubmitWF' }
+        let(:xml) { '<workflow id="etdSubmitWF"><process name="registrar-approval" status="completed" /></workflow>' }
+        let(:stubs) do
+          Faraday::Adapter::Test::Stubs.new do |stub|
+            stub.get('dor/objects/druid:123/workflows/etdSubmitWF') do |_env|
+              [200, {}, xml]
+            end
+          end
+        end
+
+        it 'returns the xml for a given repository, druid, and workflow' do
+          expect(workflow_xml).to eq(xml)
+        end
+      end
+
+      context 'when a workflow name is provided' do
+        let(:workflow) { 'etdSubmitWF' }
+        let(:xml) { '<workflow id="etdSubmitWF"><process name="registrar-approval" status="completed" /></workflow>' }
+        let(:stubs) do
+          Faraday::Adapter::Test::Stubs.new do |stub|
+            stub.get('/objects/druid:123/workflows/etdSubmitWF') do |_env|
+              [200, {}, xml]
+            end
+          end
+        end
+
+        it 'returns the xml for a given repository, druid, and workflow' do
+          expect(workflow_xml).to eq(xml)
+        end
+      end
+
+      context 'when no workflow name is provided' do
+        let(:workflow) { nil }
+
+        it 'raises an error' do
+          expect { workflow_xml }.to raise_error ArgumentError
+        end
       end
     end
   end
@@ -358,7 +445,7 @@ RSpec.describe Dor::Workflow::Client do
     let(:xml) { '<workflow id="accessionWF"><process name="publish" status="completed" /></workflow>' }
     let(:stubs) do
       Faraday::Adapter::Test::Stubs.new do |stub|
-        stub.get("dor/objects/#{@druid}/workflows/") do |_env|
+        stub.get("/objects/#{@druid}/workflows/") do |_env|
           [200, {}, xml]
         end
       end

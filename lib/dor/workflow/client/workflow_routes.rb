@@ -4,6 +4,7 @@ module Dor
   module Workflow
     class Client
       # Makes requests relating to a workflow
+      # rubocop:disable Metrics/ClassLength
       class WorkflowRoutes
         extend Deprecation
 
@@ -120,8 +121,22 @@ module Dor
         # @param [String] workflow The name of the workflow
         # @param [String] process The name of the process step
         # @return [String] status for repo-workflow-process-druid
-        def workflow_status(repo, druid, workflow, process)
-          workflow_md = workflow_xml(repo, druid, workflow)
+        # rubocop:disable Metrics/MethodLength
+        # rubocop:disable Metrics/AbcSize
+        def workflow_status(*args)
+          case args.length
+          when 4
+            Deprecation.warn(self, 'Calling workflow_status with positional args is deprecated, use kwargs instead')
+            (_repo, druid, workflow, process) = *args
+          when 1
+            opts = args.first
+            repo = opts[:repo]
+            Deprecation.warn(self, 'Passing `:repo` to workflow_status is deprecated and can be omitted') if repo
+            druid = opts[:druid]
+            workflow = opts[:workflow]
+            process = opts[:process]
+          end
+          workflow_md = workflow_xml(druid: druid, workflow: workflow)
           doc = Nokogiri::XML(workflow_md)
           raise Dor::WorkflowException, "Unable to parse response:\n#{workflow_md}" if doc.root.nil?
 
@@ -129,6 +144,8 @@ module Dor
           process = processes.max { |a, b| a.attr('version').to_i <=> b.attr('version').to_i }
           process&.attr('status')
         end
+        # rubocop:enable Metrics/AbcSize
+        # rubocop:enable Metrics/MethodLength
 
         #
         # Retrieves the raw XML for the given workflow
@@ -136,7 +153,18 @@ module Dor
         # @param [String] druid The id of the object
         # @param [String] workflow The name of the workflow
         # @return [String] XML of the workflow
-        def workflow_xml(repo, druid, workflow)
+        def workflow_xml(*args)
+          case args.length
+          when 3
+            Deprecation.warn(self, 'Calling workflow_xml with positional args is deprecated, use kwargs instead')
+            (repo, druid, workflow) = *args
+          when 1
+            opts = args.first
+            repo = opts[:repo]
+            Deprecation.warn(self, 'Passing `:repo` to workflow_xml is deprecated and can be omitted') if repo
+            druid = opts[:druid]
+            workflow = opts[:workflow]
+          end
           raise ArgumentError, 'missing workflow' unless workflow
 
           requestor.request "#{repo}/objects/#{druid}/workflows/#{workflow}"
@@ -213,8 +241,9 @@ module Dor
         # @example
         #   client.workflows('druid:sr100hp0609')
         #   => ["accessionWF", "assemblyWF", "disseminationWF"]
-        def workflows(pid, repo = 'dor')
-          xml_doc = Nokogiri::XML(workflow_xml(repo, pid, ''))
+        def workflows(pid, repo = nil)
+          Deprecation.warn(self, 'Passing the second argument (repo) to workflows is deprecated and can be omitted') if repo
+          xml_doc = Nokogiri::XML(workflow_xml(druid: pid, workflow: ''))
           xml_doc.xpath('//workflow').collect { |workflow| workflow['id'] }
         end
 
@@ -222,8 +251,9 @@ module Dor
         # @param [String] pid id of object
         # @param [String] workflow_name The name of the workflow
         # @return [Workflow::Response::Workflow]
-        def workflow(repo: 'dor', pid:, workflow_name:)
-          xml = workflow_xml(repo, pid, workflow_name)
+        def workflow(repo: nil, pid:, workflow_name:)
+          Deprecation.warn(self, 'passing the repo parameter is deprecated and will be removed in the next major versions') if repo
+          xml = workflow_xml(druid: pid, workflow: workflow_name)
           Workflow::Response::Workflow.new(xml: xml)
         end
 
@@ -260,6 +290,7 @@ module Dor
           builder.to_xml
         end
       end
+      # rubocop:enable Metrics/ClassLength
     end
   end
 end
