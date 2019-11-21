@@ -153,6 +153,7 @@ module Dor
         # @param [String] druid The id of the object
         # @param [String] workflow The name of the workflow
         # @return [String] XML of the workflow
+        # rubocop:disable Metrics/MethodLength
         def workflow_xml(*args)
           case args.length
           when 3
@@ -166,9 +167,11 @@ module Dor
             workflow = opts[:workflow]
           end
           raise ArgumentError, 'missing workflow' unless workflow
+          return requestor.request "#{repo}/objects/#{druid}/workflows/#{workflow}" if repo
 
-          requestor.request "#{repo}/objects/#{druid}/workflows/#{workflow}"
+          requestor.request "objects/#{druid}/workflows/#{workflow}"
         end
+        # rubocop:enable Metrics/MethodLength
 
         # Updates the status of one step in a workflow to error.
         # Returns true on success.  Caller must handle any exceptions
