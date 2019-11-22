@@ -136,7 +136,7 @@ module Dor
             workflow = opts[:workflow]
             process = opts[:process]
           end
-          workflow_md = workflow_xml(druid: druid, workflow: workflow)
+          workflow_md = fetch_workflow(druid: druid, workflow: workflow)
           doc = Nokogiri::XML(workflow_md)
           raise Dor::WorkflowException, "Unable to parse response:\n#{workflow_md}" if doc.root.nil?
 
@@ -166,11 +166,14 @@ module Dor
             druid = opts[:druid]
             workflow = opts[:workflow]
           end
+
           raise ArgumentError, 'missing workflow' unless workflow
           return requestor.request "#{repo}/objects/#{druid}/workflows/#{workflow}" if repo
 
-          requestor.request "objects/#{druid}/workflows/#{workflow}"
+          fetch_workflow(druid: druid, workflow: workflow)
         end
+        deprecation_deprecate workflow_xml: 'workflow_xml will not be replaced'
+
         # rubocop:enable Metrics/MethodLength
 
         # Updates the status of one step in a workflow to error.
@@ -246,7 +249,7 @@ module Dor
         #   => ["accessionWF", "assemblyWF", "disseminationWF"]
         def workflows(pid, repo = nil)
           Deprecation.warn(self, 'Passing the second argument (repo) to workflows is deprecated and can be omitted') if repo
-          xml_doc = Nokogiri::XML(workflow_xml(druid: pid, workflow: ''))
+          xml_doc = Nokogiri::XML(fetch_workflow(druid: pid, workflow: ''))
           xml_doc.xpath('//workflow').collect { |workflow| workflow['id'] }
         end
 
@@ -256,7 +259,7 @@ module Dor
         # @return [Workflow::Response::Workflow]
         def workflow(repo: nil, pid:, workflow_name:)
           Deprecation.warn(self, 'passing the repo parameter is deprecated and will be removed in the next major versions') if repo
-          xml = workflow_xml(druid: pid, workflow: workflow_name)
+          xml = fetch_workflow(druid: pid, workflow: workflow_name)
           Workflow::Response::Workflow.new(xml: xml)
         end
 
@@ -281,6 +284,12 @@ module Dor
         private
 
         attr_reader :requestor
+
+        def fetch_workflow(druid:, workflow:)
+          raise ArgumentError, 'missing workflow' unless workflow
+
+          requestor.request "objects/#{druid}/workflows/#{workflow}"
+        end
 
         # @param [Hash] params
         # @return [String]

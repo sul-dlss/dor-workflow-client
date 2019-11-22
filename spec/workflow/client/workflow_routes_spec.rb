@@ -7,6 +7,30 @@ RSpec.describe Dor::Workflow::Client::WorkflowRoutes do
 
   let(:routes) { described_class.new(requestor: mock_requestor) }
 
+  describe '#fetch_workflow' do
+    subject(:fetch_workflow) { routes.send(:fetch_workflow, druid: 'druid:mw971zk1113', workflow: workflow) }
+
+    context 'when a workflow name is provided' do
+      let(:workflow) { 'etdSubmitWF' }
+      let(:mock_requestor) { instance_double(Dor::Workflow::Client::Requestor, request: xml) }
+      let(:xml) { '<workflow id="etdSubmitWF"><process name="registrar-approval" status="completed" /></workflow>' }
+
+      it 'returns the xml for a given repository, druid, and workflow' do
+        expect(fetch_workflow).to eq(xml)
+        expect(mock_requestor).to have_received(:request)
+          .with('objects/druid:mw971zk1113/workflows/etdSubmitWF')
+      end
+    end
+
+    context 'when no workflow name is provided' do
+      let(:workflow) { nil }
+
+      it 'raises an error' do
+        expect { fetch_workflow }.to raise_error ArgumentError
+      end
+    end
+  end
+
   describe '#workflow' do
     let(:xml) do
       <<~XML
@@ -17,7 +41,7 @@ RSpec.describe Dor::Workflow::Client::WorkflowRoutes do
     end
 
     before do
-      allow(routes).to receive(:workflow_xml) { xml }
+      allow(routes).to receive(:fetch_workflow) { xml }
     end
 
     it 'returns a workflow' do

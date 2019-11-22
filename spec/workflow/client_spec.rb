@@ -336,10 +336,10 @@ RSpec.describe Dor::Workflow::Client do
   end
 
   describe '#workflow_xml' do
+    before do
+      allow(Deprecation).to receive(:warn)
+    end
     context 'with positional args' do
-      before do
-        allow(Deprecation).to receive(:warn)
-      end
       subject(:workflow_xml) { client.workflow_xml('dor', 'druid:123', workflow) }
 
       context 'when a workflow name is provided' do
@@ -371,9 +371,6 @@ RSpec.describe Dor::Workflow::Client do
 
       context 'when a repo is provided' do
         subject(:workflow_xml) { client.workflow_xml(repo: 'dor', druid: 'druid:123', workflow: workflow) }
-        before do
-          allow(Deprecation).to receive(:warn)
-        end
 
         let(:workflow) { 'etdSubmitWF' }
         let(:xml) { '<workflow id="etdSubmitWF"><process name="registrar-approval" status="completed" /></workflow>' }
