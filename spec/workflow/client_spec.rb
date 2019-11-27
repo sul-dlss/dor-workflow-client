@@ -61,7 +61,7 @@ RSpec.describe Dor::Workflow::Client do
     end
 
     it 'has a user_agent' do
-      expect(conn.headers).to include('User-Agent' => /dor-workflow-service \d+\.\d+\.\d+/)
+      expect(conn.headers).to include('User-Agent' => /dor-workflow-client \d+\.\d+\.\d+/)
     end
 
     it 'defaults to using the flat params encoder' do
