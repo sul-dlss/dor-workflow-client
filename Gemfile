@@ -2,7 +2,7 @@
 
 source 'https://rubygems.org'
 
-# Specify your gem's dependencies in dor-workflow-service.gemspec
+# Specify your gem's dependencies in dor-workflow-client.gemspec
 gemspec
 
 gem 'activesupport', ENV['RAILS_VERSION'] if ENV['RAILS_VERSION']

@@ -43,7 +43,7 @@ module Dor
         # rubocop:enable Metrics/MethodLength
 
         def user_agent
-          "dor-workflow-service #{VERSION}"
+          "dor-workflow-client #{VERSION}"
         end
 
         private
