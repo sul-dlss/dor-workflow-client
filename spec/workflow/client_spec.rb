@@ -83,46 +83,70 @@ RSpec.describe Dor::Workflow::Client do
       allow(Deprecation).to receive(:warn)
     end
 
-    it 'should request the workflow by name and return the URL to the workflow' do
+    it 'requests the workflow by name and return the URL to the workflow' do
       client.create_workflow(@repo, @druid, 'etdSubmitWF', wf_xml)
-      expect(Deprecation).to have_received(:warn)
+      expect(Deprecation).to have_received(:warn).twice
     end
 
-    it 'should raise on an unexpected Exception' do
+    it 'raises on an unexpected Exception' do
       expect { client.create_workflow(@repo, @druid, 'raiseException', wf_xml) }.to raise_error(Exception, 'broken')
-      expect(Deprecation).to have_received(:warn)
+      expect(Deprecation).to have_received(:warn).twice
     end
 
     it 'sets the lane_id param if provided in options hash' do
       client.create_workflow(@repo, @druid, 'laneIdWF', wf_xml, lane_id: 'foo_lane')
-      expect(Deprecation).to have_received(:warn)
+      expect(Deprecation).to have_received(:warn).twice
     end
   end
 
   describe '#create_workflow_by_name' do
-    let(:stubs) do
-      Faraday::Adapter::Test::Stubs.new do |stub|
-        stub.post("objects/#{@druid}/workflows/etdSubmitWF") { |_env| [201, {}, ''] }
-        stub.post("objects/#{@druid}/workflows/raiseException") { |_env| raise 'broken' }
-        stub.post("objects/#{@druid}/workflows/laneIdWF?lane-id=foo_lane") { |_env| [201, {}, ''] }
-        stub.post("objects/#{@druid}/workflows/versionWF?version=2") { |_env| [201, {}, ''] }
+    context 'with no args' do
+      let(:stubs) do
+        Faraday::Adapter::Test::Stubs.new do |stub|
+          stub.post("objects/#{@druid}/workflows/etdSubmitWF") { |_env| [201, {}, ''] }
+        end
+      end
+
+      it 'requests the workflow by name and return the URL to the workflow' do
+        expect(Deprecation).to receive(:warn)
+        client.create_workflow_by_name(@druid, 'etdSubmitWF')
       end
     end
 
-    it 'should request the workflow by name and return the URL to the workflow' do
-      client.create_workflow_by_name(@druid, 'etdSubmitWF')
+    context 'when an unexpected exception is raised' do
+      let(:stubs) do
+        Faraday::Adapter::Test::Stubs.new do |stub|
+          stub.post("objects/#{@druid}/workflows/raiseException") { |_env| raise 'broken' }
+        end
+      end
+
+      it 'raises the error' do
+        expect { client.create_workflow_by_name(@druid, 'raiseException', version: '1') }.to raise_error(Exception, 'broken')
+      end
     end
 
-    it 'should raise on an unexpected Exception' do
-      expect { client.create_workflow_by_name(@druid, 'raiseException') }.to raise_error(Exception, 'broken')
+    context 'when lane_id is provided' do
+      let(:stubs) do
+        Faraday::Adapter::Test::Stubs.new do |stub|
+          stub.post("objects/#{@druid}/workflows/laneIdWF?lane-id=foo_lane&version=1") { |_env| [201, {}, ''] }
+        end
+      end
+
+      it 'sets the lane_id param' do
+        client.create_workflow_by_name(@druid, 'laneIdWF', lane_id: 'foo_lane', version: 1)
+      end
     end
 
-    it 'sets the lane_id param if provided in options hash' do
-      client.create_workflow_by_name(@druid, 'laneIdWF', lane_id: 'foo_lane')
-    end
+    context 'when lane_id is not provided' do
+      let(:stubs) do
+        Faraday::Adapter::Test::Stubs.new do |stub|
+          stub.post("objects/#{@druid}/workflows/versionWF?version=2") { |_env| [201, {}, ''] }
+        end
+      end
 
-    it 'sets the version param if provided in options hash' do
-      client.create_workflow_by_name(@druid, 'versionWF', version: 2)
+      it 'sets the version param if provided in options hash' do
+        client.create_workflow_by_name(@druid, 'versionWF', version: 2)
+      end
     end
   end
 

@@ -34,14 +34,17 @@ module Dor
         # @param [String] druid The id of the object
         # @param [String] workflow_name The name of the workflow you want to create. This must correspond with a workflow
         # name that is known by the workflow service.
-        # @param [Hash] opts optional params
-        # @option opts [String] :lane_id adds laneId attribute to all process elements in the wf_xml workflow xml.  Defaults to a value of 'default'
-        # @option opts [Integer] :version specifies the version so that workflow service doesn't need to query dor-services.
+        # @param [String] lane_id adds laneId attribute to all process elements in the wf_xml workflow xml.  Defaults to a value of 'default'
+        # @param [Integer] version specifies the version so that workflow service doesn't need to query dor-services.
         # @return [Boolean] always true
         #
-        def create_workflow_by_name(druid, workflow_name, opts = {})
-          params = { 'lane-id' => opts.fetch(:lane_id, 'default') }
-          params['version'] = opts[:version] if opts[:version]
+        def create_workflow_by_name(druid, workflow_name, version: nil, lane_id: 'default')
+          params = { 'lane-id' => lane_id }
+          if version
+            params['version'] = version
+          else
+            Deprecation.warn(self, 'Calling create_workflow_by_name without passing version is deprecated and will result in an error in dor-workflow-client 4.0')
+          end
           requestor.request "objects/#{druid}/workflows/#{workflow_name}", 'post', '',
                             content_type: 'application/xml',
                             params: params

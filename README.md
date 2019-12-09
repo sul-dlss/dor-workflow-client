@@ -24,7 +24,7 @@ Consumers of recent versions of the [dor-services](https://github.com/sul-dlss/d
 ### Example usage
 Create a workflow
 ```
-client.create_workflow_by_name('druid:bc123df4567', 'etdSubmitWF')
+client.create_workflow_by_name('druid:bc123df4567', 'etdSubmitWF', version: '1')
 ```
 
 Update a workflow step's status
