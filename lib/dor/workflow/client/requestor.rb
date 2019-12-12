@@ -18,13 +18,21 @@ module Dor
         # @param [String] payload body for (e.g. put) request
         # @param [Hash] opts addtional headers options
         # @return [Object] response from method
+        # @raise [Dor::WorkflowException,Dor::MissingWorkflowException] if there are Faraday exceptions
         def request(uri_string, meth = 'get', payload = '', opts = {})
           response = send_workflow_resource_request(uri_string, meth, payload, opts)
           response.body
         rescue Faraday::Error => e
+          # `status` is set to `nil` if:
+          # * `e` does not respond to `:response`
+          # * `e` responds to `:response` and:
+          #   * `e.response` is `nil`
+          #   * `e.response` is a hash missing the `:status` key
+          # else it is set to the value of `e.response[:status]`
+          status = e.try(:response)&.fetch(:status, nil)
           msg = "Failed to retrieve resource: #{meth} #{base_url}/#{uri_string}"
-          msg += " (HTTP status #{e.response[:status]})" if e.respond_to?(:response) && e.response
-          raise Dor::WorkflowException, msg
+          msg += " (HTTP status #{status})" unless status.nil?
+          raise (status == 404 ? Dor::MissingWorkflowException : Dor::WorkflowException), msg
         end
 
         private
