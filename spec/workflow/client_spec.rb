@@ -329,8 +329,16 @@ RSpec.describe Dor::Workflow::Client do
       end
     end
 
-    context 'when it fails for any reason' do
+    context 'when the status is not found' do
       let(:status) { 404 }
+
+      it 'throws the missing workflow exception' do
+        expect { subject }.to raise_error Dor::MissingWorkflowException
+      end
+    end
+
+    context 'when it fails with status other than 404' do
+      let(:status) { 422 }
 
       it 'throws an exception' do
         expect { subject }.to raise_error Dor::WorkflowException
