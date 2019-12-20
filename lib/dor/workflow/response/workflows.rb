@@ -19,6 +19,12 @@ module Dor
           end
         end
 
+        # @return [Array<String>] returns a list of errors for any process for the current version
+        def errors_for(version:)
+          ng_xml.xpath("//workflow/process[@version='#{version}' and @status='error']/@errorMessage")
+                .map(&:text)
+        end
+
         attr_reader :xml
 
         private
