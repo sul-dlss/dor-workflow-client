@@ -783,6 +783,11 @@ RSpec.describe Dor::Workflow::Client do
         expect(mock_http_connection).to receive(:post).with('dor/objects/druid:123/versionClose?create-accession=false').and_call_original
         client.close_version(repo: @repo, druid: @druid, create_accession_wf: false)
       end
+
+      it 'optionally passes version' do
+        expect(mock_http_connection).to receive(:post).with('dor/objects/druid:123/versionClose?version=3').and_call_original
+        client.close_version(repo: @repo, druid: @druid, version: 3)
+      end
     end
   end
 

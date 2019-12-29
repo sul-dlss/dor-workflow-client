@@ -31,13 +31,16 @@ module Dor
             opts = args.first
             repo = opts[:repo]
             druid = opts[:druid]
+            version = opts[:version]
             create_accession_wf = opts.key?(:create_accession_wf) ? opts[:create_accession_wf] : true
           else
             raise ArgumentError, 'wrong number of arguments, must be 1-3'
           end
 
           uri = "#{repo}/objects/#{druid}/versionClose"
-          uri += '?create-accession=false' unless create_accession_wf
+          uri += '?' if !create_accession_wf || version
+          uri += "version=#{version}" if version
+          uri += 'create-accession=false' unless create_accession_wf
           requestor.request(uri, 'post', '')
           true
         end
