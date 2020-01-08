@@ -756,13 +756,38 @@ RSpec.describe Dor::Workflow::Client do
     end
 
     let(:url) { 'dor/objects/druid:123/versionClose' }
-    it 'calls the versionClose endpoint with druid' do
-      client.close_version(@repo, @druid)
+
+    context 'with positional arguments' do
+      before do
+        allow(Deprecation).to receive(:warn)
+      end
+
+      it 'calls the versionClose endpoint with druid' do
+        client.close_version(@repo, @druid)
+        expect(Deprecation).to have_received(:warn)
+      end
+
+      it 'optionally prevents creation of accessionWF' do
+        expect(mock_http_connection).to receive(:post).with('dor/objects/druid:123/versionClose?create-accession=false').and_call_original
+        client.close_version(@repo, @druid, false)
+        expect(Deprecation).to have_received(:warn)
+      end
     end
 
-    it 'optionally prevents creation of accessionWF' do
-      expect(mock_http_connection).to receive(:post).with('dor/objects/druid:123/versionClose?create-accession=false').and_call_original
-      client.close_version(@repo, @druid, false)
+    context 'with kwargs' do
+      it 'calls the versionClose endpoint with druid' do
+        client.close_version(repo: @repo, druid: @druid)
+      end
+
+      it 'optionally prevents creation of accessionWF' do
+        expect(mock_http_connection).to receive(:post).with('dor/objects/druid:123/versionClose?create-accession=false').and_call_original
+        client.close_version(repo: @repo, druid: @druid, create_accession_wf: false)
+      end
+
+      it 'optionally passes version' do
+        expect(mock_http_connection).to receive(:post).with('dor/objects/druid:123/versionClose?version=3').and_call_original
+        client.close_version(repo: @repo, druid: @druid, version: 3)
+      end
     end
   end
 
