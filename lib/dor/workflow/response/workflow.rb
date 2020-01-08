@@ -39,9 +39,18 @@ module Dor
           ng_xml.xpath('/workflow/process').empty?
         end
 
+        def complete?
+          ng_xml.xpath("/workflow/process[@version=#{version}]/@status").map(&:value).all? { |p| %w[skipped completed].include?(p) }
+        end
+
         attr_reader :xml
 
         private
+
+        # Return the max version in this workflow document
+        def version
+          ng_xml.xpath('/workflow/process/@version').map { |attr| attr.value.to_i }.max
+        end
 
         def workflow
           ng_xml.at_xpath('workflow')
