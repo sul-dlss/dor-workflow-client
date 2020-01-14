@@ -37,11 +37,7 @@ module Dor
             raise ArgumentError, 'wrong number of arguments, must be 1-3'
           end
 
-          uri = "#{repo}/objects/#{druid}/versionClose"
-          uri += '?' if !create_accession_wf || version
-          uri += "version=#{version}" if version
-          uri += 'create-accession=false' unless create_accession_wf
-          requestor.request(uri, 'post', '')
+          requestor.request(construct_url(repo, druid, version, create_accession_wf), 'post', '')
           true
         end
         # rubocop:enable Metrics/MethodLength
@@ -49,6 +45,16 @@ module Dor
         private
 
         attr_reader :requestor
+
+        def construct_url(repo, druid, version, create_accession_wf)
+          url = "#{repo}/objects/#{druid}/versionClose"
+
+          qs_args = []
+          qs_args << "version=#{version}" if version
+          qs_args << 'create-accession=false' unless create_accession_wf
+          url += "?#{qs_args.join('&')}" unless qs_args.empty?
+          url
+        end
       end
     end
   end

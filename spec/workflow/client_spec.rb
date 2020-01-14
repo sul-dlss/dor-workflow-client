@@ -742,55 +742,6 @@ RSpec.describe Dor::Workflow::Client do
     end
   end
 
-  describe '#close_version' do
-    let(:stubs) do
-      Faraday::Adapter::Test::Stubs.new do |stub|
-        stub.post('dor/objects/druid:123/versionClose?create-accession=false') do |_env|
-          [202, {}, '']
-        end
-
-        stub.post('dor/objects/druid:123/versionClose') do |_env|
-          [202, {}, '']
-        end
-      end
-    end
-
-    let(:url) { 'dor/objects/druid:123/versionClose' }
-
-    context 'with positional arguments' do
-      before do
-        allow(Deprecation).to receive(:warn)
-      end
-
-      it 'calls the versionClose endpoint with druid' do
-        client.close_version(@repo, @druid)
-        expect(Deprecation).to have_received(:warn)
-      end
-
-      it 'optionally prevents creation of accessionWF' do
-        expect(mock_http_connection).to receive(:post).with('dor/objects/druid:123/versionClose?create-accession=false').and_call_original
-        client.close_version(@repo, @druid, false)
-        expect(Deprecation).to have_received(:warn)
-      end
-    end
-
-    context 'with kwargs' do
-      it 'calls the versionClose endpoint with druid' do
-        client.close_version(repo: @repo, druid: @druid)
-      end
-
-      it 'optionally prevents creation of accessionWF' do
-        expect(mock_http_connection).to receive(:post).with('dor/objects/druid:123/versionClose?create-accession=false').and_call_original
-        client.close_version(repo: @repo, druid: @druid, create_accession_wf: false)
-      end
-
-      it 'optionally passes version' do
-        expect(mock_http_connection).to receive(:post).with('dor/objects/druid:123/versionClose?version=3').and_call_original
-        client.close_version(repo: @repo, druid: @druid, version: 3)
-      end
-    end
-  end
-
   describe '.stale_queued_workflows' do
     let(:stubs) do
       Faraday::Adapter::Test::Stubs.new do |stub|
