@@ -266,6 +266,14 @@ module Dor
           Workflow::Response::Workflow.new(xml: xml)
         end
 
+        # @param [String] pid id of object
+        # @param [String] workflow_name The name of the workflow
+        # @param [String] process The name of the workflow step
+        # @return [Workflow::Response::Process]
+        def process(pid:, workflow_name:, process:)
+          workflow(pid: pid, workflow_name: workflow_name).process_for_recent_version(name: process)
+        end
+
         # Deletes a workflow from a particular repository and druid
         # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
         # @param [String] druid The id of the object to delete the workflow from
