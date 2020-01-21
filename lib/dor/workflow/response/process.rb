@@ -44,6 +44,10 @@ module Dor
           @attributes[:errorMessage].presence
         end
 
+        def lane_id
+          @attributes[:laneId].presence
+        end
+
         delegate :pid, :workflow_name, :repository, to: :parent
 
         private

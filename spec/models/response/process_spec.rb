@@ -57,4 +57,17 @@ RSpec.describe Dor::Workflow::Response::Process do
     end
     it { is_expected.to eq 'start-assembly' }
   end
+
+  describe '#lane_id' do
+    subject { instance.lane_id }
+
+    let(:xml) do
+      <<~XML
+        <workflow repository="dor" objectId="druid:mw971zk1113" id="assemblyWF">
+          <process name="start-assembly" laneId="default">
+        </workflow>
+      XML
+    end
+    it { is_expected.to eq 'default' }
+  end
 end

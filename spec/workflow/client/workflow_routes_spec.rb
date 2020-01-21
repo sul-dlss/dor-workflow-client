@@ -49,6 +49,24 @@ RSpec.describe Dor::Workflow::Client::WorkflowRoutes do
     end
   end
 
+  describe '#process' do
+    let(:xml) do
+      <<~XML
+        <workflow repository="dor" objectId="druid:mw971zk1113" id="accessionWF">
+          <process laneId="default" lifecycle="submitted" elapsed="0.0" attempts="1" datetime="2013-02-18T15:08:10-0800" status="completed" name="start-accession"/>
+        </workflow>
+      XML
+    end
+
+    before do
+      allow(routes).to receive(:fetch_workflow) { xml }
+    end
+
+    it 'returns a process' do
+      expect(routes.process(pid: 'druid:mw971zk1113', workflow_name: 'accessionWF', process: 'start-accession')).to be_kind_of Dor::Workflow::Response::Process
+    end
+  end
+
   describe '#update_status' do
     let(:mock_requestor) { instance_double(Dor::Workflow::Client::Requestor, request: '{"next_steps":["submit-marc"]}') }
     let(:druid) { 'druid:mw971zk1113' }
