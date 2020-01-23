@@ -14,7 +14,7 @@ module Dor
         # - completes the versioningWF:submit-version and versioningWF:start-accession steps
         # - initiates accesssionWF
         #
-        # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
+        # @param [String] repo The repository the object resides in. This parameter is deprecated
         # @param [String] druid The id of the object to delete the workflow from
         # @param [Boolean] create_accession_wf Option to create accessionWF when closing a version.  Defaults to true
         # rubocop:disable Metrics/MethodLength
@@ -37,7 +37,9 @@ module Dor
             raise ArgumentError, 'wrong number of arguments, must be 1-3'
           end
 
-          requestor.request(construct_url(repo, druid, version, create_accession_wf), 'post', '')
+          Deprecation.warn(self, 'passing the repo parameter to close_version is no longer necessary. This will raise an error in dor-workflow-client version 4') if repo
+
+          requestor.request(construct_url(druid, version, create_accession_wf), 'post', '')
           true
         end
         # rubocop:enable Metrics/MethodLength
@@ -46,8 +48,8 @@ module Dor
 
         attr_reader :requestor
 
-        def construct_url(repo, druid, version, create_accession_wf)
-          url = "#{repo}/objects/#{druid}/versionClose"
+        def construct_url(druid, version, create_accession_wf)
+          url = "objects/#{druid}/versionClose"
 
           qs_args = []
           qs_args << "version=#{version}" if version
