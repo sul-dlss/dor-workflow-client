@@ -81,6 +81,10 @@ module Dor
         WorkflowTemplate.new(requestor: requestor)
       end
 
+      def status(druid:, version:)
+        @status ||= Status.new(druid: druid, version: version, lifecycle_routes: lifecycle_routes)
+      end
+
       private
 
       # Among other things, a distinct method helps tests mock default logger
