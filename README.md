@@ -51,6 +51,12 @@ Show a workflow template
 client.workflow_template('etdSubmitWF')
 ```
 
+Get the status of an object
+```ruby
+client.status(druid: 'druid:gv054hp4128', version: '3').display
+#=> "v3 Accessioned"
+```
+
 ## Underlying Clients
 
 This gem currently uses the [Faraday](https://github.com/lostisland/faraday) HTTP client to access the back-end service.  The clients be accessed directly from your `Dor::Workflow::Client` object:
