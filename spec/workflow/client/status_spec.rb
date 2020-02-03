@@ -14,12 +14,6 @@ RSpec.describe Dor::Workflow::Client::Status do
   describe '#display' do
     subject(:status) { instance.display }
 
-    before do
-      # TODO: this stub is too knowledgable about the inner workings of the LifecycleRoutest
-      # instead it should just stub :milestones which returns an array of hashes
-      # expect(lifecycle_routes).to receive(:query_lifecycle).and_return(xml)
-    end
-
     context 'for gv054hp4128' do
       context 'when current version is published, but does not have a version attribute' do
         let(:xml) do
@@ -176,6 +170,25 @@ RSpec.describe Dor::Workflow::Client::Status do
       it 'has the correct status of deposited (v2) object' do
         expect(status).to eq('v2 In accessioning (described, published, deposited) 2013-10-01 07:10PM')
       end
+    end
+  end
+
+  describe '#display_simplified' do
+    subject(:status) { instance.display_simplified }
+    let(:xml) do
+      '<?xml version="1.0" encoding="UTF-8"?>
+      <lifecycle objectId="druid:gv054hp4128">
+      <milestone date="2012-11-06T16:19:15-0800" version="2">described</milestone>
+      <milestone date="2012-11-06T16:21:02-0800">opened</milestone>
+      <milestone date="2012-11-06T16:30:03-0800">submitted</milestone>
+      <milestone date="2012-11-06T16:35:00-0800">described</milestone>
+      <milestone date="2012-11-06T16:59:39-0800" version="3">published</milestone>
+      <milestone date="2012-11-06T16:59:39-0800">published</milestone>
+      </lifecycle>'
+    end
+
+    it 'generates a status string' do
+      expect(status).to eq('In accessioning')
     end
   end
 end

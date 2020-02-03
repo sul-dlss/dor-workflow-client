@@ -42,37 +42,47 @@ module Dor
         end
 
         # @return [Hash{Symbol => Object}] including :status_code and :status_time
+        # rubocop:disable Metrics/MethodLength
         def info
-          # if we have an accessioned milestone, this is the last possible step and should be the status regardless of time stamp
-          accessioned_milestones = current_milestones.select { |m| m[:milestone] == 'accessioned' }
-          return { status_code: STEPS['accessioned'], status_time: accessioned_milestones.last[:at].utc.xmlschema } unless accessioned_milestones.empty?
+          @info ||= begin
+            # if we have an accessioned milestone, this is the last possible step and should be the status regardless of time stamp
+            accessioned_milestones = current_milestones.select { |m| m[:milestone] == 'accessioned' }
+            return { status_code: STEPS['accessioned'], status_time: accessioned_milestones.last[:at].utc.xmlschema } unless accessioned_milestones.empty?
 
-          status_code = 0
-          status_time = nil
-          # for each milestone in the current version, see if it comes at the same time or after the current 'last' step, if so, make it the last and record the date/time
-          current_milestones.each do |m|
-            m_name = m[:milestone]
-            m_time = m[:at].utc.xmlschema
-            next unless STEPS.key?(m_name) && (!status_time || m_time >= status_time)
+            status_code = 0
+            status_time = nil
+            # for each milestone in the current version, see if it comes at the same time or after the current 'last' step, if so, make it the last and record the date/time
+            current_milestones.each do |m|
+              m_name = m[:milestone]
+              m_time = m[:at].utc.xmlschema
+              next unless STEPS.key?(m_name) && (!status_time || m_time >= status_time)
 
-            status_code = STEPS[m_name]
-            status_time = m_time
+              status_code = STEPS[m_name]
+              status_time = m_time
+            end
+
+            { status_code: status_code, status_time: status_time }
           end
+        end
+        # rubocop:enable Metrics/MethodLength
 
-          { status_code: status_code, status_time: status_time }
+        def status_code
+          info.fetch(:status_code)
         end
 
         # @param [Boolean] include_time
         # @return [String] single composed status from status_info
         def display(include_time: false)
-          status_info_hash = info
-          status_code = status_info_hash[:status_code]
-          status_time = status_info_hash[:status_time]
+          status_time = info[:status_time]
 
           # use the translation table to get the appropriate verbage for the latest step
           result = "v#{version} #{STATUS_CODE_DISP_TXT[status_code]}"
           result += " #{format_date(status_time)}" if include_time
           result
+        end
+
+        def display_simplified
+          simplified_status_code(STATUS_CODE_DISP_TXT[status_code])
         end
 
         def milestones
@@ -82,6 +92,12 @@ module Dor
         private
 
         attr_reader :druid, :version, :lifecycle_routes
+
+        # @return [String] text translation of the status code, minus any trailing parenthetical explanation
+        # e.g. 'In accessioning (described)' and 'In accessioning (described, published)' both return 'In accessioning'
+        def simplified_status_code(display)
+          display.gsub(/\(.*\)$/, '').strip
+        end
 
         def current_milestones
           current = []
