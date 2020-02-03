@@ -82,7 +82,7 @@ module Dor
       end
 
       def status(druid:, version:)
-        @status ||= Status.new(druid: druid, version: version, lifecycle_routes: lifecycle_routes)
+        Status.new(druid: druid, version: version, lifecycle_routes: lifecycle_routes)
       end
 
       private
