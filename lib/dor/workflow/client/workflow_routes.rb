@@ -274,7 +274,7 @@ module Dor
           workflow(pid: pid, workflow_name: workflow_name).process_for_recent_version(name: process)
         end
 
-        # Deletes a workflow from a particular repository and druid
+        # Deletes a workflow from a particular repository and druid. This is only used by Hydrus.
         # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
         # @param [String] druid The id of the object to delete the workflow from
         # @param [String] workflow The name of the workflow to be deleted
