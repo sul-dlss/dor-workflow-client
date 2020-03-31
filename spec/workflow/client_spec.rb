@@ -488,7 +488,7 @@ RSpec.describe Dor::Workflow::Client do
   describe '#lifecycle' do
     let(:stubs) do
       Faraday::Adapter::Test::Stubs.new do |stub|
-        stub.get('dor/objects/druid:123/lifecycle') do |_env|
+        stub.get('objects/druid:123/lifecycle') do |_env|
           [200, {}, <<-EOXML]
             <lifecycle objectId="druid:ct011cv6501">
                 <milestone date="2010-04-27T11:34:17-0700">registered</milestone>
@@ -498,7 +498,7 @@ RSpec.describe Dor::Workflow::Client do
           EOXML
         end
 
-        stub.get('dor/objects/druid:abc/lifecycle') do |_env|
+        stub.get('objects/druid:abc/lifecycle') do |_env|
           [200, {}, <<-EOXML]
             <lifecycle />
           EOXML
@@ -507,18 +507,18 @@ RSpec.describe Dor::Workflow::Client do
     end
 
     it 'returns a Time object reprenting when the milestone was reached' do
-      expect(client.lifecycle('dor', 'druid:123', 'released').beginning_of_day).to eq(Time.parse('2010-06-15T16:08:58-0700').beginning_of_day)
+      expect(client.lifecycle('druid:123', 'released').beginning_of_day).to eq(Time.parse('2010-06-15T16:08:58-0700').beginning_of_day)
     end
 
     it "returns nil if the milestone hasn't been reached yet" do
-      expect(client.lifecycle('dor', 'druid:abc', 'inprocess')).to be_nil
+      expect(client.lifecycle('druid:abc', 'inprocess')).to be_nil
     end
   end
 
   describe '#active_lifecycle' do
     let(:stubs) do
       Faraday::Adapter::Test::Stubs.new do |stub|
-        stub.get("dor/objects/#{@druid}/lifecycle") do |_env|
+        stub.get("objects/#{@druid}/lifecycle") do |_env|
           [200, {}, <<-EOXML]
             <lifecycle objectId="#{@druid}">
                 <milestone date="2010-04-27T11:34:17-0700">registered</milestone>
@@ -528,7 +528,7 @@ RSpec.describe Dor::Workflow::Client do
           EOXML
         end
 
-        stub.get("dor/objects/#{@druid}/lifecycle") do |_env|
+        stub.get("objects/#{@druid}/lifecycle") do |_env|
           [200, {}, <<-EOXML]
             <lifecycle />
           EOXML
@@ -537,11 +537,11 @@ RSpec.describe Dor::Workflow::Client do
     end
 
     it 'parses out the active lifecycle' do
-      expect(client.active_lifecycle('dor', @druid, 'released').beginning_of_day).to eq(Time.parse('2010-06-15T16:08:58-0700').beginning_of_day)
+      expect(client.active_lifecycle(@druid, 'released').beginning_of_day).to eq(Time.parse('2010-06-15T16:08:58-0700').beginning_of_day)
     end
 
     it 'handles missing lifecycle' do
-      expect(client.active_lifecycle('dor', @druid, 'NOT_FOUND')).to be_nil
+      expect(client.active_lifecycle(@druid, 'NOT_FOUND')).to be_nil
     end
   end
 

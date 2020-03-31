@@ -37,7 +37,7 @@ client.update_status(druid: 'druid:bc123df4567',
 
 Show "milestones" for an object
 ```ruby
-client.milestones('dor', 'druid:gv054hp4128')
+client.milestones('druid:gv054hp4128')
 #=> [{version: '1', milestone: 'published'}]
 ```
 

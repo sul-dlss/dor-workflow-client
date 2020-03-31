@@ -86,7 +86,7 @@ module Dor
         end
 
         def milestones
-          @milestones ||= lifecycle_routes.milestones('dor', druid)
+          @milestones ||= lifecycle_routes.milestones(druid)
         end
 
         private

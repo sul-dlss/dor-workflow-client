@@ -17,7 +17,7 @@ RSpec.describe Dor::Workflow::Client::LifecycleRoutes do
       allow(routes).to receive(:query_lifecycle).and_return(ng_xml)
     end
 
-    subject(:milestones) { routes.milestones('dor', 'druid:gv054hp4128') }
+    subject(:milestones) { routes.milestones('druid:gv054hp4128') }
 
     it 'includes the version in with the milestones' do
       expect(milestones.first[:milestone]).to eq('published')
@@ -27,40 +27,40 @@ RSpec.describe Dor::Workflow::Client::LifecycleRoutes do
 
   describe '#lifecycle' do
     context 'without version' do
-      subject(:lifecycle) { routes.lifecycle('dor', 'druid:gv054hp4128', 'submitted') }
+      subject(:lifecycle) { routes.lifecycle('druid:gv054hp4128', 'submitted') }
 
       it 'make the request' do
         lifecycle
-        expect(requestor).to have_received(:request).with('dor/objects/druid:gv054hp4128/lifecycle')
+        expect(requestor).to have_received(:request).with('objects/druid:gv054hp4128/lifecycle')
       end
     end
 
     context 'with version' do
-      subject(:lifecycle) { routes.lifecycle('dor', 'druid:gv054hp4128', 'submitted', version: 3) }
+      subject(:lifecycle) { routes.lifecycle('druid:gv054hp4128', 'submitted', version: 3) }
 
       it 'makes the request with the version' do
         lifecycle
-        expect(requestor).to have_received(:request).with('dor/objects/druid:gv054hp4128/lifecycle?version=3')
+        expect(requestor).to have_received(:request).with('objects/druid:gv054hp4128/lifecycle?version=3')
       end
     end
   end
 
   describe '#active_lifecycle' do
     context 'without version' do
-      subject(:active_lifecycle) { routes.active_lifecycle('dor', 'druid:gv054hp4128', 'submitted') }
+      subject(:active_lifecycle) { routes.active_lifecycle('druid:gv054hp4128', 'submitted') }
 
       it 'make the request' do
         active_lifecycle
-        expect(requestor).to have_received(:request).with('dor/objects/druid:gv054hp4128/lifecycle?active-only=true')
+        expect(requestor).to have_received(:request).with('objects/druid:gv054hp4128/lifecycle?active-only=true')
       end
     end
 
     context 'with version' do
-      subject(:active_lifecycle) { routes.active_lifecycle('dor', 'druid:gv054hp4128', 'submitted', version: 3) }
+      subject(:active_lifecycle) { routes.active_lifecycle('druid:gv054hp4128', 'submitted', version: 3) }
 
       it 'makes the request with the version' do
         active_lifecycle
-        expect(requestor).to have_received(:request).with('dor/objects/druid:gv054hp4128/lifecycle?version=3&active-only=true')
+        expect(requestor).to have_received(:request).with('objects/druid:gv054hp4128/lifecycle?version=3&active-only=true')
       end
     end
   end
