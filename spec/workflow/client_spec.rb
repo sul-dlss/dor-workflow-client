@@ -507,11 +507,11 @@ RSpec.describe Dor::Workflow::Client do
     end
 
     it 'returns a Time object reprenting when the milestone was reached' do
-      expect(client.lifecycle('druid:123', 'released').beginning_of_day).to eq(Time.parse('2010-06-15T16:08:58-0700').beginning_of_day)
+      expect(client.lifecycle(druid: 'druid:123', milestone_name: 'released').beginning_of_day).to eq(Time.parse('2010-06-15T16:08:58-0700').beginning_of_day)
     end
 
     it "returns nil if the milestone hasn't been reached yet" do
-      expect(client.lifecycle('druid:abc', 'inprocess')).to be_nil
+      expect(client.lifecycle(druid: 'druid:abc', milestone_name: 'inprocess')).to be_nil
     end
   end
 
@@ -537,11 +537,11 @@ RSpec.describe Dor::Workflow::Client do
     end
 
     it 'parses out the active lifecycle' do
-      expect(client.active_lifecycle(@druid, 'released').beginning_of_day).to eq(Time.parse('2010-06-15T16:08:58-0700').beginning_of_day)
+      expect(client.active_lifecycle(druid: @druid, milestone_name: 'released').beginning_of_day).to eq(Time.parse('2010-06-15T16:08:58-0700').beginning_of_day)
     end
 
     it 'handles missing lifecycle' do
-      expect(client.active_lifecycle(@druid, 'NOT_FOUND')).to be_nil
+      expect(client.active_lifecycle(druid: @druid, milestone_name: 'NOT_FOUND')).to be_nil
     end
   end
 
