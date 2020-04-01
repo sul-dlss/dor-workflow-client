@@ -34,7 +34,7 @@ module Dor
           lifecycle(repo, druid, milestone_name, version: version, active_only: true)
         end
 
-        # @return [Hash]
+        # @return [Array<Hash>]
         def milestones(repo, druid)
           doc = query_lifecycle(repo, druid, active_only: false)
           doc.xpath('//lifecycle/milestone').collect do |node|
