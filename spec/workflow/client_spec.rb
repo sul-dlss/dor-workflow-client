@@ -723,17 +723,29 @@ RSpec.describe Dor::Workflow::Client do
   end
 
   describe '#delete_workflow' do
-    let(:url) { "/objects/#{@druid}/workflows/accessionWF" }
-
     let(:stubs) do
       Faraday::Adapter::Test::Stubs.new do |stub|
         stub.delete(url) { |_env| [202, {}, ''] }
       end
     end
 
-    it 'sends a delete request to the workflow service' do
-      expect(mock_http_connection).to receive(:delete).with(url).and_call_original
-      client.delete_workflow(nil, @druid, 'accessionWF')
+    context 'without a version' do
+      let(:url) { "/objects/#{@druid}/workflows/accessionWF" }
+
+      it 'sends a delete request to the workflow service' do
+        expect(Deprecation).to receive(:warn)
+        expect(mock_http_connection).to receive(:delete).with(url).and_call_original
+        client.delete_workflow(nil, @druid, 'accessionWF')
+      end
+    end
+
+    context 'with a version' do
+      let(:url) { "/objects/#{@druid}/workflows/accessionWF?version=5" }
+
+      it 'sends a delete request to the workflow service' do
+        expect(mock_http_connection).to receive(:delete).with(url).and_call_original
+        client.delete_workflow(nil, @druid, 'accessionWF', version: 5)
+      end
     end
   end
 

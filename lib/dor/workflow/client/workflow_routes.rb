@@ -278,9 +278,16 @@ module Dor
         # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
         # @param [String] druid The id of the object to delete the workflow from
         # @param [String] workflow The name of the workflow to be deleted
+        # @param [Integer] version The version of the workflow to delete
         # @return [Boolean] always true
-        def delete_workflow(repo, druid, workflow)
-          requestor.request "#{repo}/objects/#{druid}/workflows/#{workflow}", 'delete'
+        def delete_workflow(repo, druid, workflow, version: nil)
+          qs_args = if version
+                      "?version=#{version}"
+                    else
+                      Deprecation.warn(self, 'Calling delete_workflow without passing version is deprecated and will result in an error in dor-workflow-client 4.0')
+                      ''
+                    end
+          requestor.request "#{repo}/objects/#{druid}/workflows/#{workflow}#{qs_args}", 'delete'
           true
         end
 
