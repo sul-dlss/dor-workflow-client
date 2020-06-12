@@ -30,7 +30,7 @@ module Dor
 
       # Configure the workflow service
       # @param [String] :url points to the workflow service
-      # @param [Logger] :logger defaults writing to workflow_service.log with weekly rotation
+      # @param [Logger] :logger defaults writing to Rails.logger
       # @param [Integer] :timeout number of seconds for HTTP timeout
       # @param [Faraday::Connection] :connection the REST client resource
       def initialize(url: nil, logger: default_logger, timeout: nil, connection: nil)
@@ -90,7 +90,7 @@ module Dor
       # Among other things, a distinct method helps tests mock default logger
       # @return [Logger] default logger object
       def default_logger
-        Logger.new('workflow_service.log', 'weekly')
+        Rails.logger
       end
     end
   end
