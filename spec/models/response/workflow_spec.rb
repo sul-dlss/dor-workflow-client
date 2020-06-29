@@ -32,6 +32,10 @@ RSpec.describe Dor::Workflow::Response::Workflow do
   describe '#repository' do
     subject { instance.repository }
 
+    before do
+      allow(Deprecation).to receive(:warn)
+    end
+
     let(:xml) do
       <<~XML
         <workflow repository="dor" objectId="druid:mw971zk1113" id="assemblyWF">

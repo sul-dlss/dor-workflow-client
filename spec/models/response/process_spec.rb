@@ -33,6 +33,10 @@ RSpec.describe Dor::Workflow::Response::Process do
   end
 
   describe '#repository' do
+    before do
+      allow(Deprecation).to receive(:warn)
+    end
+
     subject { instance.repository }
 
     let(:xml) do
