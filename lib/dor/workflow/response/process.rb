@@ -5,6 +5,9 @@ module Dor
     module Response
       # Represents the status of an object doing a workflow process
       class Process
+        extend Deprecation
+        self.deprecation_horizon = '4.x'
+
         # @params [Workflow] parent
         # @params [Hash] attributes
         def initialize(parent:, **attributes)
@@ -49,6 +52,7 @@ module Dor
         end
 
         delegate :pid, :workflow_name, :repository, to: :parent
+        deprecation_deprecate :repository
 
         private
 
