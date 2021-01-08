@@ -1,6 +1,7 @@
 [![CircleCI](https://circleci.com/gh/sul-dlss/dor-workflow-client.svg?style=svg)](https://circleci.com/gh/sul-dlss/dor-workflow-client)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/fba77ff479c468f8510f/test_coverage)](https://codeclimate.com/github/sul-dlss/dor-services-client/test_coverage)
-[![Maintainability](https://api.codeclimate.com/v1/badges/fba77ff479c468f8510f/maintainability)](https://codeclimate.com/github/sul-dlss/dor-services-client/maintainability)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/ff9d01af29a7a357645c/test_coverage)](https://codeclimate.com/github/sul-dlss/dor-workflow-client/test_coverage)
+[![Maintainability](https://api.codeclimate.com/v1/badges/ff9d01af29a7a357645c/maintainability)](https://codeclimate.com/github/sul-dlss/dor-workflow-client/maintainability)
+
 [![Gem Version](https://badge.fury.io/rb/dor-workflow-client.svg)](https://badge.fury.io/rb/dor-workflow-client)
 
 # dor-workflow-client gem
@@ -19,7 +20,7 @@ client = Dor::Workflow::Client.new(url: 'https://test-server.edu/workflow/')
 Consumers of recent versions of the [dor-services](https://github.com/sul-dlss/dor-services) gem can access the configured `Dor::Workflow::Client` object via `Dor::Config`.
 
 ## API
-[Rubydoc](https://www.rubydoc.info/github/sul-dlss/dor-workflow-client/master)
+[Rubydoc](https://www.rubydoc.info/github/sul-dlss/dor-workflow-client/main)
 
 ### Example usage
 Create a workflow
