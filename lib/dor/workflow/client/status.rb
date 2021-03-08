@@ -33,11 +33,11 @@ module Dor
         }.freeze
 
         # @param [String] druid the object identifier
-        # @param [String] version the version identifier
+        # @param [String|Integer] version the version identifier
         # @param [LifecycleRoutes] lifecycle_routes the lifecycle client
         def initialize(druid:, version:, lifecycle_routes:)
           @druid = druid
-          @version = version
+          @version = version.to_s
           @lifecycle_routes = lifecycle_routes
         end
 

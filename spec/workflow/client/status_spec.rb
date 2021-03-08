@@ -75,6 +75,14 @@ RSpec.describe Dor::Workflow::Client::Status do
         expect(status).to eq('v2 Accessioned')
       end
 
+      context 'when version is an integer' do
+        let(:version) { 2 }
+
+        it 'converts to a string' do
+          expect(status).to eq('v2 Accessioned')
+        end
+      end
+
       context 'when there are no lifecycles for the current version, indicating malfunction in workflow' do
         let(:version) { '3' }
 
