@@ -11,7 +11,7 @@ https://consul.stanford.edu/display/DOR/DOR+services#DORservices-initializeworkf
 
 ## Usage
 
-You should initialize a `Dor::Workflow::Client` object in your application configuration, i.e. in a bootup or startup method like:
+Initialize a `Dor::Workflow::Client` object in your application configuration, i.e. in a bootup or startup method like:
 
 ```ruby
 client = Dor::Workflow::Client.new(url: 'https://test-server.edu/workflow/')
