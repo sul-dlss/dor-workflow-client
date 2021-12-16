@@ -804,7 +804,7 @@ RSpec.describe Dor::Workflow::Client do
 
     let(:stubs) do
       Faraday::Adapter::Test::Stubs.new do |stub|
-        stub.get('workflow_queue/lane_ids?lane_ids?step=dor:accessionWF:shelve') do |_env|
+        stub.get('workflow_queue/lane_ids?step=accessionWF:shelve') do |_env|
           [200, {}, <<-XML]
           <lanes>
             <lane id="lane1"/>
