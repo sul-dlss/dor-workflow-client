@@ -23,7 +23,7 @@ module Dor
         # @return [Boolean] always true
         #
         def create_workflow(_repo, druid, workflow_name, _wf_xml, opts = {})
-          create_workflow_by_name(druid, workflow_name, opts)
+          create_workflow_by_name(druid, workflow_name, **opts)
         end
         deprecation_deprecate create_workflow: 'use create_workflow_by_name instead'
 
