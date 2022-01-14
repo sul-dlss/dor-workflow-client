@@ -30,7 +30,7 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'rubocop', '~> 1.24'
   gem.add_development_dependency 'rubocop-rake'
   gem.add_development_dependency 'rubocop-rspec', '~> 2.1'
-  gem.add_development_dependency 'simplecov', '~> 0.17.0' # CodeClimate cannot use SimpleCov >= 0.18.0 for generating test coverage
+  gem.add_development_dependency 'simplecov'
   gem.add_development_dependency 'webmock'
   gem.add_development_dependency 'yard'
   gem.metadata['rubygems_mfa_required'] = 'true'
