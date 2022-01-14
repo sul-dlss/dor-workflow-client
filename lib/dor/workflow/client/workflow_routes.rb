@@ -313,8 +313,8 @@ module Dor
         # @return [String]
         def create_process_xml(params)
           builder = Nokogiri::XML::Builder.new do |xml|
-            attrs = params.reject { |_k, v| v.nil? }
-            attrs = Hash[attrs.map { |k, v| [k.to_s.camelize(:lower), v] }] # camelize all the keys in the attrs hash
+            attrs = params.compact
+            attrs = attrs.transform_keys { |k| k.to_s.camelize(:lower) } # camelize all the keys in the attrs hash
             xml.process(attrs)
           end
           builder.to_xml

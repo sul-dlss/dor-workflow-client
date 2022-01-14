@@ -16,6 +16,7 @@ Gem::Specification.new do |gem|
   gem.files         = `git ls-files`.split($INPUT_RECORD_SEPARATOR)
   gem.test_files    = gem.files.grep(%r{^(spec)/})
   gem.require_paths = ['lib']
+  gem.required_ruby_version = '>= 2.7'
 
   gem.add_dependency 'activesupport', '>= 3.2.1', '< 8'
   gem.add_dependency 'deprecation', '>= 0.99.0'
@@ -26,8 +27,11 @@ Gem::Specification.new do |gem|
 
   gem.add_development_dependency 'rake'
   gem.add_development_dependency 'rspec', '~> 3.3'
-  gem.add_development_dependency 'rubocop', '~> 0.63.1'
+  gem.add_development_dependency 'rubocop', '~> 1.24'
+  gem.add_development_dependency 'rubocop-rake'
+  gem.add_development_dependency 'rubocop-rspec', '~> 2.1'
   gem.add_development_dependency 'simplecov', '~> 0.17.0' # CodeClimate cannot use SimpleCov >= 0.18.0 for generating test coverage
   gem.add_development_dependency 'webmock'
   gem.add_development_dependency 'yard'
+  gem.metadata['rubygems_mfa_required'] = 'true'
 end
