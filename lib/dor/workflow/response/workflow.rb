@@ -35,7 +35,7 @@ module Dor
         def process_for_recent_version(name:)
           nodes = process_nodes_for(name: name)
           node = nodes.max { |a, b| a.attr('version').to_i <=> b.attr('version').to_i }
-          attributes = node ? Hash[node.attributes.collect { |k, v| [k.to_sym, v.value] }] : {}
+          attributes = node ? node.attributes.to_h { |k, v| [k.to_sym, v.value] } : {}
           Process.new(parent: self, **attributes)
         end
 

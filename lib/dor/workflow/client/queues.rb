@@ -63,7 +63,7 @@ module Dor
             )
             args.shift # ditch the `repo` argument
           end
-          uri_string = build_queued_uri(args.first) + '&count-only=true'
+          uri_string = "#{build_queued_uri(args.first)}&count-only=true"
           doc = Nokogiri::XML(requestor.request(uri_string))
           doc.at_xpath('/objects/@count').value.to_i
         end
@@ -143,9 +143,9 @@ module Dor
         def errored_objects_for_workstep(workflow, step, repository = nil)
           Deprecation.warn(self, 'the third argument to `#errored_objects_for_workstep` is unused and will go away in Dor::Workflow::Client 4.0.0. omit argument to silence.') unless repository.nil?
           resp = requestor.request "workflow_queue?workflow=#{workflow}&error=#{step}"
-          Nokogiri::XML(resp).xpath('//object').map do |node|
+          Nokogiri::XML(resp).xpath('//object').to_h do |node|
             [node['id'], node['errorMessage']]
-          end.to_h
+          end
         end
 
         # Used by preservation robots stats reporter

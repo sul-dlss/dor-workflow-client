@@ -61,7 +61,7 @@ module Dor
         def retry_block
           lambda do |env, _opts, retries, exception|
             logger.warn "retrying connection (#{retries} remaining) to #{env.url}: (#{exception.class}) " \
-              "#{exception.message} #{env.status}"
+                        "#{exception.message} #{env.status}"
           end
         end
 
