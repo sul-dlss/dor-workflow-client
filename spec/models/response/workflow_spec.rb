@@ -72,7 +72,7 @@ RSpec.describe Dor::Workflow::Response::Workflow do
     end
   end
 
-  describe '#active?' do
+  describe '#active_for?' do
     subject { instance.active_for?(version: 2) }
 
     context 'when the workflow has not been instantiated for the given version' do
