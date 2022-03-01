@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'faraday_middleware'
-
 module Dor
   module Workflow
     class Client
@@ -21,7 +19,6 @@ module Dor
         def build_connection
           Faraday.new(url: url) do |faraday|
             faraday.use Faraday::Response::RaiseError # raise exceptions on 40x, 50x responses
-            faraday.use FaradayMiddleware::FollowRedirects, limit: 3
             faraday.options.params_encoder = Faraday::FlatParamsEncoder
             if timeout
               faraday.options.timeout = timeout
@@ -51,11 +48,11 @@ module Dor
         attr_reader :logger, :timeout, :url
 
         def retriable_methods
-          Faraday::Request::Retry::IDEMPOTENT_METHODS + [:post]
+          Faraday::Retry::Middleware::IDEMPOTENT_METHODS + [:post]
         end
 
         def retriable_exceptions
-          Faraday::Request::Retry::DEFAULT_EXCEPTIONS + [Faraday::ConnectionFailed]
+          Faraday::Retry::Middleware::DEFAULT_EXCEPTIONS + [Faraday::ConnectionFailed]
         end
 
         def retry_block

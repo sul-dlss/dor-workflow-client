@@ -5,6 +5,7 @@ require 'active_support/core_ext'
 require 'nokogiri'
 require 'zeitwerk'
 require 'faraday'
+require 'faraday/retry'
 require 'deprecation'
 
 loader = Zeitwerk::Loader.new
