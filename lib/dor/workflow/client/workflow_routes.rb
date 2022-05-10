@@ -28,7 +28,7 @@ module Dor
         deprecation_deprecate create_workflow: 'use create_workflow_by_name instead'
 
         # Creates a workflow for a given object in the repository.  If this particular workflow for this objects exists,
-        # it will replace the old workflow.  You have the option of creating a datastream or not.
+        # it will replace the old workflow.
         # Returns true on success.  Caller must handle any exceptions.
         #
         # @param [String] druid The id of the object

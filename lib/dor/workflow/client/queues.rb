@@ -139,7 +139,7 @@ module Dor
         # @example
         #     client.errored_objects_for_workstep('accessionWF','content-metadata')
         #     => {"druid:qd556jq0580"=>"druid:qd556jq0580 - Item error; caused by
-        #        #<Rubydora::FedoraInvalidRequest: Error modifying datastream contentMetadata for druid:qd556jq0580. See logger for details>"}
+        #        blah blah. See logger for details>"}
         def errored_objects_for_workstep(workflow, step, repository = nil)
           Deprecation.warn(self, 'the third argument to `#errored_objects_for_workstep` is unused and will go away in Dor::Workflow::Client 4.0.0. omit argument to silence.') unless repository.nil?
           resp = requestor.request "workflow_queue?workflow=#{workflow}&error=#{step}"
