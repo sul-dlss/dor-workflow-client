@@ -17,177 +17,43 @@ RSpec.describe Dor::Workflow::Client::LifecycleRoutes do
 
     before do
       allow(routes).to receive(:query_lifecycle).and_return(ng_xml)
-      allow(Deprecation).to receive(:warn)
     end
 
-    context 'with positional arguments' do
-      subject(:milestones) { routes.milestones(repo, druid) }
+    subject(:milestones) { routes.milestones(druid: druid) }
 
-      it 'includes the version in with the milestones' do
-        expect(milestones.first[:milestone]).to eq('published')
-        expect(milestones.first[:version]).to eq('2')
-        expect(Deprecation).to have_received(:warn).twice
-      end
-    end
-
-    context 'with kwargs' do
-      subject(:milestones) { routes.milestones(druid: druid) }
-
-      it 'includes the version in with the milestones' do
-        expect(milestones.first[:milestone]).to eq('published')
-        expect(milestones.first[:version]).to eq('2')
-      end
+    it 'includes the version in with the milestones' do
+      expect(milestones.first[:milestone]).to eq('published')
+      expect(milestones.first[:version]).to eq('2')
     end
   end
 
   describe '#lifecycle' do
-    context 'with positional arguments' do
-      before do
-        allow(Deprecation).to receive(:warn)
-      end
+    context 'without version' do
+      subject(:lifecycle) { routes.lifecycle(druid: druid, milestone_name: 'submitted') }
 
-      context 'without version' do
-        subject(:lifecycle) { routes.lifecycle(repo, druid, 'submitted') }
-
-        it 'make the request' do
-          lifecycle
-          expect(requestor).to have_received(:request).with('objects/druid:gv054hp4128/lifecycle')
-          expect(Deprecation).to have_received(:warn).twice
-        end
-      end
-
-      context 'with version' do
-        subject(:lifecycle) { routes.lifecycle(repo, druid, 'submitted', version: 3) }
-
-        it 'makes the request with the version' do
-          lifecycle
-          expect(requestor).to have_received(:request).with('objects/druid:gv054hp4128/lifecycle?version=3')
-          expect(Deprecation).to have_received(:warn).twice
-        end
+      it 'make the request' do
+        lifecycle
+        expect(requestor).to have_received(:request).with('objects/druid:gv054hp4128/lifecycle')
       end
     end
 
-    context 'with kwargs' do
-      before do
-        allow(Deprecation).to receive(:warn)
-      end
+    context 'with version' do
+      subject(:lifecycle) { routes.lifecycle(druid: druid, milestone_name: 'submitted', version: 3) }
 
-      context 'with deprecated repo arg' do
-        context 'without version' do
-          subject(:lifecycle) { routes.lifecycle(repo: repo, druid: druid, milestone_name: 'submitted') }
-
-          it 'make the request' do
-            lifecycle
-            expect(requestor).to have_received(:request).with('objects/druid:gv054hp4128/lifecycle')
-            expect(Deprecation).to have_received(:warn)
-          end
-        end
-
-        context 'with version' do
-          subject(:lifecycle) { routes.lifecycle(repo: repo, druid: druid, milestone_name: 'submitted', version: 3) }
-
-          it 'makes the request with the version' do
-            lifecycle
-            expect(requestor).to have_received(:request).with('objects/druid:gv054hp4128/lifecycle?version=3')
-            expect(Deprecation).to have_received(:warn)
-          end
-        end
-      end
-
-      context 'without version' do
-        subject(:lifecycle) { routes.lifecycle(druid: druid, milestone_name: 'submitted') }
-
-        it 'make the request' do
-          lifecycle
-          expect(requestor).to have_received(:request).with('objects/druid:gv054hp4128/lifecycle')
-          expect(Deprecation).not_to have_received(:warn)
-        end
-      end
-
-      context 'with version' do
-        subject(:lifecycle) { routes.lifecycle(druid: druid, milestone_name: 'submitted', version: 3) }
-
-        it 'makes the request with the version' do
-          lifecycle
-          expect(requestor).to have_received(:request).with('objects/druid:gv054hp4128/lifecycle?version=3')
-          expect(Deprecation).not_to have_received(:warn)
-        end
+      it 'makes the request with the version' do
+        lifecycle
+        expect(requestor).to have_received(:request).with('objects/druid:gv054hp4128/lifecycle?version=3')
       end
     end
   end
 
   describe '#active_lifecycle' do
-    context 'with positional arguments' do
-      before do
-        allow(Deprecation).to receive(:warn)
-      end
-
-      context 'without version' do
-        subject(:active_lifecycle) { routes.active_lifecycle(repo, druid, 'submitted') }
-
-        it 'make the request' do
-          active_lifecycle
-          expect(requestor).to have_received(:request).with('objects/druid:gv054hp4128/lifecycle?active-only=true')
-          expect(Deprecation).to have_received(:warn).twice
-        end
-      end
-
-      context 'with version' do
-        subject(:active_lifecycle) { routes.active_lifecycle(repo, druid, 'submitted', version: 3) }
-
-        it 'makes the request with the version' do
-          active_lifecycle
-          expect(requestor).to have_received(:request).with('objects/druid:gv054hp4128/lifecycle?version=3&active-only=true')
-          expect(Deprecation).to have_received(:warn).twice
-        end
-      end
-    end
-
     context 'with kwargs' do
-      before do
-        allow(Deprecation).to receive(:warn)
-      end
+      subject(:active_lifecycle) { routes.active_lifecycle(druid: druid, milestone_name: 'submitted', version: 3) }
 
-      context 'with deprecated repo arg' do
-        context 'without version' do
-          subject(:active_lifecycle) { routes.active_lifecycle(repo: repo, druid: druid, milestone_name: 'submitted') }
-
-          it 'make the request' do
-            active_lifecycle
-            expect(requestor).to have_received(:request).with('objects/druid:gv054hp4128/lifecycle?active-only=true')
-            expect(Deprecation).to have_received(:warn)
-          end
-        end
-
-        context 'with version' do
-          subject(:active_lifecycle) { routes.active_lifecycle(repo: repo, druid: druid, milestone_name: 'submitted', version: 3) }
-
-          it 'makes the request with the version' do
-            active_lifecycle
-            expect(requestor).to have_received(:request).with('objects/druid:gv054hp4128/lifecycle?version=3&active-only=true')
-            expect(Deprecation).to have_received(:warn)
-          end
-        end
-      end
-
-      context 'without version' do
-        subject(:active_lifecycle) { routes.active_lifecycle(druid: druid, milestone_name: 'submitted') }
-
-        it 'make the request' do
-          active_lifecycle
-          expect(requestor).to have_received(:request).with('objects/druid:gv054hp4128/lifecycle?active-only=true')
-          expect(Deprecation).not_to have_received(:warn)
-        end
-      end
-
-      context 'with version' do
-        subject(:active_lifecycle) { routes.active_lifecycle(druid: druid, milestone_name: 'submitted', version: 3) }
-
-        it 'makes the request with the version' do
-          active_lifecycle
-          expect(requestor).to have_received(:request).with('objects/druid:gv054hp4128/lifecycle?version=3&active-only=true')
-          expect(Deprecation).not_to have_received(:warn)
-        end
+      it 'makes the request with the version' do
+        active_lifecycle
+        expect(requestor).to have_received(:request).with('objects/druid:gv054hp4128/lifecycle?version=3&active-only=true')
       end
     end
   end

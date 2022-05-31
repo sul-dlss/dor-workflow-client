@@ -5,9 +5,6 @@ module Dor
     module Response
       # The response from asking the server about a workflow for an item
       class Workflow
-        extend Deprecation
-        self.deprecation_horizon = '4.x'
-
         def initialize(xml:)
           @xml = xml
         end
@@ -19,11 +16,6 @@ module Dor
         def workflow_name
           workflow['id']
         end
-
-        def repository
-          workflow['repository']
-        end
-        deprecation_deprecate :repository
 
         # @param [Integer] version the version we are checking for.
         def active_for?(version:)

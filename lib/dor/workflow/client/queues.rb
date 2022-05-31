@@ -11,59 +11,35 @@ module Dor
 
         # Returns all the distinct laneIds for a given workflow step
         #
-        # @param [String] repo -- deprecated, ignored by workflow service
         # @param [String] workflow name
         # @param [String] process name
         # @return [Array<String>] all of the distinct laneIds.  Array will be empty if no lane ids were found
-        def lane_ids(*args)
-          if args.count == 3
-            Deprecation.warn(
-              self,
-              '`#lane_ids` only takes two args: workflow name, & process/step name. This will raise an exception in Dor::Workflow::Client 4.0.0'
-            )
-            args.shift # ditch the `repo` argument
-          end
-          uri = "workflow_queue/lane_ids?step=#{args.first}:#{args.second}"
+        def lane_ids(workflow, process)
+          uri = "workflow_queue/lane_ids?step=#{workflow}:#{process}"
           doc = Nokogiri::XML(requestor.request(uri))
           doc.xpath('/lanes/lane').map { |n| n['id'] }
         end
 
         # Gets all of the workflow steps that have a status of 'queued' that have a last-updated timestamp older than the number of hours passed in
         #   This will enable re-queueing of jobs that have been lost by the job manager
-        # @param [String] repository -- deprecated, ignored by workflow service
         # @param [Hash] opts optional values for query
         # @option opts [Integer] :hours_ago steps older than this value will be returned by the query.  If not passed in, the service defaults to 0 hours,
         #   meaning you will get all queued workflows
         # @option opts [Integer] :limit sets the maximum number of workflow steps that can be returned.  Defaults to no limit
         # @return [Array[Hash]] each Hash represents a workflow step.  It will have the following keys:
         #  :workflow, :step, :druid, :lane_id
-        def stale_queued_workflows(*args)
-          if args.count == 2
-            Deprecation.warn(
-              self,
-              '`#stale_queued_workflows` only takes one arg: a hash. This will raise an exception in Dor::Workflow::Client 4.0.0'
-            )
-            args.shift # ditch the `repo` argument
-          end
-          uri_string = build_queued_uri(args.first)
+        def stale_queued_workflows(opts)
+          uri_string = build_queued_uri(opts)
           parse_queued_workflows_response requestor.request(uri_string)
         end
 
         # Returns a count of workflow steps that have a status of 'queued' that have a last-updated timestamp older than the number of hours passed in
-        # @param [String] repository -- deprecated, ignored by workflow service
         # @param [Hash] opts optional values for query
         # @option opts [Integer] :hours_ago steps older than this value will be returned by the query.  If not passed in, the service defaults to 0 hours,
         #   meaning you will get all queued workflows
         # @return [Integer] number of stale, queued steps if the :count_only option was set to true
-        def count_stale_queued_workflows(*args)
-          if args.count == 2
-            Deprecation.warn(
-              self,
-              '`#count_stale_queued_workflows` only takes one arg: a hash. This will raise an exception in Dor::Workflow::Client 4.0.0'
-            )
-            args.shift # ditch the `repo` argument
-          end
-          uri_string = "#{build_queued_uri(args.first)}&count-only=true"
+        def count_stale_queued_workflows(opts)
+          uri_string = "#{build_queued_uri(opts)}&count-only=true"
           doc = Nokogiri::XML(requestor.request(uri_string))
           doc.at_xpath('/objects/@count').value.to_i
         end
@@ -102,7 +78,6 @@ module Dor
         #     }
         #
         def objects_for_workstep(completed, waiting, lane_id = 'default', options = {})
-          Deprecation.warn(self, 'the `:default_repository` option in `#objects_for_workstep` is unused and will go away in Dor::Workflow::Client 4.0.0. omit argument to silence.') if options[:default_repository]
           waiting_param = qualify_step(options[:default_workflow], waiting)
           uri_string = "workflow_queue?waiting=#{waiting_param}"
           if completed
@@ -133,15 +108,13 @@ module Dor
         #
         # @param [String] workflow name
         # @param [String] step name
-        # @param [String] repository -- deprecated, ignored by workflow service
         #
         # @return [Hash] hash of results, with key has a druid, and value as the error message
         # @example
         #     client.errored_objects_for_workstep('accessionWF','content-metadata')
         #     => {"druid:qd556jq0580"=>"druid:qd556jq0580 - Item error; caused by
         #        blah blah. See logger for details>"}
-        def errored_objects_for_workstep(workflow, step, repository = nil)
-          Deprecation.warn(self, 'the third argument to `#errored_objects_for_workstep` is unused and will go away in Dor::Workflow::Client 4.0.0. omit argument to silence.') unless repository.nil?
+        def errored_objects_for_workstep(workflow, step)
           resp = requestor.request "workflow_queue?workflow=#{workflow}&error=#{step}"
           Nokogiri::XML(resp).xpath('//object').to_h do |node|
             [node['id'], node['errorMessage']]
@@ -153,11 +126,9 @@ module Dor
         # @param [String] workflow name
         # @param [String] step name
         # @param [String] type
-        # @param [String] repo -- deprecated, ignored by workflow service
         #
         # @return [Hash] hash of results, with key has a druid, and value as the error message
-        def count_objects_in_step(workflow, step, type, repo = nil)
-          Deprecation.warn(self, 'the fourth argument to `#count_objects_in_step` is unused and will go away in Dor::Workflow::Client 4.0.0. omit argument to silence.') unless repo.nil?
+        def count_objects_in_step(workflow, step, type)
           resp = requestor.request "workflow_queue?workflow=#{workflow}&#{type}=#{step}"
           extract_object_count(resp)
         end
@@ -166,11 +137,9 @@ module Dor
         #
         # @param [String] workflow name
         # @param [String] step name
-        # @param [String] repository -- deprecated, ignored by workflow service
         #
         # @return [Integer] Number of objects with this repository:workflow:step that have a status of 'error'
-        def count_errored_for_workstep(workflow, step, repository = nil)
-          Deprecation.warn(self, 'the third argument to `#count_errored_for_workstep` is unused and will go away in Dor::Workflow::Client 4.0.0. omit argument to silence.') unless repository.nil?
+        def count_errored_for_workstep(workflow, step)
           count_objects_in_step(workflow, step, 'error')
         end
 
@@ -178,11 +147,9 @@ module Dor
         #
         # @param [String] workflow name
         # @param [String] step name
-        # @param [String] repository -- deprecated, ignored by workflow service
         #
         # @return [Integer] Number of objects with this repository:workflow:step that have a status of 'queued'
-        def count_queued_for_workstep(workflow, step, repository = nil)
-          Deprecation.warn(self, 'the third argument to `#count_queued_for_workstep` is unused and will go away in Dor::Workflow::Client 4.0.0. omit argument to silence.') unless repository.nil?
+        def count_queued_for_workstep(workflow, step)
           count_objects_in_step(workflow, step, 'queued')
         end
 

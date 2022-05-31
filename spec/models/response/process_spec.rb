@@ -32,23 +32,6 @@ RSpec.describe Dor::Workflow::Response::Process do
     it { is_expected.to eq 'assemblyWF' }
   end
 
-  describe '#repository' do
-    before do
-      allow(Deprecation).to receive(:warn)
-    end
-
-    subject { instance.repository }
-
-    let(:xml) do
-      <<~XML
-        <workflow repository="dor" objectId="druid:mw971zk1113" id="assemblyWF">
-          <process name="start-assembly">
-        </workflow>
-      XML
-    end
-    it { is_expected.to eq 'dor' }
-  end
-
   describe '#name' do
     subject { instance.name }
 

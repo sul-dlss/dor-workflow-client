@@ -29,22 +29,6 @@ RSpec.describe Dor::Workflow::Response::Workflow do
     it { is_expected.to eq 'assemblyWF' }
   end
 
-  describe '#repository' do
-    subject { instance.repository }
-
-    before do
-      allow(Deprecation).to receive(:warn)
-    end
-
-    let(:xml) do
-      <<~XML
-        <workflow repository="dor" objectId="druid:mw971zk1113" id="assemblyWF">
-        </workflow>
-      XML
-    end
-    it { is_expected.to eq 'dor' }
-  end
-
   describe '#complete?' do
     subject { instance.complete? }
     context 'when all steps are complete' do
