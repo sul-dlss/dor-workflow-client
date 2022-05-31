@@ -275,19 +275,29 @@ module Dor
         end
 
         # Deletes a workflow from a particular repository and druid. This is only used by Hydrus.
-        # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
         # @param [String] druid The id of the object to delete the workflow from
         # @param [String] workflow The name of the workflow to be deleted
         # @param [Integer] version The version of the workflow to delete
         # @return [Boolean] always true
-        def delete_workflow(repo, druid, workflow, version: nil)
+        def delete_workflow(*args)
+          case args.length
+          when 3..4
+            Deprecation.warn(self, 'Calling delete_workflow with positional args is deprecated, use kwargs instead')
+            (_repo, druid, workflow, version_hash) = *args
+            version = version_hash && version_hash[:version]
+          when 1
+            opts = args.first
+            druid = opts[:druid]
+            workflow = opts[:workflow]
+            version = opts[:version]
+          end
           qs_args = if version
                       "?version=#{version}"
                     else
                       Deprecation.warn(self, 'Calling delete_workflow without passing version is deprecated and will result in an error in dor-workflow-client 4.0')
                       ''
                     end
-          requestor.request "#{repo}/objects/#{druid}/workflows/#{workflow}#{qs_args}", 'delete'
+          requestor.request "/objects/#{druid}/workflows/#{workflow}#{qs_args}", 'delete'
           true
         end
 

@@ -729,22 +729,34 @@ RSpec.describe Dor::Workflow::Client do
       end
     end
 
-    context 'without a version' do
-      let(:url) { "/objects/#{@druid}/workflows/accessionWF" }
+    context 'with positional args' do
+      context 'without a version' do
+        let(:url) { "/objects/#{@druid}/workflows/accessionWF" }
 
-      it 'sends a delete request to the workflow service' do
-        expect(Deprecation).to receive(:warn)
-        expect(mock_http_connection).to receive(:delete).with(url).and_call_original
-        client.delete_workflow(nil, @druid, 'accessionWF')
+        it 'sends a delete request to the workflow service' do
+          expect(Deprecation).to receive(:warn).twice
+          expect(mock_http_connection).to receive(:delete).with(url).and_call_original
+          client.delete_workflow(nil, @druid, 'accessionWF')
+        end
+      end
+
+      context 'with a version' do
+        let(:url) { "/objects/#{@druid}/workflows/accessionWF?version=5" }
+
+        it 'sends a delete request to the workflow service' do
+          expect(Deprecation).to receive(:warn)
+          expect(mock_http_connection).to receive(:delete).with(url).and_call_original
+          client.delete_workflow(nil, @druid, 'accessionWF', version: 5)
+        end
       end
     end
 
-    context 'with a version' do
+    context 'with kwargs' do
       let(:url) { "/objects/#{@druid}/workflows/accessionWF?version=5" }
 
       it 'sends a delete request to the workflow service' do
         expect(mock_http_connection).to receive(:delete).with(url).and_call_original
-        client.delete_workflow(nil, @druid, 'accessionWF', version: 5)
+        client.delete_workflow(druid: @druid, workflow: 'accessionWF', version: 5)
       end
     end
   end
