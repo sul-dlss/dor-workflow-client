@@ -4,7 +4,6 @@
 .config
 .yardoc
 .rvmrc
-Gemfile.lock
 InstalledFiles
 _yardoc
 coverage
@@ -18,4 +17,3 @@ test/version_tmp
 tmp
 .ruby-version
 .ruby-gemset
-
