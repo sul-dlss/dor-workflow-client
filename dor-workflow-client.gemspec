@@ -14,7 +14,6 @@ Gem::Specification.new do |gem|
   gem.homepage      = 'https://consul.stanford.edu/display/DOR/DOR+services#DORservices-initializeworkflow'
 
   gem.files         = `git ls-files`.split($INPUT_RECORD_SEPARATOR)
-  gem.test_files    = gem.files.grep(%r{^(spec)/})
   gem.require_paths = ['lib']
   gem.required_ruby_version = '>= 2.7'
 

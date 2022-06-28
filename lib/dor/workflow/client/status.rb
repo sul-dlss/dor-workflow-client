@@ -42,7 +42,6 @@ module Dor
         end
 
         # @return [Hash{Symbol => Object}] including :status_code and :status_time
-        # rubocop:disable Metrics/MethodLength
         def info
           @info ||= begin
             # if we have an accessioned milestone, this is the last possible step and should be the status regardless of time stamp
@@ -64,7 +63,6 @@ module Dor
             { status_code: status_code, status_time: status_time }
           end
         end
-        # rubocop:enable Metrics/MethodLength
 
         def status_code
           info.fetch(:status_code)

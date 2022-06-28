@@ -15,7 +15,6 @@ module Dor
           @logger = logger
         end
 
-        # rubocop:disable Metrics/MethodLength
         def build_connection
           Faraday.new(url: url) do |faraday|
             faraday.use Faraday::Response::RaiseError # raise exceptions on 40x, 50x responses
@@ -37,7 +36,6 @@ module Dor
             faraday.adapter Faraday.default_adapter # Last middleware must be the adapter
           end
         end
-        # rubocop:enable Metrics/MethodLength
 
         def user_agent
           "dor-workflow-client #{VERSION}"
