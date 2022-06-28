@@ -5,7 +5,7 @@ PATH
       activesupport (>= 3.2.1, < 8)
       deprecation (>= 0.99.0)
       faraday (~> 2.0)
-      faraday-retry
+      faraday-retry (~> 1.0)
       nokogiri (~> 1.6)
       zeitwerk (~> 2.1)
 
@@ -32,8 +32,7 @@ GEM
       faraday-net_http (~> 2.0)
       ruby2_keywords (>= 0.0.4)
     faraday-net_http (2.0.3)
-    faraday-retry (2.0.0)
-      faraday (~> 2.0)
+    faraday-retry (1.0.3)
     hashdiff (1.0.1)
     i18n (1.10.0)
       concurrent-ruby (~> 1.0)
