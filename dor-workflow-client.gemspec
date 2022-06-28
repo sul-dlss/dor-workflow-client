@@ -14,14 +14,13 @@ Gem::Specification.new do |gem|
   gem.homepage      = 'https://consul.stanford.edu/display/DOR/DOR+services#DORservices-initializeworkflow'
 
   gem.files         = `git ls-files`.split($INPUT_RECORD_SEPARATOR)
-  gem.test_files    = gem.files.grep(%r{^(spec)/})
   gem.require_paths = ['lib']
   gem.required_ruby_version = '>= 2.7'
 
   gem.add_dependency 'activesupport', '>= 3.2.1', '< 8'
   gem.add_dependency 'deprecation', '>= 0.99.0'
   gem.add_dependency 'faraday', '~> 2.0'
-  gem.add_dependency 'faraday-retry'
+  gem.add_dependency 'faraday-retry', '~> 1.0'
 
   gem.add_dependency 'nokogiri', '~> 1.6'
   gem.add_dependency 'zeitwerk', '~> 2.1'

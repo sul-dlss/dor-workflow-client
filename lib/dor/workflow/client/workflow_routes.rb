@@ -124,7 +124,6 @@ module Dor
         # @param [String] workflow The name of the workflow
         # @param [String] process The name of the process step
         # @return [String] status for repo-workflow-process-druid
-        # rubocop:disable Metrics/MethodLength
         # rubocop:disable Metrics/AbcSize
         def workflow_status(*args)
           case args.length
@@ -147,16 +146,14 @@ module Dor
           process = processes.max { |a, b| a.attr('version').to_i <=> b.attr('version').to_i }
           process&.attr('status')
         end
-        # rubocop:enable Metrics/AbcSize
-        # rubocop:enable Metrics/MethodLength
 
+        # rubocop:enable Metrics/AbcSize
         #
         # Retrieves the raw XML for the given workflow
         # @param [String] repo The repository the object resides in.  Currently recoginzes "dor" and "sdr".
         # @param [String] druid The id of the object
         # @param [String] workflow The name of the workflow
         # @return [String] XML of the workflow
-        # rubocop:disable Metrics/MethodLength
         def workflow_xml(*args)
           case args.length
           when 3
@@ -176,8 +173,6 @@ module Dor
           fetch_workflow(druid: druid, workflow: workflow)
         end
         deprecation_deprecate workflow_xml: 'workflow_xml will not be replaced'
-
-        # rubocop:enable Metrics/MethodLength
 
         # Updates the status of one step in a workflow to error.
         # Returns true on success.  Caller must handle any exceptions

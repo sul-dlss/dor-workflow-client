@@ -84,7 +84,6 @@ module Dor
         # rubocop:enable Metrics/MethodLength
 
         # @return [Array<Hash>]
-        # rubocop:disable Metrics/MethodLength
         def milestones(*args)
           case args.size
           when 2
@@ -105,7 +104,6 @@ module Dor
             { milestone: node.text, at: Time.parse(node['date']), version: node['version'] }
           end
         end
-        # rubocop:enable Metrics/MethodLength
 
         private
 
