@@ -28,10 +28,10 @@ GEM
       activesupport
     diff-lcs (1.5.0)
     docile (1.4.0)
-    faraday (2.3.0)
+    faraday (2.4.0)
       faraday-net_http (~> 2.0)
       ruby2_keywords (>= 0.0.4)
-    faraday-net_http (2.0.3)
+    faraday-net_http (2.1.0)
     faraday-retry (1.0.3)
     hashdiff (1.0.1)
     i18n (1.12.0)
