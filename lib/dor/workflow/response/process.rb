@@ -51,8 +51,7 @@ module Dor
           @attributes[:laneId].presence
         end
 
-        delegate :pid, :workflow_name, :repository, to: :parent
-        deprecation_deprecate :repository
+        delegate :pid, :workflow_name, to: :parent
 
         private
 
