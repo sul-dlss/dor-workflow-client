@@ -10,6 +10,9 @@ Metrics/BlockLength:
   Exclude:
     - spec/**/*_spec.rb
 
+Lint/UnusedBlockArgument:
+  AllowUnusedKeywordArguments: true
+
 Gemspec/DeprecatedAttributeAssignment: # new in 1.10
   Enabled: true
 Gemspec/RequireMFA: # new in 1.23
