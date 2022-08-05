@@ -20,7 +20,7 @@ Gem::Specification.new do |gem|
   gem.add_dependency 'activesupport', '>= 3.2.1', '< 8'
   gem.add_dependency 'deprecation', '>= 0.99.0'
   gem.add_dependency 'faraday', '~> 2.0'
-  gem.add_dependency 'faraday-retry', '~> 1.0'
+  gem.add_dependency 'faraday-retry', '~> 2.0'
 
   gem.add_dependency 'nokogiri', '~> 1.6'
   gem.add_dependency 'zeitwerk', '~> 2.1'
