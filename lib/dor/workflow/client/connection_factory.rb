@@ -54,10 +54,12 @@ module Dor
         end
 
         def retry_block
-          lambda do |env, _opts, retries, exception|
-            logger.warn "retrying connection (#{retries} remaining) to #{env.url}: (#{exception.class}) " \
+          # rubocop:disable Lint/UnusedBlockArgument
+          lambda do |env:, retry_count:, exception:, options:, will_retry_in:|
+            logger.warn "retrying connection (#{retry_count + 1} tries) to #{env.url}: (#{exception.class}) " \
                         "#{exception.message} #{env.status}"
           end
+          # rubocop:enable Lint/UnusedBlockArgument
         end
 
         def retry_statuses
