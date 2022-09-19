@@ -15,7 +15,7 @@ Gem::Specification.new do |gem|
 
   gem.files         = `git ls-files`.split($INPUT_RECORD_SEPARATOR)
   gem.require_paths = ['lib']
-  gem.required_ruby_version = '>= 2.7'
+  gem.required_ruby_version = '>= 3.0'
 
   gem.add_dependency 'activesupport', '>= 3.2.1', '< 8'
   gem.add_dependency 'deprecation', '>= 0.99.0'
