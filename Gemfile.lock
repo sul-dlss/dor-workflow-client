@@ -40,7 +40,7 @@ GEM
     json (2.6.3)
     mini_portile2 (2.8.2)
     minitest (5.18.0)
-    nokogiri (1.14.3)
+    nokogiri (1.14.4)
       mini_portile2 (~> 2.8.0)
       racc (~> 1.4)
     parallel (1.23.0)
@@ -67,7 +67,7 @@ GEM
     rspec-support (3.12.0)
     rspec_junit_formatter (0.6.0)
       rspec-core (>= 2, < 4, != 2.12.0)
-    rubocop (1.50.2)
+    rubocop (1.51.0)
       json (~> 2.3)
       parallel (~> 1.10)
       parser (>= 3.2.0.0)
@@ -81,7 +81,7 @@ GEM
       parser (>= 3.2.1.0)
     rubocop-capybara (2.18.0)
       rubocop (~> 1.41)
-    rubocop-factory_bot (2.22.0)
+    rubocop-factory_bot (2.23.0)
       rubocop (~> 1.33)
     rubocop-rake (0.6.0)
       rubocop (~> 1.0)
@@ -124,4 +124,4 @@ DEPENDENCIES
   yard
 
 BUNDLED WITH
-   2.3.17
+   2.4.13
