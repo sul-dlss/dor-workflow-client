@@ -14,6 +14,7 @@ RSpec.describe Dor::Workflow::Response::Workflow do
         </workflow>
       XML
     end
+
     it { is_expected.to eq 'druid:mw971zk1113' }
   end
 
@@ -26,11 +27,13 @@ RSpec.describe Dor::Workflow::Response::Workflow do
         </workflow>
       XML
     end
+
     it { is_expected.to eq 'assemblyWF' }
   end
 
   describe '#complete?' do
     subject { instance.complete? }
+
     context 'when all steps are complete' do
       let(:xml) do
         <<~XML
@@ -40,6 +43,7 @@ RSpec.describe Dor::Workflow::Response::Workflow do
           </workflow>
         XML
       end
+
       it { is_expected.to be true }
     end
 
@@ -52,6 +56,7 @@ RSpec.describe Dor::Workflow::Response::Workflow do
           </workflow>
         XML
       end
+
       it { is_expected.to be false }
     end
   end
@@ -68,6 +73,7 @@ RSpec.describe Dor::Workflow::Response::Workflow do
           </workflow>
         XML
       end
+
       it { is_expected.to be false }
     end
 
@@ -81,6 +87,7 @@ RSpec.describe Dor::Workflow::Response::Workflow do
           </workflow>
         XML
       end
+
       it { is_expected.to be true }
     end
   end

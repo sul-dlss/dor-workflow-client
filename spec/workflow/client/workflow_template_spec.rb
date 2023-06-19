@@ -9,6 +9,7 @@ RSpec.describe Dor::Workflow::Client::WorkflowTemplate do
 
   describe '#retrieve' do
     subject(:workflow_template) { routes.retrieve('accessionWF') }
+
     let(:data) { '{"processes":[{"name":"start-assembly"},{"name":"content-metadata-create"}]}' }
 
     it 'returns a workflow template' do
@@ -20,6 +21,7 @@ RSpec.describe Dor::Workflow::Client::WorkflowTemplate do
 
   describe '#all' do
     subject(:workflow_templates) { routes.all }
+
     let(:data) { '["assemblyWF","registrationWF"]' }
 
     it 'returns a list of templates' do

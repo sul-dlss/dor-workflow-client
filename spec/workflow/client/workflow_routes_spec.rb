@@ -86,6 +86,7 @@ RSpec.describe Dor::Workflow::Client::WorkflowRoutes do
       before do
         allow(mock_requestor).to receive(:request).and_raise(Dor::WorkflowException, 'status 400')
       end
+
       it 'raises an exception' do
         expect { routes.update_status(druid: druid, workflow: 'errorWF', process: 'registrar-approval', status: 'completed') }.to raise_error(Dor::WorkflowException, /status 400/)
       end
@@ -128,6 +129,7 @@ RSpec.describe Dor::Workflow::Client::WorkflowRoutes do
       before do
         allow(mock_requestor).to receive(:request).and_raise(Dor::WorkflowException, 'status 400')
       end
+
       it 'raises an exception' do
         expect { routes.update_error_status(druid: druid, workflow: 'errorWF', process: 'registrar-approval', error_msg: 'broken') }.to raise_error(Dor::WorkflowException, /status 400/)
       end
@@ -138,6 +140,7 @@ RSpec.describe Dor::Workflow::Client::WorkflowRoutes do
     subject(:delete_all_workflows) do
       routes.delete_all_workflows(pid: 'druid:mw971zk1113')
     end
+
     let(:mock_requestor) { instance_double(Dor::Workflow::Client::Requestor, request: nil) }
 
     it 'sends a delete request' do
@@ -151,6 +154,7 @@ RSpec.describe Dor::Workflow::Client::WorkflowRoutes do
     subject(:delete_all_workflows) do
       routes.delete_all_workflows(pid: 'druid:mw971zk1113')
     end
+
     let(:mock_requestor) { instance_double(Dor::Workflow::Client::Requestor, request: nil) }
 
     it 'sends a delete request' do
@@ -175,7 +179,7 @@ RSpec.describe Dor::Workflow::Client::WorkflowRoutes do
       allow(routes).to receive(:all_workflows_xml) { xml }
     end
 
-    it 'it returns the workflows' do
+    it 'returns the workflows' do
       expect(routes.all_workflows(pid: 'druid:mw971zk1113')).to be_kind_of Dor::Workflow::Response::Workflows
     end
   end

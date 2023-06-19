@@ -14,6 +14,7 @@ RSpec.describe Dor::Workflow::Client do
     </workflow>
     EOXML
   end
+  let(:client) { described_class.new connection: mock_http_connection, logger: mock_logger }
 
   let(:wf_xml_label) do
     <<~EOXML
@@ -47,10 +48,9 @@ RSpec.describe Dor::Workflow::Client do
     @druid = 'druid:123'
   end
 
-  let(:client) { described_class.new connection: mock_http_connection, logger: mock_logger }
-
   describe '#connection' do
     subject(:conn) { client.requestor.connection }
+
     let(:client) { described_class.new url: 'http://example.com', timeout: 99, logger: mock_logger }
 
     it 'has a timeout' do
@@ -145,7 +145,16 @@ RSpec.describe Dor::Workflow::Client do
   end
 
   describe '#workflow_status' do
+    subject { client.workflow_status(druid: druid, workflow: workflow_name, process: step_name) }
+
     let(:repo) { nil }
+    let(:step_name) { 'registrar-approval' }
+    let(:workflow_name) { 'etdSubmitWF' }
+    let(:status) { 200 }
+    let(:response) do
+      [status, {}, xml]
+    end
+    let(:xml) { '' }
     let(:druid) { @druid }
     let(:stubs) do
       Faraday::Adapter::Test::Stubs.new do |stub|
@@ -154,15 +163,6 @@ RSpec.describe Dor::Workflow::Client do
         end
       end
     end
-
-    subject { client.workflow_status(druid: druid, workflow: workflow_name, process: step_name) }
-    let(:step_name) { 'registrar-approval' }
-    let(:workflow_name) { 'etdSubmitWF' }
-    let(:status) { 200 }
-    let(:response) do
-      [status, {}, xml]
-    end
-    let(:xml) { '' }
 
     context 'when a single result is returned' do
       let(:xml) do
@@ -323,7 +323,7 @@ RSpec.describe Dor::Workflow::Client do
     end
   end
 
-  context '#objects_for_workstep' do
+  describe '#objects_for_workstep' do
     before(:all) do
       @workflow   = 'googleScannedBookWF'
       @completed  = 'google-download'
@@ -354,7 +354,7 @@ RSpec.describe Dor::Workflow::Client do
     end
 
     context 'a query using qualified workflow names for completed and waiting' do
-      before :each do
+      before do
         @qualified_waiting   = "#{@workflow}:#{@waiting}"
         @qualified_completed = "#{@workflow}:#{@completed}"
       end
@@ -376,6 +376,7 @@ RSpec.describe Dor::Workflow::Client do
           let(:laneid) { 'default' }
         end
       end
+
       describe 'explicit lane_id' do
         it_behaves_like 'lane-aware' do
           let(:laneid) { 'lane1' }
@@ -383,17 +384,20 @@ RSpec.describe Dor::Workflow::Client do
       end
 
       context 'URI string creation' do
-        before :each do
+        before do
           @xml = %(<objects count="1"><object id="druid:ab123de4567"/></objects>)
         end
+
         it 'with only one completed step passed in as a String' do
           allow(mock_http_connection).to receive(:get).with("workflow_queue?waiting=#{@qualified_waiting}&completed=#{@qualified_completed}&lane-id=default").and_return(double(Faraday::Response, body: @xml))
           expect(client.objects_for_workstep(@qualified_completed, @qualified_waiting)).to eq(['druid:ab123de4567'])
         end
+
         it 'without any completed steps, only waiting' do
           allow(mock_http_connection).to receive(:get).with("workflow_queue?waiting=#{@qualified_waiting}&lane-id=default").and_return(double(Faraday::Response, body: @xml))
           expect(client.objects_for_workstep(nil, @qualified_waiting)).to eq(['druid:ab123de4567'])
         end
+
         it 'same but with lane_id' do
           allow(mock_http_connection).to receive(:get).with("workflow_queue?waiting=#{@qualified_waiting}&lane-id=lane1").and_return(double(Faraday::Response, body: @xml))
           expect(client.objects_for_workstep(nil, @qualified_waiting, 'lane1')).to eq(['druid:ab123de4567'])

@@ -6,6 +6,7 @@ RSpec.describe Dor::Workflow::Client::Status do
   subject(:instance) do
     described_class.new(druid: druid, version: version, lifecycle_routes: lifecycle_routes)
   end
+
   let(:druid) { 'druid:ab123cd4567' }
   let(:version) { '2' }
   let(:lifecycle_routes) { Dor::Workflow::Client::LifecycleRoutes.new(requestor: requestor) }
@@ -101,6 +102,8 @@ RSpec.describe Dor::Workflow::Client::Status do
     end
 
     context 'for an accessioned step with the exact same timestamp as the deposited step' do
+      subject(:status) { instance.display(include_time: true) }
+
       let(:xml) do
         '<?xml version="1.0"?>
         <lifecycle objectId="druid:bd504dj1946">
@@ -120,14 +123,14 @@ RSpec.describe Dor::Workflow::Client::Status do
         </lifecycle>'
       end
 
-      subject(:status) { instance.display(include_time: true) }
-
       it 'has the correct status of accessioned (v2) object' do
         expect(status).to eq('v2 Accessioned 2013-10-01 07:10PM')
       end
     end
 
     context 'for an accessioned step with an ealier timestamp than the deposited step' do
+      subject(:status) { instance.display(include_time: true) }
+
       let(:xml) do
         '<?xml version="1.0"?>
         <lifecycle objectId="druid:bd504dj1946">
@@ -147,14 +150,14 @@ RSpec.describe Dor::Workflow::Client::Status do
         </lifecycle>'
       end
 
-      subject(:status) { instance.display(include_time: true) }
-
       it 'has the correct status of accessioned (v2) object' do
         expect(status).to eq('v2 Accessioned 2013-09-01 07:10PM')
       end
     end
 
     context 'for a deposited step for a non-accessioned object' do
+      subject(:status) { instance.display(include_time: true) }
+
       let(:xml) do
         '<?xml version="1.0"?>
         <lifecycle objectId="druid:bd504dj1946">
@@ -173,8 +176,6 @@ RSpec.describe Dor::Workflow::Client::Status do
         </lifecycle>'
       end
 
-      subject(:status) { instance.display(include_time: true) }
-
       it 'has the correct status of deposited (v2) object' do
         expect(status).to eq('v2 In accessioning (described, published, deposited) 2013-10-01 07:10PM')
       end
@@ -183,6 +184,7 @@ RSpec.describe Dor::Workflow::Client::Status do
 
   describe '#display_simplified' do
     subject(:status) { instance.display_simplified }
+
     let(:xml) do
       '<?xml version="1.0" encoding="UTF-8"?>
       <lifecycle objectId="druid:gv054hp4128">
