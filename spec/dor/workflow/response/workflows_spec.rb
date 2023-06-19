@@ -14,6 +14,7 @@ RSpec.describe Dor::Workflow::Response::Workflows do
         </workflows>
       XML
     end
+
     it { is_expected.to eq 'druid:mw971zk1113' }
   end
 

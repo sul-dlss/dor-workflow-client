@@ -10,6 +10,8 @@ RSpec.describe Dor::Workflow::Client::LifecycleRoutes do
   let(:druid) { 'druid:gv054hp4128' }
 
   describe '#milestones' do
+    subject(:milestones) { routes.milestones(druid: druid) }
+
     let(:ng_xml) { Nokogiri::XML(xml) }
     let(:xml) do
       '<?xml version="1.0" encoding="UTF-8"?><lifecycle objectId="druid:gv054hp4128"><milestone date="2012-01-26T21:06:54-0800" version="2">published</milestone></lifecycle>'
@@ -18,8 +20,6 @@ RSpec.describe Dor::Workflow::Client::LifecycleRoutes do
     before do
       allow(routes).to receive(:query_lifecycle).and_return(ng_xml)
     end
-
-    subject(:milestones) { routes.milestones(druid: druid) }
 
     it 'includes the version in with the milestones' do
       expect(milestones.first[:milestone]).to eq('published')

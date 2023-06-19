@@ -3,8 +3,9 @@
 require 'spec_helper'
 
 RSpec.describe Dor::Workflow::Response::Process do
-  let(:parent) { Dor::Workflow::Response::Workflow.new(xml: xml) }
   subject(:instance) { parent.process_for_recent_version(name: 'start-assembly') }
+
+  let(:parent) { Dor::Workflow::Response::Workflow.new(xml: xml) }
 
   describe '#pid' do
     subject { instance.pid }
@@ -16,6 +17,7 @@ RSpec.describe Dor::Workflow::Response::Process do
         </workflow>
       XML
     end
+
     it { is_expected.to eq 'druid:mw971zk1113' }
   end
 
@@ -29,6 +31,7 @@ RSpec.describe Dor::Workflow::Response::Process do
         </workflow>
       XML
     end
+
     it { is_expected.to eq 'assemblyWF' }
   end
 
@@ -42,6 +45,7 @@ RSpec.describe Dor::Workflow::Response::Process do
         </workflow>
       XML
     end
+
     it { is_expected.to eq 'start-assembly' }
   end
 
@@ -55,6 +59,7 @@ RSpec.describe Dor::Workflow::Response::Process do
         </workflow>
       XML
     end
+
     it { is_expected.to eq 'default' }
   end
 end
