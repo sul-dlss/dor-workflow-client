@@ -44,23 +44,26 @@ module Dor
         # @return [Hash{Symbol => Object}] including :status_code and :status_time
         def info
           @info ||= begin
-            # if we have an accessioned milestone, this is the last possible step and should be the status regardless of time stamp
             accessioned_milestones = current_milestones.select { |m| m[:milestone] == 'accessioned' }
-            return { status_code: STEPS['accessioned'], status_time: accessioned_milestones.last[:at].utc.xmlschema } unless accessioned_milestones.empty?
+            if accessioned_milestones.size >= 1
+              # if we have an accessioned milestone, this is the last possible step and should be the status regardless of timestamp
+              { status_code: STEPS['accessioned'], status_time: accessioned_milestones.last[:at].utc.xmlschema }
+            else
+              status_code = 0
+              status_time = nil
+              # for each milestone in the current version, see if it comes at the same time or after the current 'last' step.
+              # if so, make it the last and record the date/time
+              current_milestones.each do |m|
+                m_name = m[:milestone]
+                m_time = m[:at].utc.xmlschema
+                next unless STEPS.key?(m_name) && (!status_time || m_time >= status_time)
 
-            status_code = 0
-            status_time = nil
-            # for each milestone in the current version, see if it comes at the same time or after the current 'last' step, if so, make it the last and record the date/time
-            current_milestones.each do |m|
-              m_name = m[:milestone]
-              m_time = m[:at].utc.xmlschema
-              next unless STEPS.key?(m_name) && (!status_time || m_time >= status_time)
+                status_code = STEPS[m_name]
+                status_time = m_time
+              end
 
-              status_code = STEPS[m_name]
-              status_time = m_time
+              { status_code: status_code, status_time: status_time }
             end
-
-            { status_code: status_code, status_time: status_time }
           end
         end
 
