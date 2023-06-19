@@ -104,13 +104,12 @@ module Dor
           current = []
           milestones.each do |m|
             next unless STEPS.key?(m[:milestone]) # milestone name must be in list of known steps
+            next if m[:milestone] == 'registered' && version.to_i > 1 # registered milestone is only valid for v1
 
             # Two possible ways the version can indicate the milestone is part of the current version:
             # if m[:version] is nil, then the milestone is active (version 0 becoming version 1)
             # if m[:version] is matches the current version, then the milestone is archived with the current version
             next unless m[:version].nil? || m[:version] == version
-
-            next if m[:milestone] == 'registered' && version.to_i > 1 # registered milestone is only valid for v1
 
             current << m
           end
