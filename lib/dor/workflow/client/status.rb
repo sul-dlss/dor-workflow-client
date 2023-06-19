@@ -44,23 +44,26 @@ module Dor
         # @return [Hash{Symbol => Object}] including :status_code and :status_time
         def info
           @info ||= begin
-            # if we have an accessioned milestone, this is the last possible step and should be the status regardless of time stamp
             accessioned_milestones = current_milestones.select { |m| m[:milestone] == 'accessioned' }
-            return { status_code: STEPS['accessioned'], status_time: accessioned_milestones.last[:at].utc.xmlschema } unless accessioned_milestones.empty?
+            if accessioned_milestones.any?
+              # if we have an accessioned milestone, this is the last possible step and should be the status regardless of timestamp
+              { status_code: STEPS['accessioned'], status_time: accessioned_milestones.last[:at].utc.xmlschema }
+            else
+              status_code = 0
+              status_time = nil
+              # for each milestone in the current version, see if it comes at the same time or after the current 'last' step.
+              # if so, make it the last and record the date/time
+              current_milestones.each do |m|
+                m_name = m[:milestone]
+                m_time = m[:at].utc.xmlschema
+                next unless STEPS.key?(m_name) && (!status_time || m_time >= status_time)
 
-            status_code = 0
-            status_time = nil
-            # for each milestone in the current version, see if it comes at the same time or after the current 'last' step, if so, make it the last and record the date/time
-            current_milestones.each do |m|
-              m_name = m[:milestone]
-              m_time = m[:at].utc.xmlschema
-              next unless STEPS.key?(m_name) && (!status_time || m_time >= status_time)
+                status_code = STEPS[m_name]
+                status_time = m_time
+              end
 
-              status_code = STEPS[m_name]
-              status_time = m_time
+              { status_code: status_code, status_time: status_time }
             end
-
-            { status_code: status_code, status_time: status_time }
           end
         end
 
@@ -99,12 +102,17 @@ module Dor
 
         def current_milestones
           current = []
-          # only get steps that are part of accessioning and part of the current version. That can mean they were archived with the current version
-          # number, or they might be active (no version number).
           milestones.each do |m|
-            if STEPS.key?(m[:milestone]) && (m[:version].nil? || m[:version] == version)
-              current << m unless m[:milestone] == 'registered' && version.to_i > 1
-            end
+            next unless STEPS.key?(m[:milestone]) # milestone name must be in list of known steps
+
+            # Two possible ways the version can indicate the milestone is part of the current version:
+            # if m[:version] is nil, then the milestone is active (version 0 becoming version 1)
+            # if m[:version] is matches the current version, then the milestone is archived with the current version
+            next unless m[:version].nil? || m[:version] == version
+
+            next if m[:milestone] == 'registered' && version.to_i > 1 # registered milestone is only valid for v1
+
+            current << m
           end
           current
         end

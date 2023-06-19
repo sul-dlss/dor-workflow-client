@@ -185,5 +185,8 @@ RSpec.describe Dor::Workflow::Client::WorkflowRoutes do
   end
 
   describe '#create_workflow_by_name' do
+    it 'need to write these specs', skip: 'need to write specs' do
+      # something
+    end
   end
 end
