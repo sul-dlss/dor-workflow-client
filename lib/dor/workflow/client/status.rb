@@ -45,7 +45,7 @@ module Dor
         def info
           @info ||= begin
             accessioned_milestones = current_milestones.select { |m| m[:milestone] == 'accessioned' }
-            if accessioned_milestones.size >= 1
+            if accessioned_milestones.any?
               # if we have an accessioned milestone, this is the last possible step and should be the status regardless of timestamp
               { status_code: STEPS['accessioned'], status_time: accessioned_milestones.last[:at].utc.xmlschema }
             else
@@ -102,12 +102,14 @@ module Dor
 
         def current_milestones
           current = []
-          # only get steps that are part of accessioning and part of the current version. That can mean they were archived with the current version
-          # number, or they might be active (no version number).
           milestones.each do |m|
-            if STEPS.key?(m[:milestone]) && (m[:version].nil? || m[:version] == version)
-              current << m unless m[:milestone] == 'registered' && version.to_i > 1
-            end
+            # only get steps that are part of accessioning and part of the current version.
+            # That can mean they were archived with the current version number, or they might be active (no version number).
+            next unless STEPS.key?(m[:milestone]) && (m[:version].nil? || m[:version] == version)
+
+            next if m[:milestone] == 'registered' && version.to_i > 1
+
+            current << m
           end
           current
         end
