@@ -19,7 +19,7 @@ RSpec.describe Dor::Workflow::Response::Workflows do
   end
 
   describe '#workflows' do
-    subject { instance.workflows }
+    subject(:workflows) { instance.workflows }
 
     let(:xml) do
       <<~XML
@@ -33,8 +33,8 @@ RSpec.describe Dor::Workflow::Response::Workflows do
     end
 
     it 'has children' do
-      expect(subject).to all(be_kind_of Dor::Workflow::Response::Workflow)
-      expect(subject.map(&:workflow_name)).to eq %w[assemblyWF sdrPreservationWF]
+      expect(workflows).to all(be_kind_of Dor::Workflow::Response::Workflow)
+      expect(workflows.map(&:workflow_name)).to eq %w[assemblyWF sdrPreservationWF]
     end
   end
 

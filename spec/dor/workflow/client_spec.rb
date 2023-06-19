@@ -89,7 +89,8 @@ RSpec.describe Dor::Workflow::Client do
       end
 
       it 'sets the lane_id param' do
-        client.create_workflow_by_name(@druid, 'laneIdWF', lane_id: 'foo_lane', version: 1)
+        # if the stub isn't correct (params), it will raise an error
+        expect { client.create_workflow_by_name(@druid, 'laneIdWF', lane_id: 'foo_lane', version: 1) }.not_to raise_error
       end
     end
 
@@ -101,7 +102,8 @@ RSpec.describe Dor::Workflow::Client do
       end
 
       it 'sets the version param if provided in options hash' do
-        client.create_workflow_by_name(@druid, 'versionWF', version: 2)
+        # if the stub isn't correct (options hash), it will raise an error
+        expect { client.create_workflow_by_name(@druid, 'versionWF', version: 2) }.not_to raise_error
       end
     end
   end
@@ -145,7 +147,7 @@ RSpec.describe Dor::Workflow::Client do
   end
 
   describe '#workflow_status' do
-    subject { client.workflow_status(druid: druid, workflow: workflow_name, process: step_name) }
+    subject(:workflow_status) { client.workflow_status(druid: druid, workflow: workflow_name, process: step_name) }
 
     let(:repo) { nil }
     let(:step_name) { 'registrar-approval' }
@@ -170,7 +172,7 @@ RSpec.describe Dor::Workflow::Client do
       end
 
       it 'returns status as a string' do
-        expect(subject).to eq('completed')
+        expect(workflow_status).to eq('completed')
       end
     end
 
@@ -181,7 +183,7 @@ RSpec.describe Dor::Workflow::Client do
       end
 
       it 'returns the status for the highest version' do
-        expect(subject).to eq('waiting')
+        expect(workflow_status).to eq('waiting')
       end
     end
 
@@ -189,7 +191,7 @@ RSpec.describe Dor::Workflow::Client do
       let(:status) { 404 }
 
       it 'throws the missing workflow exception' do
-        expect { subject }.to raise_error Dor::MissingWorkflowException
+        expect { workflow_status }.to raise_error Dor::MissingWorkflowException
       end
     end
 
@@ -197,7 +199,7 @@ RSpec.describe Dor::Workflow::Client do
       let(:status) { 422 }
 
       it 'throws an exception' do
-        expect { subject }.to raise_error Dor::WorkflowException
+        expect { workflow_status }.to raise_error Dor::WorkflowException
       end
     end
 
@@ -207,7 +209,7 @@ RSpec.describe Dor::Workflow::Client do
       end
 
       it 'throws an exception' do
-        expect { subject }.to raise_error Dor::WorkflowException, "Unable to parse response:\nsomething not xml"
+        expect { workflow_status }.to raise_error Dor::WorkflowException, "Unable to parse response:\nsomething not xml"
       end
     end
 
@@ -218,7 +220,7 @@ RSpec.describe Dor::Workflow::Client do
       let(:step_name) { 'publish' }
 
       it 'returns nil' do
-        expect(subject).to be_nil
+        expect(workflow_status).to be_nil
       end
     end
   end
@@ -324,7 +326,7 @@ RSpec.describe Dor::Workflow::Client do
   end
 
   describe '#objects_for_workstep' do
-    before(:all) do
+    before do
       @workflow   = 'googleScannedBookWF'
       @completed  = 'google-download'
       @waiting    = 'process-content'
@@ -407,7 +409,7 @@ RSpec.describe Dor::Workflow::Client do
   end
 
   context 'when empty workflow queue' do
-    before(:all) do
+    before do
       @workflow   = 'googleScannedBookWF'
       @completed  = 'google-download'
       @waiting    = 'process-content'
@@ -427,7 +429,7 @@ RSpec.describe Dor::Workflow::Client do
   end
 
   context 'when errored workflow steps' do
-    before(:all) do
+    before do
       @workflow   = 'accessionWF'
       @step       = 'publish'
     end
@@ -458,7 +460,7 @@ RSpec.describe Dor::Workflow::Client do
   end
 
   describe '#count_queued_for_workstep' do
-    before(:all) do
+    before do
       @workflow   = 'accessionWF'
       @step       = 'publish'
     end
@@ -481,7 +483,7 @@ RSpec.describe Dor::Workflow::Client do
   end
 
   describe '#count_objects_in_step' do
-    before(:all) do
+    before do
       @workflow   = 'sdrIngestWF'
       @step       = 'start-ingest'
       @type       = 'waiting'
