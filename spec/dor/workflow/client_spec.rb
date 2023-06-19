@@ -326,7 +326,7 @@ RSpec.describe Dor::Workflow::Client do
   end
 
   describe '#objects_for_workstep' do
-    before(:all) do
+    before do
       @workflow   = 'googleScannedBookWF'
       @completed  = 'google-download'
       @waiting    = 'process-content'
@@ -409,7 +409,7 @@ RSpec.describe Dor::Workflow::Client do
   end
 
   context 'when empty workflow queue' do
-    before(:all) do
+    before do
       @workflow   = 'googleScannedBookWF'
       @completed  = 'google-download'
       @waiting    = 'process-content'
@@ -429,7 +429,7 @@ RSpec.describe Dor::Workflow::Client do
   end
 
   context 'when errored workflow steps' do
-    before(:all) do
+    before do
       @workflow   = 'accessionWF'
       @step       = 'publish'
     end
@@ -460,7 +460,7 @@ RSpec.describe Dor::Workflow::Client do
   end
 
   describe '#count_queued_for_workstep' do
-    before(:all) do
+    before do
       @workflow   = 'accessionWF'
       @step       = 'publish'
     end
@@ -483,7 +483,7 @@ RSpec.describe Dor::Workflow::Client do
   end
 
   describe '#count_objects_in_step' do
-    before(:all) do
+    before do
       @workflow   = 'sdrIngestWF'
       @step       = 'start-ingest'
       @type       = 'waiting'
