@@ -147,7 +147,7 @@ RSpec.describe Dor::Workflow::Client do
   end
 
   describe '#workflow_status' do
-    subject { client.workflow_status(druid: druid, workflow: workflow_name, process: step_name) }
+    subject(:workflow_status) { client.workflow_status(druid: druid, workflow: workflow_name, process: step_name) }
 
     let(:repo) { nil }
     let(:step_name) { 'registrar-approval' }
@@ -172,7 +172,7 @@ RSpec.describe Dor::Workflow::Client do
       end
 
       it 'returns status as a string' do
-        expect(subject).to eq('completed')
+        expect(workflow_status).to eq('completed')
       end
     end
 
@@ -183,7 +183,7 @@ RSpec.describe Dor::Workflow::Client do
       end
 
       it 'returns the status for the highest version' do
-        expect(subject).to eq('waiting')
+        expect(workflow_status).to eq('waiting')
       end
     end
 
@@ -191,7 +191,7 @@ RSpec.describe Dor::Workflow::Client do
       let(:status) { 404 }
 
       it 'throws the missing workflow exception' do
-        expect { subject }.to raise_error Dor::MissingWorkflowException
+        expect { workflow_status }.to raise_error Dor::MissingWorkflowException
       end
     end
 
@@ -199,7 +199,7 @@ RSpec.describe Dor::Workflow::Client do
       let(:status) { 422 }
 
       it 'throws an exception' do
-        expect { subject }.to raise_error Dor::WorkflowException
+        expect { workflow_status }.to raise_error Dor::WorkflowException
       end
     end
 
@@ -209,7 +209,7 @@ RSpec.describe Dor::Workflow::Client do
       end
 
       it 'throws an exception' do
-        expect { subject }.to raise_error Dor::WorkflowException, "Unable to parse response:\nsomething not xml"
+        expect { workflow_status }.to raise_error Dor::WorkflowException, "Unable to parse response:\nsomething not xml"
       end
     end
 
@@ -220,7 +220,7 @@ RSpec.describe Dor::Workflow::Client do
       let(:step_name) { 'publish' }
 
       it 'returns nil' do
-        expect(subject).to be_nil
+        expect(workflow_status).to be_nil
       end
     end
   end
