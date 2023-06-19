@@ -89,7 +89,8 @@ RSpec.describe Dor::Workflow::Client do
       end
 
       it 'sets the lane_id param' do
-        client.create_workflow_by_name(@druid, 'laneIdWF', lane_id: 'foo_lane', version: 1)
+        # if the stub isn't correct (params), it will raise an error
+        expect { client.create_workflow_by_name(@druid, 'laneIdWF', lane_id: 'foo_lane', version: 1) }.not_to raise_error
       end
     end
 
@@ -101,7 +102,8 @@ RSpec.describe Dor::Workflow::Client do
       end
 
       it 'sets the version param if provided in options hash' do
-        client.create_workflow_by_name(@druid, 'versionWF', version: 2)
+        # if the stub isn't correct (options hash), it will raise an error
+        expect { client.create_workflow_by_name(@druid, 'versionWF', version: 2) }.not_to raise_error
       end
     end
   end
