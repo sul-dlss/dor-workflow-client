@@ -15,7 +15,7 @@ RSpec.describe Dor::Workflow::Client::Status do
   describe '#display' do
     subject(:status) { instance.display }
 
-    context 'for gv054hp4128' do
+    describe 'for gv054hp4128' do
       context 'when current version is published, but does not have a version attribute' do
         let(:xml) do
           '<?xml version="1.0" encoding="UTF-8"?>
@@ -52,7 +52,7 @@ RSpec.describe Dor::Workflow::Client::Status do
       end
     end
 
-    context 'for bd504dj1946' do
+    describe 'for bd504dj1946' do
       let(:xml) do
         '<?xml version="1.0"?>
         <lifecycle objectId="druid:bd504dj1946">
@@ -101,7 +101,7 @@ RSpec.describe Dor::Workflow::Client::Status do
       end
     end
 
-    context 'for an accessioned step with the exact same timestamp as the deposited step' do
+    context 'with an accessioned step with the exact same timestamp as the deposited step' do
       subject(:status) { instance.display(include_time: true) }
 
       let(:xml) do
@@ -128,7 +128,7 @@ RSpec.describe Dor::Workflow::Client::Status do
       end
     end
 
-    context 'for an accessioned step with an ealier timestamp than the deposited step' do
+    context 'with an accessioned step with an ealier timestamp than the deposited step' do
       subject(:status) { instance.display(include_time: true) }
 
       let(:xml) do
@@ -155,7 +155,7 @@ RSpec.describe Dor::Workflow::Client::Status do
       end
     end
 
-    context 'for a deposited step for a non-accessioned object' do
+    context 'with a deposited step for a non-accessioned object' do
       subject(:status) { instance.display(include_time: true) }
 
       let(:xml) do
