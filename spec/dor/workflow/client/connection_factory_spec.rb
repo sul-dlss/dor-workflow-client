@@ -13,17 +13,18 @@ RSpec.describe Dor::Workflow::Client::ConnectionFactory do
   before do
     stub_request(:post, request_url)
       .to_return(status: 500, body: 'Internal error', headers: {})
+    allow(mock_logger).to receive(:warn)
   end
 
   describe '#create_workflow_by_name' do
     subject(:request) { client.create_workflow_by_name(druid, 'httpException', version: '1') }
 
     it 'logs an error and retry upon a targeted Faraday exception' do
-      expect(mock_logger).to receive(:warn)
-        .with("retrying connection (1) to #{request_url}: (Faraday::RetriableResponse)  500")
-      expect(mock_logger).to receive(:warn)
-        .with("retrying connection (2) to #{request_url}: (Faraday::RetriableResponse)  500")
       expect { request }.to raise_error Dor::WorkflowException
+      expect(mock_logger).to have_received(:warn)
+        .with("retrying connection (1) to #{request_url}: (Faraday::RetriableResponse)  500")
+      expect(mock_logger).to have_received(:warn)
+        .with("retrying connection (2) to #{request_url}: (Faraday::RetriableResponse)  500")
     end
   end
 end

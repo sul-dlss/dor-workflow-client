@@ -510,12 +510,15 @@ RSpec.describe Dor::Workflow::Client do
         stub.delete(url) { |_env| [202, {}, ''] }
       end
     end
-
     let(:url) { "/objects/#{@druid}/workflows/accessionWF?version=5" }
 
+    before do
+      allow(mock_http_connection).to receive(:delete).with(url).and_call_original
+    end
+
     it 'sends a delete request to the workflow service' do
-      expect(mock_http_connection).to receive(:delete).with(url).and_call_original
       client.delete_workflow(druid: @druid, workflow: 'accessionWF', version: 5)
+      expect(mock_http_connection).to have_received(:delete).with(url)
     end
   end
 
