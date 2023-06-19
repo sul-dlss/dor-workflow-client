@@ -353,7 +353,7 @@ RSpec.describe Dor::Workflow::Client do
       end
     end
 
-    context 'a query using qualified workflow names for completed and waiting' do
+    context 'with a query using qualified workflow names for completed and waiting' do
       before do
         @qualified_waiting   = "#{@workflow}:#{@waiting}"
         @qualified_completed = "#{@workflow}:#{@completed}"
@@ -383,7 +383,7 @@ RSpec.describe Dor::Workflow::Client do
         end
       end
 
-      context 'URI string creation' do
+      context 'with URI string creation' do
         before do
           @xml = %(<objects count="1"><object id="druid:ab123de4567"/></objects>)
         end
@@ -406,7 +406,7 @@ RSpec.describe Dor::Workflow::Client do
     end
   end
 
-  context 'get empty workflow queue' do
+  context 'when empty workflow queue' do
     before(:all) do
       @workflow   = 'googleScannedBookWF'
       @completed  = 'google-download'
@@ -426,7 +426,7 @@ RSpec.describe Dor::Workflow::Client do
     end
   end
 
-  context 'get errored workflow steps' do
+  context 'when errored workflow steps' do
     before(:all) do
       @workflow   = 'accessionWF'
       @step       = 'publish'
