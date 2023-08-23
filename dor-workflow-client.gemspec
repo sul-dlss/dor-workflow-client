@@ -25,13 +25,5 @@ Gem::Specification.new do |gem|
   gem.add_dependency 'nokogiri', '~> 1.6'
   gem.add_dependency 'zeitwerk', '~> 2.1'
 
-  gem.add_development_dependency 'rake'
-  gem.add_development_dependency 'rspec', '~> 3.3'
-  gem.add_development_dependency 'rubocop', '~> 1.24'
-  gem.add_development_dependency 'rubocop-rake'
-  gem.add_development_dependency 'rubocop-rspec', '~> 2.1'
-  gem.add_development_dependency 'simplecov'
-  gem.add_development_dependency 'webmock'
-  gem.add_development_dependency 'yard'
   gem.metadata['rubygems_mfa_required'] = 'true'
 end
