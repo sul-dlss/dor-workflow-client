@@ -21,6 +21,15 @@ module Dor
           JSON.parse(body)
         end
 
+        # Retrieves a list of workflow template name
+        #
+        # @return [Array<String>] the list of templates
+        #
+        def all
+          body = requestor.request 'workflow_templates'
+          JSON.parse(body)
+        end
+
         private
 
         attr_reader :requestor
