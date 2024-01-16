@@ -71,6 +71,10 @@ module Dor
         templates.retrieve(name)
       end
 
+      def workflow_templates
+        templates.all
+      end
+
       def templates
         WorkflowTemplate.new(requestor: requestor)
       end
