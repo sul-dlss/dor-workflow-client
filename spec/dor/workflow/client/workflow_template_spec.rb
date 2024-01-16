@@ -18,15 +18,4 @@ RSpec.describe Dor::Workflow::Client::WorkflowTemplate do
       expect(mock_requestor).to have_received(:request).with('workflow_templates/accessionWF')
     end
   end
-
-  describe '#all' do
-    subject(:workflow_templates) { routes.all }
-
-    let(:data) { '["assemblyWF","registrationWF"]' }
-
-    it 'returns a list of templates' do
-      expect(workflow_templates).to eq %w[assemblyWF registrationWF]
-      expect(mock_requestor).to have_received(:request).with('workflow_templates')
-    end
-  end
 end

@@ -20,30 +20,6 @@ module Dor
           doc.xpath('/lanes/lane').map { |n| n['id'] }
         end
 
-        # Gets all of the workflow steps that have a status of 'queued' that have a last-updated timestamp older than the number of hours passed in
-        #   This will enable re-queueing of jobs that have been lost by the job manager
-        # @param [Hash] opts optional values for query
-        # @option opts [Integer] :hours_ago steps older than this value will be returned by the query.  If not passed in, the service defaults to 0 hours,
-        #   meaning you will get all queued workflows
-        # @option opts [Integer] :limit sets the maximum number of workflow steps that can be returned.  Defaults to no limit
-        # @return [Array[Hash]] each Hash represents a workflow step.  It will have the following keys:
-        #  :workflow, :step, :druid, :lane_id
-        def stale_queued_workflows(opts)
-          uri_string = build_queued_uri(opts)
-          parse_queued_workflows_response requestor.request(uri_string)
-        end
-
-        # Returns a count of workflow steps that have a status of 'queued' that have a last-updated timestamp older than the number of hours passed in
-        # @param [Hash] opts optional values for query
-        # @option opts [Integer] :hours_ago steps older than this value will be returned by the query.  If not passed in, the service defaults to 0 hours,
-        #   meaning you will get all queued workflows
-        # @return [Integer] number of stale, queued steps if the :count_only option was set to true
-        def count_stale_queued_workflows(opts)
-          uri_string = "#{build_queued_uri(opts)}&count-only=true"
-          doc = Nokogiri::XML(requestor.request(uri_string))
-          doc.at_xpath('/objects/@count').value.to_i
-        end
-
         # Returns a list of druids from the workflow service that meet the criteria
         # of the passed in completed and waiting params
         #
@@ -104,64 +80,9 @@ module Dor
           Nokogiri::XML(resp).xpath('//object[@id]').map { |n| n[:id] }
         end
 
-        # Get a list of druids that have errored out in a particular workflow and step
-        #
-        # @param [String] workflow name
-        # @param [String] step name
-        #
-        # @return [Hash] hash of results, with key has a druid, and value as the error message
-        # @example
-        #     client.errored_objects_for_workstep('accessionWF','content-metadata')
-        #     => {"druid:qd556jq0580"=>"druid:qd556jq0580 - Item error; caused by
-        #        blah blah. See logger for details>"}
-        def errored_objects_for_workstep(workflow, step)
-          resp = requestor.request "workflow_queue?workflow=#{workflow}&error=#{step}"
-          Nokogiri::XML(resp).xpath('//object').to_h do |node|
-            [node['id'], node['errorMessage']]
-          end
-        end
-
-        # Used by preservation robots stats reporter
-        #
-        # @param [String] workflow name
-        # @param [String] step name
-        # @param [String] type
-        #
-        # @return [Hash] hash of results, with key has a druid, and value as the error message
-        def count_objects_in_step(workflow, step, type)
-          resp = requestor.request "workflow_queue?workflow=#{workflow}&#{type}=#{step}"
-          extract_object_count(resp)
-        end
-
-        # Returns the number of objects that have a status of 'error' in a particular workflow and step
-        #
-        # @param [String] workflow name
-        # @param [String] step name
-        #
-        # @return [Integer] Number of objects with this repository:workflow:step that have a status of 'error'
-        def count_errored_for_workstep(workflow, step)
-          count_objects_in_step(workflow, step, 'error')
-        end
-
-        # Returns the number of objects that have a status of 'queued' in a particular workflow and step
-        #
-        # @param [String] workflow name
-        # @param [String] step name
-        #
-        # @return [Integer] Number of objects with this repository:workflow:step that have a status of 'queued'
-        def count_queued_for_workstep(workflow, step)
-          count_objects_in_step(workflow, step, 'queued')
-        end
-
         private
 
         attr_reader :requestor
-
-        def build_queued_uri(opts = {})
-          query_hash = opts.slice(:hours_ago, :limit).transform_keys { |key| key.to_s.tr('_', '-') }
-          query_string = URI.encode_www_form(query_hash)
-          "workflow_queue/all_queued?#{query_string}"
-        end
 
         # Converts workflow-step into workflow:step
         # @param [String] default_workflow
@@ -173,24 +94,6 @@ module Dor
           current = step.split(':').last(2)
           current.unshift(default_workflow) if current.length < 2
           current.join(':')
-        end
-
-        def parse_queued_workflows_response(xml)
-          Nokogiri::XML(xml).xpath('/workflows/workflow').collect do |wf_node|
-            {
-              workflow: wf_node['name'],
-              step: wf_node['process'],
-              druid: wf_node['druid'],
-              lane_id: wf_node['laneId']
-            }
-          end
-        end
-
-        def extract_object_count(resp)
-          node = Nokogiri::XML(resp).at_xpath('/objects')
-          raise Dor::WorkflowException, 'Unable to determine count from response' if node.nil?
-
-          node['count'].to_i
         end
       end
     end

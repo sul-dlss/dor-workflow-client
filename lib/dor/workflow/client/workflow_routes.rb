@@ -98,19 +98,11 @@ module Dor
           Workflow::Response::Update.new(json: response)
         end
 
-        #
-        # Retrieves the raw XML for all the workflows for the the given object
-        # @param [String] druid The id of the object
-        # @return [String] XML of the workflow
-        def all_workflows_xml(druid)
-          requestor.request "objects/#{druid}/workflows"
-        end
-
         # Retrieves all workflows for the given object
         # @param [String] pid The id of the object
         # @return [Workflow::Response::Workflows]
         def all_workflows(pid:)
-          xml = all_workflows_xml(pid)
+          xml = requestor.request "objects/#{pid}/workflows"
           Workflow::Response::Workflows.new(xml: xml)
         end
 
