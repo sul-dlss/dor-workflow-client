@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    dor-workflow-client (6.0.0)
+    dor-workflow-client (7.0.0)
       activesupport (>= 3.2.1, < 8)
       deprecation (>= 0.99.0)
       faraday (~> 2.0)
