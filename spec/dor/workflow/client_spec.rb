@@ -123,21 +123,6 @@ RSpec.describe Dor::Workflow::Client do
     end
   end
 
-  describe '#workflow_templates' do
-    subject(:workflow_templates) { client.workflow_templates }
-
-    let(:workflow_template_client) { instance_double Dor::Workflow::Client::WorkflowTemplate, all: 'data' }
-
-    before do
-      allow(Dor::Workflow::Client::WorkflowTemplate).to receive(:new).and_return(workflow_template_client)
-    end
-
-    it 'delegates to the client' do
-      expect(workflow_templates).to eq 'data'
-      expect(workflow_template_client).to have_received(:all)
-    end
-  end
-
   describe '#templates' do
     subject(:templates) { client.templates }
 
@@ -222,31 +207,6 @@ RSpec.describe Dor::Workflow::Client do
       it 'returns nil' do
         expect(workflow_status).to be_nil
       end
-    end
-  end
-
-  describe '#all_workflows_xml' do
-    subject(:all_workflows_xml) { client.all_workflows_xml('druid:123') }
-
-    let(:workflow) { 'etdSubmitWF' }
-    let(:xml) do
-      <<~XML
-        <workflows>
-        <workflow id="etdSubmitWF"><process name="registrar-approval" status="completed" /></workflow>
-        <workflow id="etdSubmitWF"><process name="registrar-approval" status="completed" /></workflow>
-        </workflows>
-      XML
-    end
-    let(:stubs) do
-      Faraday::Adapter::Test::Stubs.new do |stub|
-        stub.get('objects/druid:123/workflows') do |_env|
-          [200, {}, xml]
-        end
-      end
-    end
-
-    it 'returns the xml for a given druid' do
-      expect(all_workflows_xml).to eq(xml)
     end
   end
 
@@ -428,84 +388,6 @@ RSpec.describe Dor::Workflow::Client do
     end
   end
 
-  context 'when errored workflow steps' do
-    before do
-      @workflow   = 'accessionWF'
-      @step       = 'publish'
-    end
-
-    let(:stubs) do
-      Faraday::Adapter::Test::Stubs.new do |stub|
-        stub.get("/workflow_queue?error=#{@step}&workflow=#{@workflow}") do |_env|
-          [200, {}, <<-EOXML]
-            <objects count="1">
-               <object id="druid:ab123cd4567" errorMessage="This is an error message"/>
-             </objects>
-          EOXML
-        end
-      end
-    end
-
-    describe 'errored_objects_for_workstep' do
-      it 'returns error messages for errored objects' do
-        expect(client.errored_objects_for_workstep(@workflow, @step)).to eq('druid:ab123cd4567' => 'This is an error message')
-      end
-    end
-
-    describe 'count_errored_for_workstep' do
-      it 'counts how many steps are errored out' do
-        expect(client.count_errored_for_workstep(@workflow, @step)).to eq(1)
-      end
-    end
-  end
-
-  describe '#count_queued_for_workstep' do
-    before do
-      @workflow   = 'accessionWF'
-      @step       = 'publish'
-    end
-
-    let(:stubs) do
-      Faraday::Adapter::Test::Stubs.new do |stub|
-        stub.get("/workflow_queue?queued=#{@step}&workflow=#{@workflow}") do |_env|
-          [200, {}, <<-EOXML]
-            <objects count="1">
-               <object id="druid:ab123cd4567"/>
-             </objects>
-          EOXML
-        end
-      end
-    end
-
-    it 'counts how many steps are errored out' do
-      expect(client.count_queued_for_workstep(@workflow, @step)).to eq(1)
-    end
-  end
-
-  describe '#count_objects_in_step' do
-    before do
-      @workflow   = 'sdrIngestWF'
-      @step       = 'start-ingest'
-      @type       = 'waiting'
-    end
-
-    let(:stubs) do
-      Faraday::Adapter::Test::Stubs.new do |stub|
-        stub.get("/workflow_queue?workflow=#{@workflow}&#{@type}=#{@step}") do |_env|
-          [200, {}, <<-EOXML]
-            <objects count="1">
-              <object id="druid:oo000ra0001" url="null/fedora/objects/druid:oo000ra0001"/>
-            </objects>
-          EOXML
-        end
-      end
-    end
-
-    it 'counts how many objects are at the type of step' do
-      expect(client.count_objects_in_step(@workflow, @step, @type)).to eq(1)
-    end
-  end
-
   describe '#delete_workflow' do
     let(:stubs) do
       Faraday::Adapter::Test::Stubs.new do |stub|
@@ -521,44 +403,6 @@ RSpec.describe Dor::Workflow::Client do
     it 'sends a delete request to the workflow service' do
       client.delete_workflow(druid: @druid, workflow: 'accessionWF', version: 5)
       expect(mock_http_connection).to have_received(:delete).with(url)
-    end
-  end
-
-  describe '.stale_queued_workflows' do
-    let(:stubs) do
-      Faraday::Adapter::Test::Stubs.new do |stub|
-        stub.get('workflow_queue/all_queued?hours-ago=24&limit=100') do |_env|
-          [200, {}, <<-XML]
-          <workflows>
-              <workflow laneId="lane1" note="annotation" lifecycle="in-process" errorText="stacktrace" errorMessage="NullPointerException" elapsed="1.173" repository="dor" attempts="0" datetime="2008-11-15T13:30:00-0800" status="waiting" process="content-metadata" name="accessionWF" druid="dr:123"/>
-              <workflow laneId="lane2" note="annotation" lifecycle="in-process" errorText="stacktrace" errorMessage="NullPointerException" elapsed="1.173" repository="dor" attempts="0" datetime="2008-11-15T13:30:00-0800" status="waiting" process="jp2-create" name="assemblyWF" druid="dr:456"/>
-          </workflows>
-          XML
-        end
-      end
-    end
-
-    it 'returns an Array of Hashes containing each workflow step' do
-      ah = client.stale_queued_workflows hours_ago: 24, limit: 100
-      expected = [
-        { workflow: 'accessionWF', step: 'content-metadata', druid: 'dr:123', lane_id: 'lane1' },
-        { workflow: 'assemblyWF',  step: 'jp2-create',       druid: 'dr:456', lane_id: 'lane2' }
-      ]
-      expect(ah).to eql(expected)
-    end
-  end
-
-  describe '.count_stale_queued_workflows' do
-    let(:stubs) do
-      Faraday::Adapter::Test::Stubs.new do |stub|
-        stub.get('workflow_queue/all_queued?hours-ago=48&count-only=true') do |_env|
-          [200, {}, '<objects count="10"/>']
-        end
-      end
-    end
-
-    it 'returns the number of queued workflow steps' do
-      expect(client.count_stale_queued_workflows(hours_ago: 48)).to eq(10)
     end
   end
 

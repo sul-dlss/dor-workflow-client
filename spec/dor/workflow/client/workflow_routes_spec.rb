@@ -161,9 +161,7 @@ RSpec.describe Dor::Workflow::Client::WorkflowRoutes do
       XML
     end
 
-    before do
-      allow(routes).to receive(:all_workflows_xml) { xml }
-    end
+    let(:mock_requestor) { instance_double(Dor::Workflow::Client::Requestor, request: xml) }
 
     it 'returns the workflows' do
       expect(routes.all_workflows(pid: 'druid:mw971zk1113')).to be_kind_of Dor::Workflow::Response::Workflows

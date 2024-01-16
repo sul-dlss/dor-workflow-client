@@ -40,15 +40,13 @@ module Dor
         @requestor = Requestor.new(connection: connection || ConnectionFactory.build_connection(url, timeout: timeout, logger: logger))
       end
 
-      delegate :create_workflow_by_name, :workflow_status, :all_workflows_xml, :workflows,
+      delegate :create_workflow_by_name, :workflow_status, :workflows,
                :workflow, :process, :delete_workflow, :delete_all_workflows, :update_status, :update_error_status,
                to: :workflow_routes
 
       delegate :lifecycle, :active_lifecycle, :milestones, to: :lifecycle_routes
 
-      delegate :lane_ids, :stale_queued_workflows, :count_stale_queued_workflows,
-               :objects_for_workstep, :errored_objects_for_workstep, :count_objects_in_step,
-               :count_errored_for_workstep, :count_queued_for_workstep,
+      delegate :lane_ids, :objects_for_workstep,
                to: :queues
 
       delegate :close_version, to: :version_routes
@@ -71,10 +69,6 @@ module Dor
 
       def workflow_template(name)
         templates.retrieve(name)
-      end
-
-      def workflow_templates
-        templates.all
       end
 
       def templates
