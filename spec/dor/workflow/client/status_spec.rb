@@ -32,7 +32,7 @@ RSpec.describe Dor::Workflow::Client::Status do
         let(:version) { '4' }
 
         it 'generates a status string' do
-          expect(status).to eq('v4 In accessioning (described, published)')
+          expect(status).to eq('v4 In accessioning (published)')
         end
       end
 
@@ -47,7 +47,7 @@ RSpec.describe Dor::Workflow::Client::Status do
         let(:version) { '3' }
 
         it 'generates a status string' do
-          expect(status).to eq('v3 In accessioning (described, published)')
+          expect(status).to eq('v3 In accessioning (published)')
         end
       end
     end
@@ -177,7 +177,7 @@ RSpec.describe Dor::Workflow::Client::Status do
       end
 
       it 'has the correct status of deposited (v2) object' do
-        expect(status).to eq('v2 In accessioning (described, published, deposited) 2013-10-01 07:10PM')
+        expect(status).to eq('v2 In accessioning (published, deposited) 2013-10-01 07:10PM')
       end
     end
   end
