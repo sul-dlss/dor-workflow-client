@@ -17,6 +17,7 @@ module Dor
           workflow['id']
         end
 
+        # Check if there are any processes for the provided version.
         # @param [Integer] version the version we are checking for.
         def active_for?(version:)
           result = ng_xml.at_xpath("/workflow/process[@version=#{version}]")
@@ -35,8 +36,14 @@ module Dor
           ng_xml.xpath('/workflow/process').empty?
         end
 
-        def complete?
+        # Check if all processes are skipped or complete for the provided version.
+        # @param [Integer] version the version we are checking for.
+        def complete_for?(version:)
           ng_xml.xpath("/workflow/process[@version=#{version}]/@status").map(&:value).all? { |p| %w[skipped completed].include?(p) }
+        end
+
+        def complete?
+          complete_for?(version: version)
         end
 
         attr_reader :xml

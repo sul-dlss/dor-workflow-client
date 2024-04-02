@@ -61,6 +61,31 @@ RSpec.describe Dor::Workflow::Response::Workflow do
     end
   end
 
+  describe '#complete_for?' do
+    let(:xml) do
+      <<~XML
+        <workflow repository="dor" objectId="druid:mw971zk1113" id="assemblyWF">
+          <process version="1" laneId="default" elapsed="0.0" attempts="1" datetime="2013-02-18T14:40:25-0800" status="completed" name="start-assembly"/>
+          <process version="1" laneId="default" elapsed="0.509" attempts="1" datetime="2013-02-18T14:42:24-0800" status="waiting" name="jp2-create"/>
+          <process version="2" laneId="default" elapsed="0.0" attempts="1" datetime="2013-02-18T14:40:25-0800" status="completed" name="start-assembly"/>
+          <process version="2" laneId="default" elapsed="0.509" attempts="1" datetime="2013-02-18T14:42:24-0800" status="completed" name="jp2-create"/>
+        </workflow>
+      XML
+    end
+
+    context 'when all steps are complete' do
+      it 'returns true' do
+        expect(instance.complete_for?(version: 2)).to be true
+      end
+    end
+
+    context 'when some steps are not complete' do
+      it 'returns false' do
+        expect(instance.complete_for?(version: 1)).to be false
+      end
+    end
+  end
+
   describe '#active_for?' do
     subject { instance.active_for?(version: 2) }
 
