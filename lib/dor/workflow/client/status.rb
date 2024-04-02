@@ -10,26 +10,24 @@ module Dor
           0 => 'Unknown Status', # if there are no milestones for the current version, someone likely messed up the versioning process.
           1 => 'Registered',
           2 => 'In accessioning',
-          3 => 'In accessioning (described)',
-          4 => 'In accessioning (described, published)',
-          5 => 'In accessioning (described, published, deposited)',
-          6 => 'Accessioned',
-          7 => 'Accessioned (indexed)',
-          8 => 'Accessioned (indexed, ingested)',
-          9 => 'Opened'
+          3 => 'In accessioning (published)',
+          4 => 'In accessioning (published, deposited)',
+          5 => 'Accessioned',
+          6 => 'Accessioned (indexed)',
+          7 => 'Accessioned (indexed, ingested)',
+          8 => 'Opened'
         }.freeze
 
         # milestones from accessioning and the order they happen in
         STEPS = {
           'registered' => 1,
           'submitted' => 2,
-          'described' => 3,
-          'published' => 4,
-          'deposited' => 5,
-          'accessioned' => 6,
-          'indexed' => 7,
-          'shelved' => 8,
-          'opened' => 9
+          'published' => 3,
+          'deposited' => 4,
+          'accessioned' => 5,
+          'indexed' => 6,
+          'shelved' => 7,
+          'opened' => 8
         }.freeze
 
         attr_reader :status_code
@@ -78,7 +76,7 @@ module Dor
         end
 
         # @return [String] text translation of the status code, minus any trailing parenthetical explanation
-        # e.g. 'In accessioning (described)' and 'In accessioning (described, published)' both return 'In accessioning'
+        # e.g. 'Accessioned (indexed)' and 'Accessioned (indexed, ingested)', both return 'Accessioned'
         def simplified_status_code(display)
           display.gsub(/\(.*\)$/, '').strip
         end
