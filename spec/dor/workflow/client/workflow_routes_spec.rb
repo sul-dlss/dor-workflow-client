@@ -169,8 +169,48 @@ RSpec.describe Dor::Workflow::Client::WorkflowRoutes do
   end
 
   describe '#create_workflow_by_name' do
-    it 'need to write these specs', skip: 'need to write specs' do
-      # something
+    let(:mock_requestor) { instance_double(Dor::Workflow::Client::Requestor, request: nil) }
+
+    context 'with default lane_id and no metadata' do
+      subject(:create_workflow_by_name) do
+        routes.create_workflow_by_name('druid:mw971zk1113', 'accessionWF', version: '1')
+      end
+
+      it 'sends a create request with default lane_id and without any metadata param' do
+        create_workflow_by_name
+        expect(mock_requestor).to have_received(:request)
+          .with('objects/druid:mw971zk1113/workflows/accessionWF', 'post', '',
+                { content_type: 'application/xml',
+                  params: { 'lane-id' => 'default', 'version' => '1' } })
+      end
+    end
+
+    context 'with a custom lane_id' do
+      subject(:create_workflow_by_name) do
+        routes.create_workflow_by_name('druid:mw971zk1113', 'accessionWF', version: '1', lane_id: 'hamburgers')
+      end
+
+      it 'sends a create request without any metadata param' do
+        create_workflow_by_name
+        expect(mock_requestor).to have_received(:request)
+          .with('objects/druid:mw971zk1113/workflows/accessionWF', 'post', '',
+                { content_type: 'application/xml',
+                  params: { 'lane-id' => 'hamburgers', 'version' => '1' } })
+      end
+    end
+
+    context 'when metadata is sent' do
+      subject(:create_workflow_by_name) do
+        routes.create_workflow_by_name('druid:mw971zk1113', 'accessionWF', version: '1', lane_id: 'default', metadata: { foo: 'bar' })
+      end
+
+      it 'sends a create request with the metadata param' do
+        create_workflow_by_name
+        expect(mock_requestor).to have_received(:request)
+          .with('objects/druid:mw971zk1113/workflows/accessionWF', 'post', '',
+                { content_type: 'application/xml',
+                  params: { 'lane-id' => 'default', 'version' => '1', 'metadata' => { foo: 'bar' } } })
+      end
     end
   end
 end

@@ -28,6 +28,11 @@ Create a workflow
 client.create_workflow_by_name('druid:bc123df4567', 'etdSubmitWF', version: '1')
 ```
 
+Create a workflow and send in metadata
+```
+client.create_workflow_by_name('druid:bc123df4567', 'etdSubmitWF', version: '1', metadata: { foo: 'bar'} )
+```
+
 Update a workflow step's status
 ```ruby
 client.update_status(druid: 'druid:bc123df4567',
