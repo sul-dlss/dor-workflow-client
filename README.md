@@ -19,6 +19,20 @@ client = Dor::Workflow::Client.new(url: 'https://test-server.edu/workflow/')
 
 Consumers of recent versions of the [dor-services](https://github.com/sul-dlss/dor-services) gem can access the configured `Dor::Workflow::Client` object via `Dor::Config`.
 
+## Console
+
+During development, you can test the gem locally on your laptop, hitting a local instance of workflow-server-rails via the console:
+
+```
+bin/console
+
+client = Dor::Workflow::Client.new(url: 'http://localhost:3000')
+client.create_workflow_by_name('druid:bc123df4567', 'accessionWF', version: '1', metadata: { 'requireOCR' => true})
+client.workflows('druid:bc123df4567')
+client.workflow(pid: 'druid:bc123df4567', workflow_name: 'accessionWF')
+client.all_workflows(pid: 'druid:bc123df4567')
+```
+
 ## API
 [Rubydoc](https://www.rubydoc.info/github/sul-dlss/dor-workflow-client/main)
 

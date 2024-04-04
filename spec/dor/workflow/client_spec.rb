@@ -225,6 +225,29 @@ RSpec.describe Dor::Workflow::Client do
     end
   end
 
+  describe '#all_workflows' do
+    let(:xml) do
+      <<~XML
+        <workflows objectId="druid:123">
+          <workflow repository="dor" objectId="druid:123" id="accessionWF">
+            <process laneId="default" lifecycle="submitted" elapsed="0.0" attempts="1" datetime="2013-02-18T15:08:10-0800" status="completed" name="start-accession"/>
+          </workflow>
+        </workflows>
+      XML
+    end
+    let(:stubs) do
+      Faraday::Adapter::Test::Stubs.new do |stub|
+        stub.get("/objects/#{@druid}/workflows") do |_env|
+          [200, {}, xml]
+        end
+      end
+    end
+
+    it 'returns the workflow details associated with druid' do
+      expect(client.all_workflows(pid: @druid).xml).to eq(xml)
+    end
+  end
+
   describe '#lifecycle' do
     let(:stubs) do
       Faraday::Adapter::Test::Stubs.new do |stub|

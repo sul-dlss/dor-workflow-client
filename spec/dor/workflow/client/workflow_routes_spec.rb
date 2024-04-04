@@ -209,7 +209,7 @@ RSpec.describe Dor::Workflow::Client::WorkflowRoutes do
         expect(mock_requestor).to have_received(:request)
           .with('objects/druid:mw971zk1113/workflows/accessionWF', 'post', '',
                 { content_type: 'application/xml',
-                  params: { 'lane-id' => 'default', 'version' => '1', 'metadata' => { foo: 'bar' } } })
+                  params: { 'lane-id' => 'default', 'version' => '1', 'metadata' => '{"foo":"bar"}' } })
       end
     end
   end

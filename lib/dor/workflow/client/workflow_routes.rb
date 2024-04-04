@@ -23,7 +23,7 @@ module Dor
         #
         def create_workflow_by_name(druid, workflow_name, version:, lane_id: 'default', metadata: nil)
           params = { 'lane-id' => lane_id, 'version' => version }
-          params.merge!('metadata' => metadata) if metadata
+          params.merge!('metadata' => metadata.to_json) if metadata
           requestor.request "objects/#{druid}/workflows/#{workflow_name}", 'post', '',
                             content_type: 'application/xml',
                             params: params
