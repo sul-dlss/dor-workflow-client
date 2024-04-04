@@ -28,9 +28,18 @@ bin/console
 
 client = Dor::Workflow::Client.new(url: 'http://localhost:3000')
 client.create_workflow_by_name('druid:bc123df4567', 'accessionWF', version: '1', metadata: { 'requireOCR' => true})
+
 client.workflows('druid:bc123df4567')
+ => ["accessionWF"]
+
 client.workflow(pid: 'druid:bc123df4567', workflow_name: 'accessionWF')
+=> #<Dor::Workflow::Response::Workflow:0x0000000105c8b440
+
+client.workflow(pid: 'druid:bc123df4567', workflow_name: 'accessionWF').process_for_recent_version(name: 'start-accession').metadata
+ => {"requireOCR"=>true}
+
 client.all_workflows(pid: 'druid:bc123df4567')
+=> #<Dor::Workflow::Response::Workflows:0x00000001055d29a0>.....
 ```
 
 ## API

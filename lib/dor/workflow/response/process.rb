@@ -51,6 +51,13 @@ module Dor
           @attributes[:laneId].presence
         end
 
+        # @return [Hash] the metadata for the process (or nil if none present)
+        def metadata
+          return nil unless @attributes[:metadata].present?
+
+          JSON.parse(@attributes[:metadata])
+        end
+
         delegate :pid, :workflow_name, to: :parent
 
         private

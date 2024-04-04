@@ -62,4 +62,32 @@ RSpec.describe Dor::Workflow::Response::Process do
 
     it { is_expected.to eq 'default' }
   end
+
+  describe '#metadata' do
+    subject { instance.metadata }
+
+    context 'when metadata exists' do
+      let(:xml) do
+        <<~XML
+          <workflow repository="dor" objectId="druid:mw971zk1113" id="assemblyWF">
+            <process name="start-assembly" laneId="default" metadata="{&quot;requireOCR&quot;:true}">
+          </workflow>
+        XML
+      end
+
+      it { is_expected.to eq({ 'requireOCR' => true }) }
+    end
+
+    context 'when no metadata exists' do
+      let(:xml) do
+        <<~XML
+          <workflow repository="dor" objectId="druid:mw971zk1113" id="assemblyWF">
+            <process name="start-assembly" laneId="default" metadata="">
+          </workflow>
+        XML
+      end
+
+      it { is_expected.to be_nil }
+    end
+  end
 end
