@@ -28,8 +28,7 @@ module Dor
         def process_for_recent_version(name:)
           nodes = process_nodes_for(name: name)
           node = nodes.max { |a, b| a.attr('version').to_i <=> b.attr('version').to_i }
-          attributes = node ? node.attributes.to_h { |k, v| [k.to_sym, v.value] } : {}
-          Process.new(parent: self, **attributes)
+          to_process(node)
         end
 
         def empty?
@@ -39,11 +38,22 @@ module Dor
         # Check if all processes are skipped or complete for the provided version.
         # @param [Integer] version the version we are checking for.
         def complete_for?(version:)
-          ng_xml.xpath("/workflow/process[@version=#{version}]/@status").map(&:value).all? { |p| %w[skipped completed].include?(p) }
+          # ng_xml.xpath("/workflow/process[@version=#{version}]/@status").map(&:value).all? { |p| %w[skipped completed].include?(p) }
+          incomplete_processes_for(version: version).empty?
         end
 
         def complete?
           complete_for?(version: version)
+        end
+
+        def incomplete_processes_for(version:)
+          process_nodes = ng_xml.xpath("/workflow/process[@version=#{version}]")
+          incomplete_process_nodes = process_nodes.reject { |process_node| %w[skipped completed].include?(process_node.attr('status')) }
+          incomplete_process_nodes.map { |process_node| to_process(process_node) }
+        end
+
+        def incomplete_processes
+          incomplete_processes_for(version: version)
         end
 
         attr_reader :xml
@@ -65,6 +75,11 @@ module Dor
 
         def ng_xml
           @ng_xml ||= Nokogiri::XML(@xml)
+        end
+
+        def to_process(node)
+          attributes = node ? node.attributes.to_h { |k, v| [k.to_sym, v.value] } : {}
+          Process.new(parent: self, **attributes)
         end
       end
     end
