@@ -16,5 +16,6 @@ test/tmp
 test/version_tmp
 tmp
 workflow_service.log
+workflow_service.log.*
 .ruby-version
 .ruby-gemset
