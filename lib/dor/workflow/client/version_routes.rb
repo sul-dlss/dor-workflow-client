@@ -14,7 +14,6 @@ module Dor
         # - completes the versioningWF:submit-version and versioningWF:start-accession steps
         # - initiates accesssionWF
         #
-        # @param [String] repo The repository the object resides in. This parameter is deprecated
         # @param [String] druid The id of the object to delete the workflow from
         # @param [Boolean] create_accession_wf Option to create accessionWF when closing a version.  Defaults to true
         def close_version(druid:, version:, create_accession_wf: true)

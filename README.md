@@ -23,7 +23,7 @@ Consumers of recent versions of the [dor-services](https://github.com/sul-dlss/d
 
 During development, you can test the gem locally on your laptop, hitting a local instance of workflow-server-rails via the console:
 
-```
+```ruby
 bin/console
 
 client = Dor::Workflow::Client.new(url: 'http://localhost:3000')
@@ -35,7 +35,7 @@ client.workflows('druid:bc123df4567')
 client.workflow(pid: 'druid:bc123df4567', workflow_name: 'accessionWF')
 => #<Dor::Workflow::Response::Workflow:0x0000000105c8b440
 
-client.workflow(pid: 'druid:bc123df4567', workflow_name: 'accessionWF').process_for_recent_version(name: 'start-accession').metadata
+client.process(pid: 'druid:bc123df4567', workflow_name: 'accessionWF', process: 'start-accession').metadata
  => {"requireOCR"=>true}
 
 client.all_workflows(pid: 'druid:bc123df4567')
@@ -76,13 +76,13 @@ client.workflow(pid: 'druid:bc123df4567', workflow_name: 'etdSubmitWF')
 
 Fetch information about a workflow step:
 ```ruby
-client.workflow(pid: 'druid:bc123df4567', workflow_name: 'etdSubmitWF').process_for_recent_version(name: 'registrar-approval')
+client.process(pid: 'druid:bc123df4567', workflow_name: 'etdSubmitWF', process: 'registrar-approval')
  => #<Dor::Workflow::Response::Process:0x000000010c505098
 ```
 
 Fetch metadata about a workflow step:
 ```ruby
-client.workflow(pid: 'druid:bc123df4567', workflow_name: 'etdSubmitWF').process_for_recent_version(name: 'registrar-approval').metadata
+client.process(pid: 'druid:bc123df4567', workflow_name: 'etdSubmitWF', process: 'registrar-approval').metadata
  => {"foo"=>"bar"}
 ```
 

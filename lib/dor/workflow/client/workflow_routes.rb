@@ -33,7 +33,6 @@ module Dor
         # Updates the status of one step in a workflow.
         # Returns true on success.  Caller must handle any exceptions
         #
-        # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
         # @param [String] druid The id of the object
         # @param [String] workflow The name of the workflow
         # @param [String] process The name of the process step
@@ -63,7 +62,6 @@ module Dor
 
         #
         # Retrieves the process status of the given workflow for the given object identifier
-        # @param [String] repo The repository the object resides in.  Currently recoginzes "dor" and "sdr".
         # @param [String] druid The id of the object
         # @param [String] workflow The name of the workflow
         # @param [String] process The name of the process step
