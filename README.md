@@ -45,6 +45,10 @@ client.all_workflows(pid: 'druid:bc123df4567')
 ## API
 [Rubydoc](https://www.rubydoc.info/github/sul-dlss/dor-workflow-client/main)
 
+### Workflow Variables
+
+If a workflow or workflows for a particular object require data to be persisted and available between steps, workflow variables can be set.  These are per object/version pair and thus available to any step in any workflow for a given version of an object once set.  Pass in a metadata variable as a Hash as shown in the example below.  The metadata will be returned as a hash when fetching workflows data for an object.
+
 ### Example usage
 Create a workflow
 ```
@@ -62,6 +66,24 @@ client.update_status(druid: 'druid:bc123df4567',
                      workflow: 'etdSubmitWF',
                      process: 'registrar-approval',
                      status: 'completed')
+```
+
+Fetch information about a workflow:
+```ruby
+client.workflow(pid: 'druid:bc123df4567', workflow_name: 'etdSubmitWF')
+ => #<Dor::Workflow::Response::Workflow:0x000000010cb28588
+```
+
+Fetch information about a workflow step:
+```ruby
+client.workflow(pid: 'druid:bc123df4567', workflow_name: 'etdSubmitWF').process_for_recent_version(name: 'registrar-approval')
+ => #<Dor::Workflow::Response::Process:0x000000010c505098
+```
+
+Fetch metadata about a workflow step:
+```ruby
+client.workflow(pid: 'druid:bc123df4567', workflow_name: 'etdSubmitWF').process_for_recent_version(name: 'registrar-approval').metadata
+ => {"foo"=>"bar"}
 ```
 
 Show "milestones" for an object
