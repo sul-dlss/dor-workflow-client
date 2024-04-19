@@ -171,16 +171,16 @@ RSpec.describe Dor::Workflow::Client::WorkflowRoutes do
   describe '#create_workflow_by_name' do
     let(:mock_requestor) { instance_double(Dor::Workflow::Client::Requestor, request: nil) }
 
-    context 'with default lane_id and no metadata' do
+    context 'with default lane_id and no context' do
       subject(:create_workflow_by_name) do
         routes.create_workflow_by_name('druid:mw971zk1113', 'accessionWF', version: '1')
       end
 
-      it 'sends a create request with default lane_id and without any metadata param' do
+      it 'sends a create request with default lane_id and without any context param' do
         create_workflow_by_name
         expect(mock_requestor).to have_received(:request)
           .with('objects/druid:mw971zk1113/workflows/accessionWF', 'post', '',
-                { content_type: 'application/xml',
+                { content_type: 'application/json',
                   params: { 'lane-id' => 'default', 'version' => '1' } })
       end
     end
@@ -190,26 +190,26 @@ RSpec.describe Dor::Workflow::Client::WorkflowRoutes do
         routes.create_workflow_by_name('druid:mw971zk1113', 'accessionWF', version: '1', lane_id: 'hamburgers')
       end
 
-      it 'sends a create request without any metadata param' do
+      it 'sends a create request without any context param' do
         create_workflow_by_name
         expect(mock_requestor).to have_received(:request)
           .with('objects/druid:mw971zk1113/workflows/accessionWF', 'post', '',
-                { content_type: 'application/xml',
+                { content_type: 'application/json',
                   params: { 'lane-id' => 'hamburgers', 'version' => '1' } })
       end
     end
 
-    context 'when metadata is sent' do
+    context 'when context is sent' do
       subject(:create_workflow_by_name) do
-        routes.create_workflow_by_name('druid:mw971zk1113', 'accessionWF', version: '1', lane_id: 'default', metadata: { foo: 'bar' })
+        routes.create_workflow_by_name('druid:mw971zk1113', 'accessionWF', version: '1', lane_id: 'default', context: { foo: 'bar' })
       end
 
-      it 'sends a create request with the metadata param' do
+      it 'sends a create request with the context in the body' do
         create_workflow_by_name
         expect(mock_requestor).to have_received(:request)
-          .with('objects/druid:mw971zk1113/workflows/accessionWF', 'post', '',
-                { content_type: 'application/xml',
-                  params: { 'lane-id' => 'default', 'version' => '1', 'metadata' => '{"foo":"bar"}' } })
+          .with('objects/druid:mw971zk1113/workflows/accessionWF', 'post', '{"context":{"foo":"bar"}}',
+                { content_type: 'application/json',
+                  params: { 'lane-id' => 'default', 'version' => '1' } })
       end
     end
   end

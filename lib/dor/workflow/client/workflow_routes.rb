@@ -17,15 +17,15 @@ module Dor
         # @param [String] workflow_name The name of the workflow you want to create. This must correspond with a workflow
         # name that is known by the workflow service.
         # @param [String] lane_id adds laneId attribute to all process elements in the wf_xml workflow xml.  Defaults to a value of 'default'
-        # @param [Hash] metadata optional metadata to be included in the workflow (same for all processes for a given druid/version pair)
+        # @param [Hash] context optional context to be included in the workflow (same for all processes for a given druid/version pair)
         # @param [Integer] version specifies the version so that workflow service doesn't need to query dor-services.
         # @return [Boolean] always true
         #
-        def create_workflow_by_name(druid, workflow_name, version:, lane_id: 'default', metadata: nil)
+        def create_workflow_by_name(druid, workflow_name, version:, lane_id: 'default', context: nil)
           params = { 'lane-id' => lane_id, 'version' => version }
-          params.merge!('metadata' => metadata.to_json) if metadata
-          requestor.request "objects/#{druid}/workflows/#{workflow_name}", 'post', '',
-                            content_type: 'application/xml',
+          body = context ? { 'context' => context }.to_json : ''
+          requestor.request "objects/#{druid}/workflows/#{workflow_name}", 'post', body,
+                            content_type: 'application/json',
                             params: params
           true
         end

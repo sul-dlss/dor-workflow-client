@@ -27,7 +27,7 @@ During development, you can test the gem locally on your laptop, hitting a local
 bin/console
 
 client = Dor::Workflow::Client.new(url: 'http://localhost:3000')
-client.create_workflow_by_name('druid:bc123df4567', 'accessionWF', version: '1', metadata: { 'requireOCR' => true})
+client.create_workflow_by_name('druid:bc123df4567', 'accessionWF', version: '1', context: { 'requireOCR' => true})
 
 client.workflows('druid:bc123df4567')
  => ["accessionWF"]
@@ -35,7 +35,7 @@ client.workflows('druid:bc123df4567')
 client.workflow(pid: 'druid:bc123df4567', workflow_name: 'accessionWF')
 => #<Dor::Workflow::Response::Workflow:0x0000000105c8b440
 
-client.process(pid: 'druid:bc123df4567', workflow_name: 'accessionWF', process: 'start-accession').metadata
+client.process(pid: 'druid:bc123df4567', workflow_name: 'accessionWF', process: 'start-accession').context
  => {"requireOCR"=>true}
 
 client.all_workflows(pid: 'druid:bc123df4567')
@@ -47,7 +47,7 @@ client.all_workflows(pid: 'druid:bc123df4567')
 
 ### Workflow Variables
 
-If a workflow or workflows for a particular object require data to be persisted and available between steps, workflow variables can be set.  These are per object/version pair and thus available to any step in any workflow for a given version of an object once set.  Pass in a metadata variable as a Hash as shown in the example below.  The metadata will be returned as a hash when fetching workflows data for an object.
+If a workflow or workflows for a particular object require data to be persisted and available between steps, workflow variables can be set.  These are per object/version pair and thus available to any step in any workflow for a given version of an object once set.  Pass in a context variable as a Hash as shown in the example below.  The context will be returned as a hash when fetching workflows data for an object.
 
 ### Example usage
 Create a workflow
@@ -55,9 +55,9 @@ Create a workflow
 client.create_workflow_by_name('druid:bc123df4567', 'etdSubmitWF', version: '1')
 ```
 
-Create a workflow and send in metadata
+Create a workflow and send in context
 ```
-client.create_workflow_by_name('druid:bc123df4567', 'etdSubmitWF', version: '1', metadata: { foo: 'bar'} )
+client.create_workflow_by_name('druid:bc123df4567', 'etdSubmitWF', version: '1', context: { foo: 'bar'} )
 ```
 
 Update a workflow step's status
@@ -80,9 +80,9 @@ client.process(pid: 'druid:bc123df4567', workflow_name: 'etdSubmitWF', process: 
  => #<Dor::Workflow::Response::Process:0x000000010c505098
 ```
 
-Fetch metadata about a workflow step:
+Fetch version context about a workflow step:
 ```ruby
-client.process(pid: 'druid:bc123df4567', workflow_name: 'etdSubmitWF', process: 'registrar-approval').metadata
+client.process(pid: 'druid:bc123df4567', workflow_name: 'etdSubmitWF', process: 'registrar-approval').context
  => {"foo"=>"bar"}
 ```
 
