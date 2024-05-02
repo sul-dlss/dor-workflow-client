@@ -51,9 +51,9 @@ module Dor
           @attributes[:laneId].presence
         end
 
-        # @return [Hash] the context for the process (or nil if none present)
+        # @return [Hash] the context for the process (or empty hash if none present)
         def context
-          return nil unless @attributes[:context].present?
+          return {} unless @attributes[:context].present?
 
           JSON.parse(@attributes[:context])
         end

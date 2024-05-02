@@ -87,7 +87,7 @@ RSpec.describe Dor::Workflow::Response::Process do
         XML
       end
 
-      it { is_expected.to be_nil }
+      it { is_expected.to eq({}) }
     end
   end
 end
