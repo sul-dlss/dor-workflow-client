@@ -17,13 +17,15 @@ module Dor
         # @param [String] workflow_name The name of the workflow you want to create. This must correspond with a workflow
         # name that is known by the workflow service.
         # @param [String] lane_id adds laneId attribute to all process elements in the wf_xml workflow xml.  Defaults to a value of 'default'
+        # @param [Hash] context optional context to be included in the workflow (same for all processes for a given druid/version pair)
         # @param [Integer] version specifies the version so that workflow service doesn't need to query dor-services.
         # @return [Boolean] always true
         #
-        def create_workflow_by_name(druid, workflow_name, version:, lane_id: 'default')
+        def create_workflow_by_name(druid, workflow_name, version:, lane_id: 'default', context: nil)
           params = { 'lane-id' => lane_id, 'version' => version }
-          requestor.request "objects/#{druid}/workflows/#{workflow_name}", 'post', '',
-                            content_type: 'application/xml',
+          body = context ? { 'context' => context }.to_json : ''
+          requestor.request "objects/#{druid}/workflows/#{workflow_name}", 'post', body,
+                            content_type: 'application/json',
                             params: params
           true
         end
@@ -31,7 +33,6 @@ module Dor
         # Updates the status of one step in a workflow.
         # Returns true on success.  Caller must handle any exceptions
         #
-        # @param [String] repo The repository the object resides in.  The service recoginzes "dor" and "sdr" at the moment
         # @param [String] druid The id of the object
         # @param [String] workflow The name of the workflow
         # @param [String] process The name of the process step
@@ -61,7 +62,6 @@ module Dor
 
         #
         # Retrieves the process status of the given workflow for the given object identifier
-        # @param [String] repo The repository the object resides in.  Currently recoginzes "dor" and "sdr".
         # @param [String] druid The id of the object
         # @param [String] workflow The name of the workflow
         # @param [String] process The name of the process step

@@ -11,7 +11,6 @@ module Dor
 
         # Returns the Date for a requested milestone from workflow lifecycle
         #
-        # @param [String] repo The repository the object resides in. This parameter is deprecated
         # @param [String] druid object id
         # @param [String] milestone_name the name of the milestone being queried for
         # @param [Number] version (nil) the version to query for

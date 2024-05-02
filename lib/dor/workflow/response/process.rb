@@ -51,6 +51,13 @@ module Dor
           @attributes[:laneId].presence
         end
 
+        # @return [Hash] the context for the process (or empty hash if none present)
+        def context
+          return {} unless @attributes[:context].present?
+
+          JSON.parse(@attributes[:context])
+        end
+
         delegate :pid, :workflow_name, to: :parent
 
         private

@@ -62,4 +62,32 @@ RSpec.describe Dor::Workflow::Response::Process do
 
     it { is_expected.to eq 'default' }
   end
+
+  describe '#context' do
+    subject { instance.context }
+
+    context 'when context exists' do
+      let(:xml) do
+        <<~XML
+          <workflow repository="dor" objectId="druid:mw971zk1113" id="assemblyWF">
+            <process name="start-assembly" laneId="default" context="{&quot;requireOCR&quot;:true}">
+          </workflow>
+        XML
+      end
+
+      it { is_expected.to eq({ 'requireOCR' => true }) }
+    end
+
+    context 'when no context exists' do
+      let(:xml) do
+        <<~XML
+          <workflow repository="dor" objectId="druid:mw971zk1113" id="assemblyWF">
+            <process name="start-assembly" laneId="default" context="">
+          </workflow>
+        XML
+      end
+
+      it { is_expected.to eq({}) }
+    end
+  end
 end
