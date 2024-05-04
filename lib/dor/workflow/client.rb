@@ -24,7 +24,7 @@ module Dor
     #
     # Create and update workflows
     class Client
-      # From Workflow Service's admin/Process.java
+      # From workflow-server-rails' app/models/workflow_step.rb
       VALID_STATUS = %w[waiting completed error queued skipped started].freeze
 
       attr_accessor :requestor
