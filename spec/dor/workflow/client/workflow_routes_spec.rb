@@ -108,6 +108,12 @@ RSpec.describe Dor::Workflow::Client::WorkflowRoutes do
         expect { routes.update_status(druid: druid, workflow: 'accessionWF', process: 'publish', status: 'NOT_VALID_STATUS') }.to raise_error(ArgumentError)
       end
     end
+
+    context 'when an error status is provided' do
+      it 'throws an exception' do
+        expect { routes.update_status(druid: druid, workflow: 'accessionWF', process: 'publish', status: 'error') }.to raise_error(ArgumentError)
+      end
+    end
   end
 
   describe '#update_error_status' do

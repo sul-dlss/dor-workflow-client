@@ -51,6 +51,7 @@ module Dor
         def update_status(druid:, workflow:, process:, status:, elapsed: 0, lifecycle: nil, note: nil, current_status: nil)
           raise ArgumentError, "Unknown status value #{status}" unless VALID_STATUS.include?(status)
           raise ArgumentError, "Unknown current_status value #{current_status}" if current_status && !VALID_STATUS.include?(current_status)
+          raise ArgumentError, "Do not set status to 'error', use update_error_status method" if status == 'error'
 
           xml = create_process_xml(name: process, status: status, elapsed: elapsed, lifecycle: lifecycle, note: note)
           uri = "objects/#{druid}/workflows/#{workflow}/#{process}"
