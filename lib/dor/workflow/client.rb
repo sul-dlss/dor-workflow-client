@@ -49,8 +49,6 @@ module Dor
       delegate :lane_ids, :objects_for_workstep,
                to: :queues
 
-      delegate :close_version, to: :version_routes
-
       def queues
         @queues ||= Queues.new(requestor: requestor)
       end
@@ -61,10 +59,6 @@ module Dor
 
       def lifecycle_routes
         @lifecycle_routes ||= LifecycleRoutes.new(requestor: requestor)
-      end
-
-      def version_routes
-        @version_routes ||= VersionRoutes.new(requestor: requestor)
       end
 
       def workflow_template(name)
