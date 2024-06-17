@@ -107,6 +107,13 @@ module Dor
           Workflow::Response::Workflows.new(xml: xml)
         end
 
+        # Skips all steps in a WF
+        def skip_all(druid:, workflow:, note:)
+          xml = create_process_xml(name: 'skip-all', status: 'skipped', note: note)
+          response = requestor.request "objects/#{druid}/workflows/#{workflow}/skip-all", 'post', xml, content_type: 'application/xml'
+          Workflow::Response::Workflows.new(xml: response)
+        end
+
         # Get workflow names into an array for given PID
         # This method only works when this gem is used in a project that is configured to connect to DOR
         #

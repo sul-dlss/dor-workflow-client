@@ -156,6 +156,22 @@ RSpec.describe Dor::Workflow::Client::WorkflowRoutes do
     end
   end
 
+  describe '#skip_all' do
+    subject(:skip_all) do
+      routes.skip_all(druid: 'druid:mw971zk1113', note: 'test note', workflow: 'ocrWF')
+    end
+
+    let(:mock_requestor) { instance_double(Dor::Workflow::Client::Requestor, request: nil) }
+
+    it 'sends a skip all request' do
+      skip_all
+      expect(mock_requestor).to have_received(:request)
+        .with('objects/druid:mw971zk1113/workflows/ocrWF/skip-all', 'post',
+              "<?xml version=\"1.0\"?>\n<process name=\"skip-all\" status=\"skipped\" note=\"test note\"/>\n",
+              { content_type: 'application/xml' })
+    end
+  end
+
   describe '#all_workflows' do
     let(:xml) do
       <<~XML
