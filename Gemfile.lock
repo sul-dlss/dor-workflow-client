@@ -36,12 +36,12 @@ GEM
     deprecation (1.1.0)
       activesupport
     diff-lcs (1.5.1)
-    docile (1.4.0)
+    docile (1.4.1)
     drb (2.2.1)
     faraday (2.10.0)
       faraday-net_http (>= 2.0, < 3.2)
       logger
-    faraday-net_http (3.1.0)
+    faraday-net_http (3.1.1)
       net-http
     faraday-retry (2.2.1)
       faraday (~> 2.0)
@@ -56,14 +56,14 @@ GEM
     mutex_m (0.2.0)
     net-http (0.4.1)
       uri
-    nokogiri (1.16.6)
+    nokogiri (1.16.7)
       mini_portile2 (~> 2.8.2)
       racc (~> 1.4)
     parallel (1.25.1)
     parser (3.3.4.0)
       ast (~> 2.4.1)
       racc
-    public_suffix (6.0.0)
+    public_suffix (6.0.1)
     racc (1.8.0)
     rainbow (3.1.1)
     rake (13.2.1)
