@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     dor-workflow-client (7.6.0)
-      activesupport (>= 3.2.1, < 8)
+      activesupport (>= 7.0.0)
       deprecation (>= 0.99.0)
       faraday (~> 2.0)
       faraday-retry (~> 2.0)
