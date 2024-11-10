@@ -17,7 +17,7 @@ Gem::Specification.new do |gem|
   gem.require_paths = ['lib']
   gem.required_ruby_version = '>= 3.0'
 
-  gem.add_dependency 'activesupport', '>= 3.2.1', '< 8'
+  gem.add_dependency 'activesupport', '>= 7.0.0'
   gem.add_dependency 'deprecation', '>= 0.99.0'
   gem.add_dependency 'faraday', '~> 2.0'
   gem.add_dependency 'faraday-retry', '~> 2.0'
