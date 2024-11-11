@@ -3,7 +3,7 @@
 module Dor
   module Workflow
     class Client
-      VERSION = '7.6.0'
+      VERSION = '7.6.1'
     end
   end
 end
