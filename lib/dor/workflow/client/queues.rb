@@ -80,6 +80,25 @@ module Dor
           Nokogiri::XML(resp).xpath('//object[@id]').map { |n| n[:id] }
         end
 
+        # Returns a list of druids from the workflow service that meet the criteria
+        # of the passed in error param
+        #
+        # @see `#objects_for_workstep`
+        #
+        # @param [String] error name of the error step
+        # @param [Hash] options
+        # @param options  [String]  :default_workflow workflow to query for if not using the qualified format
+        # @option options [Integer] :limit maximum number of druids to return (nil for no limit)
+        # @return [Array<String>]  Array of druids
+        def objects_erroring_at_workstep(error, options = {})
+          uri_string = "workflow_queue?error=#{error}"
+          uri_string += "&limit=#{options[:limit].to_i}" if options[:limit]&.to_i&.positive?
+
+          resp = requestor.request uri_string
+
+          Nokogiri::XML(resp).xpath('//object[@id]').map { |n| n[:id] }
+        end
+
         private
 
         attr_reader :requestor
