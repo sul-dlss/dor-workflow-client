@@ -46,8 +46,7 @@ module Dor
 
       delegate :lifecycle, :active_lifecycle, :milestones, to: :lifecycle_routes
 
-      delegate :lane_ids, :objects_for_workstep,
-               to: :queues
+      delegate :lane_ids, :objects_for_workstep, :objects_erroring_at_workstep, to: :queues
 
       def queues
         @queues ||= Queues.new(requestor: requestor)

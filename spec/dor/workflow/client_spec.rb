@@ -391,6 +391,38 @@ RSpec.describe Dor::Workflow::Client do
     end
   end
 
+  describe '#objects_erroring_at_workstep' do
+    before do
+      @workflow = 'googleScannedBookWF'
+      @error = 'process-content'
+    end
+
+    let(:stubs) do
+      Faraday::Adapter::Test::Stubs.new do |stub|
+        stub.get("workflow_queue?error=#{@workflow}:#{@error}") do |_env|
+          [200, {}, '<objects count="1"><object id="druid:ab123de4567"/><object id="druid:ab123de9012"/></objects>']
+        end
+      end
+    end
+
+    context 'with a query using qualified workflow name for error' do
+      before do
+        @qualified_error = "#{@workflow}:#{@error}"
+      end
+
+      context 'with URI string creation' do
+        before do
+          @xml = %(<objects count="1"><object id="druid:ab123de4567"/></objects>)
+        end
+
+        it 'with lane ID' do
+          allow(mock_http_connection).to receive(:get).with("workflow_queue?error=#{@qualified_error}").and_return(double(Faraday::Response, body: @xml))
+          expect(client.objects_erroring_at_workstep(@qualified_error)).to eq(['druid:ab123de4567'])
+        end
+      end
+    end
+  end
+
   context 'when empty workflow queue' do
     before do
       @workflow   = 'googleScannedBookWF'
