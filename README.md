@@ -1,7 +1,5 @@
 [![CircleCI](https://circleci.com/gh/sul-dlss/dor-workflow-client.svg?style=svg)](https://circleci.com/gh/sul-dlss/dor-workflow-client)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/ff9d01af29a7a357645c/test_coverage)](https://codeclimate.com/github/sul-dlss/dor-workflow-client/test_coverage)
-[![Maintainability](https://api.codeclimate.com/v1/badges/ff9d01af29a7a357645c/maintainability)](https://codeclimate.com/github/sul-dlss/dor-workflow-client/maintainability)
-
+[![codecov](https://codecov.io/github/sul-dlss/dor-workflow-client/graph/badge.svg?token=Wz2wROJGOY)](https://codecov.io/github/sul-dlss/dor-workflow-client)
 [![Gem Version](https://badge.fury.io/rb/dor-workflow-client.svg)](https://badge.fury.io/rb/dor-workflow-client)
 
 # dor-workflow-client gem
