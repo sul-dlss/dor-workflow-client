@@ -21,7 +21,7 @@ module Dor
         # @param [Integer] version the version we are checking for.
         def active_for?(version:)
           result = ng_xml.at_xpath("/workflow/process[@version=#{version}]")
-          result ? true : false
+          result ? true : false # rubocop:disable Style/RedundantCondition
         end
 
         # Returns the process, for the most recent version that matches the given name:
