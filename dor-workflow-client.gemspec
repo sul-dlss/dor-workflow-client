@@ -12,7 +12,7 @@ Gem::Specification.new do |gem|
   gem.description   = 'Enables Ruby manipulation of the DOR Workflow Service via its REST API'
   gem.summary       = 'Provides convenience methods to work with the DOR Workflow Service'
   gem.homepage      = 'https://consul.stanford.edu/display/DOR/DOR+services#DORservices-initializeworkflow'
-
+  gem.licenses      = ['Apache-2.0']
   gem.files         = `git ls-files`.split($INPUT_RECORD_SEPARATOR)
   gem.require_paths = ['lib']
   gem.required_ruby_version = '>= 3.0'
