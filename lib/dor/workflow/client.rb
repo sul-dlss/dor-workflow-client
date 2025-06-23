@@ -44,7 +44,7 @@ module Dor
                :workflow, :process, :delete_workflow, :delete_all_workflows, :update_status, :update_error_status,
                to: :workflow_routes
 
-      delegate :lifecycle, :active_lifecycle, :milestones, to: :lifecycle_routes
+      delegate :lifecycle, :active_lifecycle, :milestones, :query_lifecycle, to: :lifecycle_routes
 
       delegate :lane_ids, :objects_for_workstep, :objects_erroring_at_workstep, to: :queues
 
