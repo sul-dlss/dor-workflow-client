@@ -57,4 +57,23 @@ RSpec.describe Dor::Workflow::Client::LifecycleRoutes do
       end
     end
   end
+
+  describe '#query_lifecycle' do
+    subject(:lifecycle) { routes.query_lifecycle(druid, active_only: true, version: 2) }
+
+    let(:xml) do
+      '<?xml version="1.0" encoding="UTF-8"?><lifecycle objectId="druid:gv054hp4128"><milestone date="2012-01-26T21:06:54-0800" version="2">published</milestone></lifecycle>'
+    end
+
+    before do
+      allow(requestor).to receive(:request).and_return(xml)
+    end
+
+    it 'returns XML' do
+      expect(lifecycle).to be_a(Nokogiri::XML::Document)
+      expect(lifecycle.to_xml).to eq(Nokogiri::XML(xml).to_xml)
+
+      expect(requestor).to have_received(:request).with('objects/druid:gv054hp4128/lifecycle?version=2&active-only=true')
+    end
+  end
 end

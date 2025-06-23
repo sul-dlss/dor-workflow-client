@@ -39,15 +39,6 @@ module Dor
           end
         end
 
-        private
-
-        def filter_milestone(lifecycle_doc, milestone_name)
-          milestone = lifecycle_doc.at_xpath("//lifecycle/milestone[text() = '#{milestone_name}']")
-          return unless milestone
-
-          Time.parse(milestone['date'])
-        end
-
         # @param [String] druid object id
         # @param [Boolean] active_only (false) if true, return only lifecycle steps for versions that have all processes complete
         # @param [Number] version the version to query for
@@ -69,7 +60,16 @@ module Dor
           Nokogiri::XML(requestor.request(req))
         end
 
+        private
+
         attr_reader :requestor
+
+        def filter_milestone(lifecycle_doc, milestone_name)
+          milestone = lifecycle_doc.at_xpath("//lifecycle/milestone[text() = '#{milestone_name}']")
+          return unless milestone
+
+          Time.parse(milestone['date'])
+        end
       end
     end
   end
