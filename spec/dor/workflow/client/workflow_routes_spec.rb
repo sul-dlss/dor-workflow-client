@@ -223,13 +223,13 @@ RSpec.describe Dor::Workflow::Client::WorkflowRoutes do
 
     context 'when context is sent' do
       subject(:create_workflow_by_name) do
-        routes.create_workflow_by_name('druid:mw971zk1113', 'accessionWF', version: '1', lane_id: 'default', context: { foo: 'bar' })
+        routes.create_workflow_by_name('druid:mw971zk1113', 'accessionWF', version: '1', lane_id: 'default', context: { requireOCR: 'true', ocrLanguages: ['Russian'] })
       end
 
       it 'sends a create request with the context in the body' do
         create_workflow_by_name
         expect(mock_requestor).to have_received(:request)
-          .with('objects/druid:mw971zk1113/workflows/accessionWF', 'post', '{"context":{"foo":"bar"}}',
+          .with('objects/druid:mw971zk1113/workflows/accessionWF', 'post', '{"context":{"requireOCR":"true","ocrLanguages":["Russian"]}}',
                 { content_type: 'application/json',
                   params: { 'lane-id' => 'default', 'version' => '1' } })
       end
